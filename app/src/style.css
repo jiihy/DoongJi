@@ -208,4 +208,5 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .tltext{font-size:15px;line-height:1.55;color:var(--ink)}
 .tlmeta{font-size:12px;font-weight:500;color:var(--ink4)}
 .imp .capture{cursor:zoom-in}
-.imp .ctasm{align-self:flex-start}
+.seecap{align-self:center;background:none;border:none;padding:6px 0;font-size:12px;font-weight:500;
+  color:var(--ink4);text-decoration:underline;text-underline-offset:3px}

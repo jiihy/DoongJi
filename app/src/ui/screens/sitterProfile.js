@@ -113,7 +113,6 @@ export function sitterProfileScreen(s, stats, back, pub) {
 
       // 「본인이 올림 · 이 서비스가 확인하지 않음」 — 확인된 것과 섞지 않는다 (§2-3)
       (s.imported || []).length ? card([
-        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 올림 · 이 서비스가 확인하지 않음' }),
         el('div', { class: 'h', text: '다른 곳에서 받은 후기' }),
         el('div', { class: 'sub', text: '캡처를 직접 보고 판단해주세요.' }),
         ...s.imported.map(v => el('div', { class: 'imp' }, [
@@ -125,7 +124,7 @@ export function sitterProfileScreen(s, stats, back, pub) {
           // 리뷰에 붙어 있던 사진은 그대로 보이고, 원본 캡처는 눌러서 따로 본다
           v.attach_url ? el('img', { class: 'capture', src: v.attach_url, alt: '첨부 사진',
             onclick: () => openLightbox(v.attach_url) }) : null,
-          v.capture_url ? el('button', { class: 'ctasm', text: '첨부 인증 보기',
+          v.capture_url ? el('button', { class: 'seecap', text: '첨부 인증 보기',
             onclick: () => openLightbox(v.capture_url) }) : null,
         ])),
       ]) : null,
