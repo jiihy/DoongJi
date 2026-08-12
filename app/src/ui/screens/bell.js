@@ -47,6 +47,5 @@ export function bellScreen(events, back, title, empty, opts = {}) {
         })) : el('div', { class: 'sub', text: empty || '아직 알림이 없어요.' }),
       ]),
     ],
-    hint: '알림은 서버가 남깁니다 — 앱을 안 켜둬도 쌓입니다.',
   };
 }
