@@ -103,6 +103,5 @@ export function profileScreen(ctx, rerender, go) {
         } catch (e) { flash('저장 실패', e.message); }
       },
     })],
-    hint: '공개 링크로 들어온 사람에게는 이름·소개·회계 숫자만 보입니다.',
   };
 }

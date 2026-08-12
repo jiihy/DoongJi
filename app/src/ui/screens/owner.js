@@ -52,7 +52,6 @@ export function ownerWelcome(c, go) {
       ]),
     ],
     foot: [el('button', { class: 'cta', text: '시작하기', onclick: () => go('confirm') })],
-    hint: '시터가 보낸 초대 링크입니다. 가입은 필요 없어요.',
   };
 }
 
@@ -394,7 +393,6 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
         flash('전달했어요', '시터에게 일정이 전송됐습니다.');
         await reload(); go(installSeen() ? 'home' : 'install');
       } })],
-    hint: '보호자 화면입니다. 찍을 대상을 보호자가 정합니다.',
   };
 }
 
@@ -440,7 +438,6 @@ export function ownerPetProfile(c, ui, go, reload, rerender) {
           onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
       ]),
     ],
-    hint: '여기서 고치면 돌봄 일정과 시터 화면에 바로 반영됩니다.',
   };
 }
 
@@ -681,6 +678,5 @@ export function ownerHome(c, go, ui, rerender, bell) {
       ]),
       installSeen() ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') }) : null,
     ],
-    hint: '사진과 시각은 시터가 올린 그대로입니다.',
   };
 }

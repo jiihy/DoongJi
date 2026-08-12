@@ -86,6 +86,5 @@ export function recordScreen(r) {
         x.thanks_reaction ? el('span', { class: 'thxdone', text: `보호자 「${x.thanks_reaction}」` }) : null,
       ])),
     ],
-    hint: '읽기 전용 · 보호자 동의로 공개된 기록입니다.',
   };
 }

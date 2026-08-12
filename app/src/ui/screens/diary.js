@@ -50,7 +50,6 @@ export function diaryWriteScreen(c, ui, sitterId, go, reload, rerender) {
           await reload(); rerender();
         } catch (e) { flash('저장 실패', e.message); }
       } })],
-    hint: '아이당 한 권 · 이 돌봄에서 한 편입니다.',
   };
 }
 
@@ -87,6 +86,5 @@ export function booksScreen(books, go) {
         el('div', { class: 'sub', text: '돌봄을 마치고 후기를 남기면 아이 이름으로 한 권이 만들어집니다.' }),
       ]),
     ],
-    hint: '보호자와 공개 프로필에서 이 글이 보입니다.',
   };
 }

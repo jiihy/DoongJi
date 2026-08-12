@@ -130,6 +130,5 @@ export function sitterProfileScreen(s, stats, back, pub) {
         ])),
       ]) : null,
     ],
-    hint: '숫자는 이 시터의 모든 돌봄을 합친 것입니다.',
   };
 }

@@ -66,6 +66,5 @@ export function importedScreen(ctx, go, rerender, reload) {
         ])),
       ]) : null,
     ],
-    hint: '캡처 없이는 등록되지 않습니다.',
   };
 }

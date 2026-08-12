@@ -57,7 +57,26 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
 
       el('button', { class: 'add', text: '＋ 돌봄 준비하기',
         onclick: () => { ctx.fromInquiry = null; ctx.form = null; go('newContract'); } }),
+
+      (() => {
+        const waiting = (ctx.inquiries || []).filter(q => !q.handled);
+        return waiting.length ? el('div', { class: 'sectwrap' }, [
+          el('div', { class: 'sect', text: `받은 의뢰 ${waiting.length}건` }),
+          ...waiting.map(q => card([
+            el('div', { class: 'notelist' }, [
+              el('span', { class: 'k', text: '연락처' }), el('span', { class: 'v', text: q.contact }),
+              ...(q.pet_name ? [el('span', { class: 'k sep', text: '아이' }),
+                                el('span', { class: 'v sep', text: q.pet_name })] : []),
+              ...(q.when_text ? [el('span', { class: 'k sep', text: '시기' }),
+                                 el('span', { class: 'v sep', text: q.when_text })] : []),
+              ...(q.msg ? [el('span', { class: 'k sep', text: '소개' }),
+                           el('span', { class: 'v sep', text: q.msg })] : []),
+            ]),
+            el('button', { class: 'cta', text: '이 의뢰로 준비하기',
+              onclick: () => { ctx.fromInquiry = q; ctx.form = null; go('newContract'); } }),
+          ])),
+        ]) : null;
+      })(),
     ],
-    hint: '보호자가 일정을 보내면 「기록하기」가 열립니다.',
   };
 }

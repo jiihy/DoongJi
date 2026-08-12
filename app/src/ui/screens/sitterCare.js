@@ -293,7 +293,6 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         } }),
       ]) : null),
     ],
-    hint: '사진을 올린 시각이 그대로 남습니다. 늦어도 벌점은 없어요.',
   };
 }
 

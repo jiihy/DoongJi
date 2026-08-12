@@ -185,6 +185,5 @@ export function newContractScreen(ctx, go, rerender) {
         go('home');
       } catch (e) { ctx.busy = false; sync(); flash('저장 실패', e.message); }
     }), cta)],
-    hint: '이 정보는 내 계정에 저장됩니다. 보호자는 가입하지 않아도 됩니다.',
   };
 }

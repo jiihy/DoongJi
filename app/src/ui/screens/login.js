@@ -82,6 +82,5 @@ export function loginScreen(state, rerender) {
       text: state.busy ? '처리 중…' : (state.mode === 'up' ? '가입하기' : '로그인'),
       onclick: state.mode === 'up' ? signUp : signIn,
     })],
-    hint: '이 화면은 시터용입니다.',
   };
 }

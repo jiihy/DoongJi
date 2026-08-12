@@ -129,7 +129,6 @@ export function sitterContractScreen(c, ui, go, reload, rerender) {
         items.length ? null : el('div', { class: 'sub', text: '＋ 를 눌러 항목을 넣어두면 보호자가 확인만 하면 됩니다.' }),
       ]),
     ],
-    hint: '보호자에게 보내기 전에 미리 채워두는 정보입니다.',
   };
 }
 
