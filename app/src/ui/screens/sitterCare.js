@@ -1,6 +1,8 @@
 import { el, card, flash, openLightbox } from '../el.js';
 import * as api from '../../data/care.js';
 import { finishCare, replyDispute, noReply } from '../../data/care.js';
+import { delNote } from '../../data/owner.js';
+import { careNoteSheet } from './owner.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const hm = t => (t || '').slice(0, 5);
@@ -191,6 +193,8 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
     }
   }
 
+  overlay = overlay || careNoteSheet(c, ui, reload, rerender, cur);
+
   return {
     title: '오늘의 돌봄',
     back: () => go('home'),
@@ -213,15 +217,23 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
 
       (() => {
         const notes = c.notes.filter(n => !multi || !n.pet_id || n.pet_id === cur);
-        return notes.length ? card([
-          el('div', { class: 'tight' }, [
-            el('div', { class: 'h', text: '보호자가 남긴 참고 사항' }),
-            el('div', { class: 'notelist' }, notes.flatMap((n, i) => [
-              el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
-              el('span', { class: 'v' + (i ? ' sep' : ''), text: n.text }),
-            ])),
+        return card([
+          el('div', { class: 'headrow' }, [
+            el('div', {}, [el('div', { class: 'h', text: '보호자가 남긴 참고 사항' })]),
+            el('button', { class: 'addmini', text: '＋', 'aria-label': '특이사항 추가',
+              onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
           ]),
-        ]) : null;
+          notes.length ? el('div', { class: 'notelist' }, notes.flatMap((n, i) => [
+            el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
+            el('span', { class: 'v' + (i ? ' sep' : '') }, [
+              el('span', { class: 'vtx', text: n.text }),
+              el('button', { class: 'ntrash', text: '✕', 'aria-label': '삭제', onclick: async () => {
+                c.notes.splice(c.notes.indexOf(n), 1); rerender();
+                try { await delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
+              } }),
+            ]),
+          ])) : el('div', { class: 'sub', text: '아직 없습니다. ＋로 통화에서 들은 내용을 적어두세요.' }),
+        ]);
       })(),
 
       card([
