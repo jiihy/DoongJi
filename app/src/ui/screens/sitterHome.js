@@ -33,7 +33,7 @@ export function sitterHomeScreen(ctx, go, rerender) {
 
       list.length ? card([
         el('div', { class: 'h', text: `돌봄 ${list.length}건` }),
-        ...list.map(c => {
+        el('div', { class: 'rows' }, list.map(c => {
           const pets = (c.contract_pets || []).map(cp => cp.pets?.name).filter(Boolean).join('·');
           const state = c.finished_at ? '완료' : c.sent_at ? '진행 중' : c.confirmed_at ? '일정 대기' : '보호자 확인 대기';
           return el('div', { class: 'listrow' }, [
@@ -48,7 +48,7 @@ export function sitterHomeScreen(ctx, go, rerender) {
               ? el('button', { class: 'ctasm', text: '기록하기', onclick: () => go('care', c.id) })
               : el('button', { class: 'ctasm', text: '링크 복사', onclick: () => copy(inviteUrlOf(c.invite_token)) }),
           ]);
-        }),
+        })),
       ]) : card([
         el('div', { class: 'h', text: '아직 준비된 돌봄이 없어요' }),
         el('div', { class: 'sub', text: '의뢰가 오면 아이 정보·기간·픽드롭을 미리 채우고 링크를 보냅니다. 보호자는 확인만 하면 돼요.' }),

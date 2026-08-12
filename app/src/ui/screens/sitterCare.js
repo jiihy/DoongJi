@@ -110,7 +110,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
       card([
         el('div', { class: 'h', text: '오늘 해야 할 것' }),
         el('div', { class: 'sub', text: '항목을 누르면 사진과 시각이 그대로 보호자에게 갑니다.' }),
-        ...items.map(it => el('div', { class: 'listrow' }, [
+        el('div', { class: 'rows' }, items.map(it => el('div', { class: 'listrow' }, [
           el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
           el('div', { class: 'lrmain' }, [
             el('div', { class: 'lrtitle' }, [
@@ -121,7 +121,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
           ]),
           el('button', { class: 'ctasm', text: it.proof ? '다시' : '기록하기',
             onclick: () => { ui.proofFor = it.id; ui.proofDraft = null; rerender(); } }),
-        ])),
+        ]))),
         items.length ? null : el('div', { class: 'sub', text: '보호자가 아직 일정을 보내지 않았어요.' }),
       ]),
     ],

@@ -404,7 +404,7 @@ export function ownerHome(c, go, ui, rerender) {
 
       card([
         el('div', { class: 'h', text: '오늘의 기록' }),
-        ...c.items.map(it => el('div', { class: 'prow' }, [
+        el('div', { class: 'rows' }, c.items.map(it => el('div', { class: 'prow' }, [
           el('div', { class: 'phead' }, [
             el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
             el('span', { class: 'tk', text: KINDS[it.kind] + (multi ? ` · ${nameOf(it.pet_id)}` : '') }),
@@ -416,7 +416,7 @@ export function ownerHome(c, go, ui, rerender) {
             [[it.proof.photo_url, it.proof.shot_at], [it.proof.photo2_url, it.proof.shot2_at]]
               .filter(([u]) => u).map(([u, a]) => shot(u, a))) : null,
           it.proof && it.proof.text ? el('div', { class: 'ptext', text: it.proof.text }) : null,
-        ])),
+        ]))),
       ]),
 
       el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),
