@@ -2,7 +2,7 @@
 import { sb } from '../lib/supabase.js';
 import { prepare } from '../lib/photo.js';
 
-const SEL = `id, start_date, end_date, confirmed_at, sent_at, finished_at,
+const SEL = `id, invite_token, start_date, end_date, confirmed_at, sent_at, finished_at,
   handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
   owner_place_addr, owner_place_detail, owner_id, record_public, record_token,
   sitters(id, name, type, region, bio, addr, addr_detail, photo_url),
