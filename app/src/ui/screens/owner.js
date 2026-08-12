@@ -387,11 +387,16 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 const REACTIONS = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
 
-export function ownerHome(c, go, ui, rerender) {
+// 종 배지 = 아직 안 본 인증 (반응한 것은 「새 인증」이 아니다 — 38차 회귀 방지)
+export const freshProofs = c => c.items
+  .filter(it => it.proof && !it.proof.seen && !it.proof.verdict)
+  .map(it => it.proof.id);
+
+export function ownerHome(c, go, ui, rerender, bell) {
   const s = c.sitters || {};
   const multi = c.pets.length > 1;
   const nameOf = id => (c.pets.find(p => p.id === id) || {}).name || '';
-  const fresh = c.items.filter(it => it.proof && !(it.proof.seens || []).length).length;
+  const fresh = freshProofs(c).length;
 
   const shot = (url, at) => el('button', { class: 'thumb', onclick: () => { ui.lightbox = url; rerender(); } }, [
     el('img', { src: url, alt: '' }),
@@ -405,6 +410,7 @@ export function ownerHome(c, go, ui, rerender) {
 
   return {
     title: '돌봄 일지',
+    right: bell,
     overlay,
     body: [
       card([

@@ -1,18 +1,23 @@
 import { el, card, field, flash } from '../el.js';
 
 // 프로토타입의 「펫시터 프로필」을 그대로 옮긴다 — 숫자 3종이 주인공, 보조 지표는 그 다음
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0) + '%';
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
-const hero = (label, big, sub, desc) => card([
-  el('div', { class: 'herolab', text: label }),
-  el('div', { class: 'herobig', text: big }),
-  el('div', { class: 'herosub', text: sub }),
-  el('div', { class: 'sub', text: desc }),
+// 프로토타입 verify()의 hero — 숫자 · 분수 · 설명 · 게이지 순서까지 그대로
+const hero = (label, pctv, sub, desc) => card([
+  el('div', { class: 'hero' }, [
+    el('span', { class: 'l', text: label }),
+    el('div', { class: 'row' }, [
+      el('span', { class: 'n', text: pctv + '%' }),
+      el('span', { class: 'p', text: '(' + sub + ')' }),
+    ]),
+    el('span', { class: 'd', text: desc }),
+    el('div', { class: 'pbar' }, el('i', { style: `width:${pctv}%` })),
+  ]),
 ]);
 
-const minor = (k, v) => el('div', { class: 'minorrow' }, [
-  el('span', { class: 'sub', text: k }),
-  el('span', { class: 'minorv', text: v }),
+const minor = (k, v) => el('div', { class: 'r' }, [
+  el('span', { class: 'k', text: k }), el('span', { class: 'v', text: v }),
 ]);
 
 // pub이 있으면 공개 경로(SNS)로 들어온 화면 — 의뢰 폼이 붙는다
@@ -70,6 +75,7 @@ export function sitterProfileScreen(s, stats, back, pub) {
         s.bio ? el('div', { class: 'lead', text: s.bio }) : null,
       ]),
 
+      // ── 숫자가 주인공
       hero('약속 이행', pct(n('submitted'), n('total')), `${n('submitted')} / ${n('total')}건`,
         '보호자가 정한 항목 중 인증을 올린 비율입니다.'),
       hero('보호자 확인', pct(n('checked'), n('submitted')), `${n('checked')} / ${n('submitted')}건`,
@@ -88,20 +94,22 @@ export function sitterProfileScreen(s, stats, back, pub) {
       ]) : null,
 
       card([
-        el('div', { class: 'h', text: '이 두 숫자만 보셔도 됩니다' }),
-        el('div', { class: 'sub', text: '약속한 것을 얼마나 했고, 그중 얼마가 보호자에게 확인됐는지. 실시간 영상은 그 순간만 보여주고 사라지지만 이 숫자는 남습니다.' }),
+        el('div', { class: 'h', text: '이 세 숫자만 보셔도 됩니다' }),
+        el('div', { class: 'sub', text: '약속한 것을 얼마나 했고, 그중 얼마가 보호자에게 확인됐고, 어긋난 것은 어떻게 됐는지. 실시간 영상은 그 순간만 보여주고 사라지지만 이 숫자는 남습니다.' }),
       ]),
 
+      // ── 보조 지표
       card([
         el('span', { class: 'veri', text: '✓ 이 서비스에서 확인됨' }),
         el('div', { class: 'minor' }, [
-          minor('앱 촬영 인증', '앱 카메라 · 시각 새김'),
+          minor('앱 촬영 인증', '전 건 앱 카메라 · 시각 새김'),
+          minor('가짜 인증 신고', `${n('disputes')}건 중 ${n('resolved')}건 해소`
+            + (n('noreply') ? ` · 무응답 ${n('noreply')}` : '')),
           minor('사진 인증', `${n('photos')}건`),
           minor('설명 인증', `${n('notes')}건`),
           minor('다시 제출', `${n('resub')}건`),
           minor('도착 직후 열람', `${n('seen')} / ${n('submitted')}건`),
-          minor('가짜 인증 신고', `${n('disputes')}건 중 ${n('resolved')}건 해소`
-            + (n('noreply') ? ` · 무응답 ${n('noreply')}` : '')),
+          minor('산책 왕복 인증', '나갈 때·들어올 때 두 컷 · 시각 차이 기록'),
           minor('받은 리액션', `${n('reactions')}개 (😍 😌 💙)`),
           minor('먼저 챙긴 순간', `${n('extras')}건 · 보호자 고마워요 ${n('thanks')}`),
         ]),

@@ -32,7 +32,11 @@ export async function hydrate(contract) {
   const { data: extras } = await sb.from('extras')
     .select('*, extra_photos(*)').eq('contract_id', contract.id).order('at');
 
-  const byItem = Object.fromEntries(proofs.map(p => [p.schedule_item_id, p]));
+  const byItem = Object.fromEntries(proofs.map(p => [p.schedule_item_id, {
+    ...p,
+    verdict: Array.isArray(p.verdicts) ? (p.verdicts[0] || null) : (p.verdicts || null),
+    seen:    Array.isArray(p.seens)    ? (p.seens[0]    || null) : (p.seens    || null),
+  }]));
   return {
     ...contract,
     pets: (contract.contract_pets || []).map(cp => cp.pets),
@@ -98,3 +102,24 @@ export function lateOf(item, at = new Date()) {
   const due = new Date(at); due.setHours(h, m + (item.fuzz_min || 0), 0, 0);
   return at > due;
 }
+
+/* ── 알림 종 ── */
+// 이벤트는 트리거가 쓴다(마이그레이션 16) — 클라이언트는 읽고 읽음 표시만 한다
+export async function listEvents(audience, contractId) {
+  let q = sb.from('events').select('*').eq('audience', audience).order('at', { ascending: false }).limit(50);
+  if (contractId) q = q.eq('contract_id', contractId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+export const readEvents = async (ids) => {
+  if (!ids.length) return;
+  await sb.from('events').update({ read_at: new Date().toISOString() }).in('id', ids).throwOnError();
+};
+
+// 화면을 연 것 자체가 열람이다 — 보호자가 따로 누를 필요 없이 시각만 남긴다
+export const markSeen = async (proofIds) => {
+  if (!proofIds.length) return;
+  await sb.from('seens').upsert(proofIds.map(id => ({ proof_id: id, kind: 'view' })),
+    { onConflict: 'proof_id', ignoreDuplicates: true }).throwOnError();
+};

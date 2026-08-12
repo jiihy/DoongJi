@@ -7,8 +7,10 @@ import { loginScreen } from './ui/screens/login.js';
 import { profileScreen } from './ui/screens/profile.js';
 import { sitterHomeScreen } from './ui/screens/sitterHome.js';
 import { loadContract } from './data/owner.js';
-import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen } from './ui/screens/owner.js';
+import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen, freshProofs } from './ui/screens/owner.js';
 import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
+import { bellButton, bellScreen } from './ui/screens/bell.js';
+import { listEvents, readEvents, markSeen } from './data/care.js';
 import { sitterStats, publicProfile, sendInquiry } from './data/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 import { loadCare, hydrate } from './data/care.js';
@@ -18,7 +20,16 @@ const ctx = { sitter: null, session: null, screen: 'home', clients: [], contract
 const uiState = {};
 const rerender = () => render();
 const go = async (screen, arg) => {
+  // 종을 여는 것 자체가 읽음이다 — 화면을 그린 뒤 표시해서 NEW가 한 번은 보이게 한다
+  const wasBell = ctx.screen === 'bell';
   ctx.screen = screen;
+  if (screen === 'bell') {
+    render();
+    const unread = (ctx.events || []).filter(e => !e.read_at).map(e => e.id);
+    if (unread.length) { await readEvents(unread); ctx.events = await listEvents('sitter'); }
+    return;
+  }
+  if (wasBell) ctx.events = await listEvents('sitter');
   if (screen === 'care') { ctx.careId = arg || ctx.careId; ctx.care = null; render(); ctx.care = await loadCare(ctx.careId); watchCare(); }
   else { unwatch(); await refresh(); }
   render();
@@ -27,8 +38,8 @@ const go = async (screen, arg) => {
 async function refresh() {
   if (!ctx.sitter) return;
   try {
-    [ctx.clients, ctx.contracts, ctx.inquiries] = await Promise.all([
-      listClients(ctx.sitter.id), listContracts(ctx.sitter.id), listInquiries(),
+    [ctx.clients, ctx.contracts, ctx.inquiries, ctx.events] = await Promise.all([
+      listClients(ctx.sitter.id), listContracts(ctx.sitter.id), listInquiries(), listEvents('sitter'),
     ]);
   } catch (e) { console.error(e); }
 }
@@ -54,6 +65,10 @@ function render() {
   if (!ctx.session) return paint(loginScreen(uiState, rerender));
   if (!ctx.sitter) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
 
+  if (ctx.screen === 'bell') {
+    return paint(bellScreen(ctx.events || [], () => go('home'), '보호자 알림',
+      '보호자가 확인·전달·리액션을 하면 여기에 쌓입니다.'));
+  }
   if (ctx.screen === 'profile') return paint(profileScreen(ctx, rerender, go));
   if (ctx.screen === 'newContract') return paint(newContractScreen(ctx, go, rerender));
   if (ctx.screen === 'care') {
@@ -61,7 +76,8 @@ function render() {
     return paint(sitterCareScreen(ctx.care, uiState, go,
       async () => { ctx.care = await loadCare(ctx.careId); render(); }, rerender));
   }
-  return paint(sitterHomeScreen(ctx, go, rerender));
+  const unread = (ctx.events || []).filter(e => !e.read_at).length;
+  return paint(sitterHomeScreen(ctx, go, rerender, bellButton(unread, () => go('bell'))));
 }
 
 // TOKEN_REFRESHED·탭 복귀까지 다시 그리면 입력 중 화면이 튕긴다 — 로그인/로그아웃만 반응한다
@@ -90,12 +106,24 @@ function watchCare() {
       async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'extras', filter: `contract_id=eq.${ctx.careId}` },
       async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'events' },
+      async () => { ctx.events = await listEvents('sitter'); if (ctx.screen !== 'bell') render(); })
     .subscribe();
 }
 
 /* ── 보호자(무계정) 경로 ── */
-const owner = { c: null, screen: null, ui: {}, err: null };
+const owner = { c: null, screen: null, ui: {}, err: null, events: [] };
 const ownerGo = async s => {
+  if (s === 'live') {
+    owner.screen = s; renderOwner();
+    // 이 화면을 연 것이 곧 열람 — 인증에 seen을 남기고 알림도 읽음 처리한다
+    const ids = freshProofs(owner.c);
+    const evIds = owner.events.filter(e => !e.read_at).map(e => e.id);
+    if (ids.length) await markSeen(ids);
+    if (evIds.length) await readEvents(evIds);
+    if (ids.length || evIds.length) { await ownerReload(); renderOwner(); }
+    return;
+  }
   if (s === 'sitterProfile' && !owner.stats && owner.c?.sitters?.id) {
     try { owner.stats = await sitterStats(owner.c.sitters.id); } catch (e) { owner.stats = {}; }
   }
@@ -103,7 +131,12 @@ const ownerGo = async s => {
   if (s === 'install') owner.ui.step = 1;
   owner.screen = s; renderOwner();
 };
-const ownerReload = async () => { try { owner.c = await loadContract(); } catch (e) { owner.err = e.message; } };
+const ownerReload = async () => {
+  try {
+    owner.c = await loadContract();
+    owner.events = await listEvents('owner', owner.c.id);
+  } catch (e) { owner.err = e.message; }
+};
 
 let ownerChannel = null;
 function watchOwner() {
@@ -112,6 +145,8 @@ function watchOwner() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'proofs' },
       async () => { await ownerReload(); renderOwner(); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'extras', filter: `contract_id=eq.${owner.c.id}` },
+      async () => { await ownerReload(); renderOwner(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter: `contract_id=eq.${owner.c.id}` },
       async () => { await ownerReload(); renderOwner(); })
     .subscribe();
 }
@@ -141,7 +176,11 @@ function renderOwner() {
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'sitterProfile') return paint(sitterProfileScreen(c.sitters || {}, owner.stats, () => go('home')));
-  return paint(ownerHome(c, go, owner.ui, rr));
+  if (screen === 'live') return paint(bellScreen(owner.events, () => go('home'), '지금 오는 인증',
+    '시터가 인증을 보내면 여기에 먼저 뜹니다.'));
+  const unseen = freshProofs(c);
+  const unreadEv = owner.events.filter(e => !e.read_at).length;
+  return paint(ownerHome(c, go, owner.ui, rr, bellButton(Math.max(unseen.length, unreadEv), () => go('live'))));
 }
 
 (async () => {

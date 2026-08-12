@@ -160,19 +160,29 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
   background:#fff;color:var(--ink2);font-size:13px;font-weight:600}
 .react button[aria-pressed="true"]{background:var(--tint);border-color:var(--primary);color:var(--primary-ink)}
 .thxdone{font-size:12px;font-weight:600;color:var(--primary-ink)}
-/* 펫시터 프로필 — 숫자가 주인공 */
-.herolab{font-size:13px;font-weight:600;color:var(--ink4)}
-.herobig{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-.herosub{font-size:14px;font-weight:700;color:var(--ink3)}
+/* 펫시터 프로필 */
 .veri{align-self:flex-start;font-size:11px;font-weight:700;padding:5px 10px;border-radius:1000px;
   background:var(--tint);color:var(--primary-ink)}
-.minor{display:flex;flex-direction:column}
-.minorrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px}
-.minorrow+.minorrow{border-top:1px solid var(--line)}
-.minorv{font-weight:600;color:var(--ink2);text-align:right}
 .shoot{background:var(--bg);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600;color:var(--ink2)}
 .outmin{font-size:13px;font-weight:700;color:var(--primary-ink)}
 .addchip{border-style:dashed;color:var(--ink4)}
 .addrow{display:flex;gap:8px;align-items:center}
 .addrow input{flex:1;min-width:0}
 .addrow .ctasm{align-self:center;height:48px}
+/* 알림 종 */
+.bell{position:relative;background:none;border:none;padding:6px 4px;font-size:19px;line-height:1}
+.bbadge{position:absolute;top:0;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:1000px;
+  background:#e5484d;color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center}
+/* 펫시터 프로필 — 프로토타입 verify() 그대로 */
+.hero{display:flex;flex-direction:column;gap:2px}
+.hero .l{font-size:12px;font-weight:600;color:var(--ink4);letter-spacing:.01em}
+.hero .row{display:flex;align-items:baseline;gap:8px}
+.hero .n{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--primary-ink)}
+.hero .p{font-size:15px;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums}
+.hero .d{font-size:12px;font-weight:500;line-height:1.5;color:var(--ink4);margin-top:3px}
+.pbar{height:6px;border-radius:1000px;background:var(--bg);overflow:hidden;margin-top:8px}
+.pbar>i{display:block;height:100%;background:var(--primary);border-radius:1000px}
+.minor{display:flex;flex-direction:column;gap:9px}
+.minor .r{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.minor .k{font-size:13px;font-weight:600;color:var(--ink3)}
+.minor .v{font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums;text-align:right}

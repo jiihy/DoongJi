@@ -61,7 +61,12 @@ export function paint(view) {
     el('div', { class: 'nav' }, [
       view.back ? el('button', { class: 'navback', text: '‹', onclick: view.back }) : el('span', { class: 'sp' }),
       el('span', { class: 'navt', text: view.title || '' }),
-      view.right ? el('button', { class: 'navr', text: view.right.label, onclick: view.right.on }) : el('span', { class: 'sp' }),
+      view.rightExtra || null,
+      view.right
+        ? (typeof view.right === 'object' && view.right.label !== undefined
+            ? el('button', { class: 'navr', text: view.right.label, onclick: view.right.on })
+            : view.right)
+        : (view.rightExtra ? null : el('span', { class: 'sp' })),
     ]),
     el('div', { class: 'body' }, (view.body || []).filter(Boolean)),
     (view.foot || []).filter(Boolean).length ? el('div', { class: 'foot' }, view.foot.filter(Boolean)) : null,

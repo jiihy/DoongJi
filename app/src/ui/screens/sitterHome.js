@@ -4,7 +4,7 @@ import { inviteUrlOf } from '../../data/contracts.js';
 const dot = d => (d || '').replaceAll('-', '.');
 
 let rerenderRef = null;
-export function sitterHomeScreen(ctx, go, rerender) {
+export function sitterHomeScreen(ctx, go, rerender, bell) {
   rerenderRef = rerender;
   const list = ctx.contracts || [];
   const copy = async (url) => {
@@ -16,6 +16,7 @@ export function sitterHomeScreen(ctx, go, rerender) {
   return {
     title: '오늘의 돌봄',
     right: { label: '내 프로필', on: () => go('profile') },
+    rightExtra: bell,
     body: [
       ctx.lastToken ? el('div', { class: 'ding' }, [
         el('span', { class: 't', text: '초대 링크가 준비됐어요' }),
