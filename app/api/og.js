@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   let title = '둥지 — 돌봄 기록';
   let desc = '약속한 것을 사진과 시각으로 남깁니다. 말이 아니라 기록으로 남는 펫시팅.';
-  let image = `${origin}/app-icon-512.png?v=5`;
+  let image = `${origin}/og-default.jpg?v=1`;
   let path = '/';
 
   if (type === 's' && id) {
@@ -40,6 +40,21 @@ export default async function handler(req, res) {
         + (total ? ` · 약속 이행 ${Math.round((done / total) * 100)}% (${done}/${total}건)` : '')
         + (p.bio ? ` — ${p.bio}` : '');
       if (p.photo_url) image = p.photo_url;
+    }
+  } else if (type === 't' && id) {
+    const v = await rpc('invite_preview', { p_token: id });
+    path = `/?t=${id}`;
+    if (v) {
+      const pets = (v.pets || []).join(' · ');
+      title = `${v.sitter} 시터가 보낸 돌봄 초대`;
+      desc = `${pets} · ${(v.start_date || '').replaceAll('-', '.')} ~ ${(v.end_date || '').replaceAll('-', '.')}`
+        + ' — ' + (v.sent ? '사진 인증이 도착하면 여기에 쌓입니다.'
+                : v.confirmed ? '돌봄 일정을 알려주시면 시작합니다.'
+                : '가입 없이 열어서 확인만 하시면 됩니다.');
+      if (v.photo_url) image = v.photo_url;
+    } else {
+      title = '열 수 없는 초대입니다 · 둥지';
+      desc = '링크를 다시 확인해주세요.';
     }
   } else if (type === 'r' && id) {
     const r = await rpc('public_record', { p_token: id });
