@@ -124,8 +124,8 @@ const ownerGo = async s => {
     if (ids.length || evIds.length) { await ownerReload(); renderOwner(); }
     return;
   }
-  if (s === 'sitterProfile' && !owner.stats && owner.c?.sitters?.id) {
-    try { owner.stats = await sitterStats(owner.c.sitters.id); } catch (e) { owner.stats = {}; }
+  if (s === 'sitterProfile' && !owner.pub && owner.c?.sitters?.invite_slug) {
+    try { owner.pub = await publicProfile(owner.c.sitters.invite_slug); } catch (e) { owner.pub = null; }
   }
   if (s === 'home') markInstallSeen();   // 설치 안내를 지나쳤으면 다시 막지 않는다
   if (s === 'install') owner.ui.step = 1;
@@ -175,7 +175,10 @@ function renderOwner() {
   if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
-  if (screen === 'sitterProfile') return paint(sitterProfileScreen(c.sitters || {}, owner.stats, () => go('home')));
+  if (screen === 'sitterProfile') {
+    const sp = owner.pub || c.sitters || {};
+    return paint(sitterProfileScreen(sp, sp.stats, () => go('home')));
+  }
   if (screen === 'live') return paint(bellScreen(owner.events, () => go('home'), '지금 오는 인증',
     '시터가 인증을 보내면 여기에 먼저 뜹니다.'));
   const unseen = freshProofs(c);

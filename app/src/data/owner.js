@@ -9,7 +9,7 @@ export async function loadContract() {
     .select(`id, start_date, end_date, confirmed_at, sent_at, finished_at,
              handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
              owner_place_addr, owner_place_detail, owner_id,
-             sitters(id, name, type, region, bio, addr, addr_detail, photo_url),
+             sitters(id, name, type, region, bio, addr, addr_detail, photo_url, invite_slug),
              owners(nickname),
              contract_pets(pets(id, name, age, extra))`)
     .eq('invite_token', inviteToken).single();

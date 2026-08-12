@@ -116,6 +116,23 @@ export function sitterProfileScreen(s, stats, back, pub) {
         el('div', { class: 'sub', text: '사진과 설명의 비율을 그대로 공개합니다. 사진이 많은 시터인지는 숫자로 바로 보입니다.' }),
       ]),
 
+      // 일기는 「시터 본인이 씀」 — 확인된 것과 섞지 않는다 (§2-3)
+      (s.diary || []).length ? card([
+        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 씀' }),
+        el('div', { class: 'h', text: `돌봄 일기 · ${s.diary.length}권` }),
+        el('div', { class: 'sub', text: '돌본 아이마다 한 권씩입니다. 어떤 마음으로 돌보는 사람인지 여기서 보입니다.' }),
+        ...s.diary.slice(0, 2).map(bk => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: `${bk.pet}의 돌봄 일기` }),
+            el('span', { class: 'date', text: `후기 ${bk.entries}편` }),
+          ]),
+          bk.first ? el('div', { class: 'q',
+            text: '“' + String(bk.first).slice(0, 80) + (String(bk.first).length > 80 ? '…' : '') + '”' }) : null,
+          bk.public_record ? el('div', { class: 'proofline', text: '🔗 돌봄 기록 읽어보기 · 검증됨' }) : null,
+        ])),
+        s.diary.length > 2 ? el('div', { class: 'sub', text: `외 ${s.diary.length - 2}권` }) : null,
+      ]) : null,
+
       card([
         el('div', { class: 'h', text: '왜 「사고 0건」이 아닌가' }),
         el('div', { class: 'sub', text: '무사고를 자랑 지표로 쓰면 이상을 알린 시터가 손해를 봅니다. 여기서는 신고된 건과 해소된 건을 함께 셉니다. 소명하지 않은 것도 숨기지 않습니다.' }),

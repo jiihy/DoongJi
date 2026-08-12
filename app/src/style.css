@@ -186,3 +186,13 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .minor .r{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .minor .k{font-size:13px;font-weight:600;color:var(--ink3)}
 .minor .v{font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums;text-align:right}
+/* 「본인이 씀」 표기와 일기 미리보기 (프로토타입 .imp) */
+.unver{align-self:flex-start;font-size:11px;font-weight:700;padding:5px 10px;border-radius:1000px;
+  background:var(--bg);color:var(--ink4)}
+.imp{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.imp .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.imp .src{font-size:13px;font-weight:700}
+.imp .date{font-size:12px;font-weight:600;color:var(--ink4)}
+.imp .q{font-size:13px;line-height:1.6;color:var(--ink2)}
+.proofline{align-self:flex-start;font-size:12px;font-weight:700;color:var(--primary-ink);
+  background:var(--tint);border-radius:1000px;padding:7px 12px}
