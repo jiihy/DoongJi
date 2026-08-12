@@ -1,7 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "rewrites": [{ "source": "/s/:slug", "destination": "/" }, { "source": "/r/:token", "destination": "/" }],
+  "rewrites": [
+    {
+      "source": "/s/:slug",
+      "destination": "/api/og?type=s&id=:slug"
+    },
+    {
+      "source": "/r/:token",
+      "destination": "/api/og?type=r&id=:token"
+    }
+  ],
   "build": {
     "env": {
       "VITE_SUPABASE_URL": "https://maipblnldvmvttfjbmsc.supabase.co",
