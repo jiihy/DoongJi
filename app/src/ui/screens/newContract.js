@@ -4,6 +4,9 @@ import { createContract, listClients } from '../../data/contracts.js';
 const today = () => new Date().toISOString().slice(0, 10);
 const plus = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };
 
+const KINDS = { meal: '밥', walk: '산책', poop: '배변', med: '약', play: '놀이', sleep: '취침' };
+const FUZZ = { 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤', '-1': '아무때나' };
+
 const HO_START = { owner: '보호자가 데려다줘요', sitter: '펫시터가 데리러 와요' };
 const HO_END = { owner: '보호자가 데리러 와요', sitter: '펫시터가 데려다줘요' };
 
@@ -13,6 +16,10 @@ export function newContractScreen(ctx, go, rerender) {
     pets: [{ name: '', age: '', extra: '' }],
     start: today(), end: plus(2),
     startTime: '14:00', startBy: 'owner', endTime: '18:00', endBy: 'owner',
+    items: [
+      { kind: 'meal', time: '08:00', fuzz: 60 },
+      { kind: 'meal', time: '18:00', fuzz: 60 },
+    ],
   };
   const cta = el('button', { class: 'cta' });
   const ready = () => !!f.ownerId || f.pets.some(p => (p.name || '').trim());
@@ -109,9 +116,39 @@ export function newContractScreen(ctx, go, rerender) {
       text: `보호자가 오실 때 만날 곳: ${ctx.sitter.addr || '프로필에 기본 약속 장소를 등록해주세요'}` }) : null,
   ]));
 
+  const petCount = f.ownerId ? (ctx.clients.find(x => x.id === f.ownerId)?.pets || []).length
+                            : f.pets.filter(p => (p.name || '').trim()).length;
+  body.push(card([
+    el('div', { class: 'headrow' }, [
+      el('div', {}, [
+        el('div', { class: 'h', text: '돌봄 일정 초안' }),
+        el('div', { class: 'sub', text: petCount > 1
+          ? '아이마다 같은 항목으로 들어갑니다. 보호자가 확인하며 고치고 더할 수 있어요.'
+          : '보호자는 확인만 하면 됩니다. 다르면 보호자가 고칠 수 있어요.' }),
+      ]),
+      el('button', { class: 'addmini', 'aria-label': '항목 추가', text: '＋',
+        onclick: () => { f.items.push({ kind: 'meal', time: '12:00', fuzz: 60 }); rerender(); } }),
+    ]),
+    ...f.items.map((it, i) => el('div', { class: 'srow' }, [
+      el('select', { name: `it${i}_kind`, onchange: e => {
+        it.kind = e.target.value;
+        if (it.kind === 'med') it.fuzz = 0;
+        rerender();
+      } }, Object.entries(KINDS).map(([k, t]) => el('option', { value: k, selected: it.kind === k, text: t }))),
+      it.fuzz === -1 ? null : el('input', { name: `it${i}_time`, type: 'time', value: it.time,
+        onchange: e => { it.time = e.target.value || it.time; } }),
+      el('select', { name: `it${i}_fuzz`, 'aria-label': '시간 범위',
+        onchange: e => { it.fuzz = Number(e.target.value); rerender(); } },
+        Object.entries(FUZZ).map(([v, t]) => el('option', { value: v, selected: String(it.fuzz) === v, text: t }))),
+      el('button', { class: 'del', text: '✕', 'aria-label': '삭제',
+        onclick: () => { f.items.splice(i, 1); rerender(); } }),
+    ])),
+    f.items.length ? null : el('div', { class: 'sub', text: '비워두면 보호자가 직접 넣습니다.' }),
+  ]));
+
   body.push(card([
     el('div', { class: 'h', text: '보내면 이렇게 됩니다' }),
-    el('div', { class: 'sub', text: '보호자는 링크를 열어 이 정보를 확인하고(수정 가능), 돌봄 일정과 특이사항만 입력합니다. 회원가입은 필요 없어요.' }),
+    el('div', { class: 'sub', text: '보호자는 링크를 열어 이 정보를 확인하고(수정 가능), 특이사항만 채우면 끝입니다. 회원가입은 필요 없어요.' }),
   ]));
 
   return {

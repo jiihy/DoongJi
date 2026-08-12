@@ -55,6 +55,18 @@ export async function createContract(sitterId, form) {
     .insert(petIds.map(pid => ({ contract_id: contract.id, pet_id: pid })));
   if (e3) throw e3;
 
+  // 일정 초안 — 시터가 미리 채워 보내면 보호자는 확인만 하면 된다 (아이마다 같은 항목)
+  const draft = (form.items || []).filter(i => i.kind);
+  if (draft.length) {
+    const rows = [];
+    petIds.forEach(pid => draft.forEach((it, i) => rows.push({
+      contract_id: contract.id, pet_id: pid,
+      kind: it.kind, at_time: it.fuzz === -1 ? null : it.time, fuzz_min: it.fuzz, sort_key: i,
+    })));
+    const { error: e4 } = await sb.from('schedule_items').insert(rows);
+    if (e4) throw e4;
+  }
+
   return contract;
 }
 

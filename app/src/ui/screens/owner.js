@@ -303,6 +303,10 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
     back: () => go(c.sent_at ? 'home' : 'confirm'),
     overlay: noteSheet,
     body: [
+      (!c.sent_at && c.items.length) ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: `${(c.sitters || {}).name} 시터가 일정을 미리 넣어뒀어요` }),
+        el('span', { class: 'd', text: '맞는지 보시고 다르면 고치면 됩니다. 특이사항만 채우면 끝이에요.' }),
+      ]) : null,
       multi ? el('div', { class: 'pettabs' }, c.pets.map(p =>
         el('button', { class: 'ptab', 'aria-pressed': cur === p.id, text: p.name,
           onclick: () => { ui.petTab = p.id; rerender(); } }))) : null,
