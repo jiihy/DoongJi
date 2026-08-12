@@ -12,8 +12,9 @@ export const el = (tag, attrs = {}, kids = []) => {
   return n;
 };
 export const card = kids => el('div', { class: 'card' }, kids);
-export const field = (label, attrs) => el('div', { class: 'field' }, [
-  el('label', { text: label }), el('input', attrs),
+export const field = (label, attrs = {}) => el('div', { class: 'field' }, [
+  label ? el('label', { text: label }) : null,
+  el('input', { name: attrs.name || `f_${label || ''}`.replace(/\s/g, ''), ...attrs }),
 ]);
 
 let toastTimer = null;
@@ -31,6 +32,10 @@ export function flash(title, desc) {
 // 화면 함수는 { title, body[], foot[], hint }를 반환한다 (프로토타입과 동일)
 export function paint(view) {
   const app = document.getElementById('app');
+  // 다시 그릴 때 입력 중이던 포커스·커서·스크롤을 잃지 않게 한다 (튕김 방지)
+  const act = document.activeElement;
+  const keep = act && act.name ? { name: act.name, pos: act.selectionStart } : null;
+  const scroll = window.scrollY;
   app.replaceChildren(...[
     el('div', { class: 'nav' }, [
       view.back ? el('button', { class: 'navback', text: '‹', onclick: view.back }) : el('span', { class: 'sp' }),
@@ -41,4 +46,13 @@ export function paint(view) {
     (view.foot || []).filter(Boolean).length ? el('div', { class: 'foot' }, view.foot.filter(Boolean)) : null,
     view.hint ? el('div', { class: 'hint', text: view.hint }) : null,
   ].filter(Boolean));
+
+  if (keep) {
+    const next = app.querySelector(`[name="${CSS.escape(keep.name)}"]`);
+    if (next) {
+      next.focus({ preventScroll: true });
+      try { next.setSelectionRange(keep.pos, keep.pos); } catch (e) {}
+    }
+  }
+  window.scrollTo({ top: scroll });
 }

@@ -2,7 +2,7 @@ import { el, card, field, flash } from '../el.js';
 import { sb } from '../../lib/supabase.js';
 import { saveSitter } from '../../data/sitter.js';
 
-export function profileScreen(ctx, rerender) {
+export function profileScreen(ctx, rerender, go) {
   const s = ctx.sitter;
   const patch = {};
   const f = (label, key, ph) => field(label, {
@@ -13,6 +13,7 @@ export function profileScreen(ctx, rerender) {
 
   return {
     title: '내 프로필',
+    back: go ? () => go('home') : null,
     right: { label: '로그아웃', on: async () => { await sb.auth.signOut(); location.reload(); } },
     body: [
       card([
