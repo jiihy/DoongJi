@@ -215,7 +215,7 @@ function renderOwner() {
   const rr = () => renderOwner();
 
   if (screen === 'welcome')  return paint(ownerWelcome(c, go));
-  if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
+  if (screen === 'install')  { owner.ui.contractId = c.id; return paint(ownerInstall(owner.ui, go, rr)); }
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'petProfile') return paint(ownerPetProfile(c, owner.ui, go, async () => { await reload(); rr(); }, rr));

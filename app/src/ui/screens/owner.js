@@ -1,6 +1,7 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
 import { copyText, openLightbox } from '../el.js';
+import { enablePush } from '../../lib/push.js';
 import { shareOrigin } from '../../lib/supabase.js';
 import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
@@ -57,6 +58,7 @@ export function ownerWelcome(c, go) {
 
 /* ── 2. 앱처럼 쓰기 (홈 화면 추가 · 알림) ── */
 export function ownerInstall(state, go, rerender) {
+  // 홈 화면에 추가한 뒤에만 iOS가 푸시를 준다 — 안내 순서가 그래서 설치 먼저다
   if (state.step === undefined) state.step = 1;
   const bullet = (t) => el('div', { class: 'bul' }, [el('span', { class: 'bdot' }), el('span', { class: 'btx', text: t })]);
   const sheet = kids => el('div', { class: 'sheetback' }, [el('div', { class: 'sheet' }, kids)]);
@@ -100,7 +102,10 @@ export function ownerInstall(state, go, rerender) {
       bullet('돌봄이 끝나면 하루 요약을 보내드려요'),
     ]),
     el('button', { class: 'cta', text: '알림 켜기', onclick: async () => {
-      try { if ('Notification' in window) await Notification.requestPermission(); } catch (e) {}
+      try {
+        await enablePush({ audience: 'owner', contractId: state.contractId });
+        flash('알림을 켰어요', '인증이 도착하면 바로 알려드려요.');
+      } catch (e) { flash('알림을 켤 수 없어요', e.message); }
       go('home');
     } }),
     el('button', { class: 'linkbtn center', text: '나중에 할게요', onclick: () => go('home') }),
@@ -624,15 +629,18 @@ export function ownerHome(c, go, ui, rerender, bell) {
         el('div', { class: 'sect', text: '먼저 챙긴 순간' }),
         el('div', { class: 'sectsub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
         ...c.extras.map(x => card([
-          el('div', { class: 'phead' }, [
-            el('span', { class: 'tltime', text: clock(x.at) }),
-          ]),
-          (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
-            el('button', { class: 'thumb', onclick: () => openLightbox(ph.url) }, [
-              el('img', { src: ph.url, alt: '' }),
-              el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
-            ]))) : null,
-          x.text ? el('div', { class: 'ptext', text: x.text }) : null,
+          el('div', { class: 'exrow' }, [
+            (x.extra_photos || []).length ? el('div', { class: 'exshots' }, [
+              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos[0].url) }, [
+                el('img', { src: x.extra_photos[0].url, alt: '' }),
+                el('span', { class: 'tag', text: x.extra_photos[0].is_album ? '앨범' : '앱 촬영' }),
+              ]),
+              x.extra_photos.length > 1 ? el('button', { class: 'exmore', text: `+${x.extra_photos.length - 1}`,
+                onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
+            ]) : null,
+            el('div', { class: 'excol' }, [
+              el('span', { class: 'tltime', text: clock(x.at) }),
+              x.text ? el('div', { class: 'ptext', text: x.text }) : null,
           el('div', { class: 'react' + (x.thanks_reaction ? ' locked' : '') },
             Object.entries(REACTIONS).map(([label, emoji]) =>
               el('button', {
@@ -646,6 +654,8 @@ export function ownerHome(c, go, ui, rerender, bell) {
                   try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
                 },
               }))),
+            ]),
+          ]),
           x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
         ])),
       ]) : null,

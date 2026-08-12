@@ -264,15 +264,20 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         el('div', { class: 'h', text: '먼저 챙긴 순간' }),
         el('div', { class: 'sub', text: '부탁받지 않았어도 보여주고 싶은 순간. 보호자의 리액션은 프로필에 쌓입니다.' }),
         (c.extras || []).length ? el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
-          el('div', { class: 'phead' }, [
-            el('span', { class: 'tltime', text: clock(x.at) }),
+          el('div', { class: 'exrow' }, [
+            (x.extra_photos || []).length ? el('div', { class: 'exshots' }, [
+              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos[0].url) }, [
+                el('img', { src: x.extra_photos[0].url, alt: '' }),
+                el('span', { class: 'tag', text: x.extra_photos[0].is_album ? '앨범' : '앱 촬영' }),
+              ]),
+              x.extra_photos.length > 1 ? el('button', { class: 'exmore', text: `+${x.extra_photos.length - 1}`,
+                onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
+            ]) : null,
+            el('div', { class: 'excol' }, [
+              el('span', { class: 'tltime', text: clock(x.at) }),
+              x.text ? el('div', { class: 'ptext', text: x.text }) : null,
+            ]),
           ]),
-          (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
-            el('button', { class: 'shot', onclick: () => openLightbox(ph.url) }, [
-              el('img', { src: ph.url, alt: '' }),
-              el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
-            ]))) : null,
-          x.text ? el('div', { class: 'ptext', text: x.text }) : null,
           x.thanks_at
             ? el('span', { class: 'thxdone', text: `${REACT_EMOJI[x.thanks_reaction] || '💙'} 보호자가 「${x.thanks_reaction || '고마워요'}」를 보냈어요` })
             : el('button', { class: 'linkbtn', text: '지우기',

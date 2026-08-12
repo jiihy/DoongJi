@@ -1,6 +1,7 @@
 import { el, card, field, flash, copyText } from '../el.js';
 import { sb, shareOrigin } from '../../lib/supabase.js';
 import { saveSitter, uploadAvatar, listInquiries, markInquiry } from '../../data/sitter.js';
+import { enablePush } from '../../lib/push.js';
 
 export function profileScreen(ctx, rerender, go) {
   const s = ctx.sitter;
@@ -58,6 +59,17 @@ export function profileScreen(ctx, rerender, go) {
       el('div', { class: 'hgrid' }, [
         el('button', { class: 'add', text: '돌봄 일기', onclick: () => go('books') }),
         el('button', { class: 'add', text: '가져온 후기', onclick: () => go('imported') }),
+      ]),
+
+      card([
+        el('div', { class: 'h', text: '알림' }),
+        el('div', { class: 'sub', text: '보호자가 확인·전달·리액션을 하면 폰으로 알려드려요. 아이폰은 홈 화면에 추가한 뒤에만 켤 수 있습니다.' }),
+        el('button', { class: 'ctasm', text: '알림 켜기', onclick: async () => {
+          try {
+            await enablePush({ audience: 'sitter', sitterId: s.id });
+            flash('알림을 켰어요');
+          } catch (e) { flash('알림을 켤 수 없어요', e.message); }
+        } }),
       ]),
 
       card([
