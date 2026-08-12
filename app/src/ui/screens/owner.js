@@ -452,6 +452,12 @@ export function ownerPetProfile(c, ui, go, reload, rerender) {
 
 /* ── 5. 돌봄 일지 — 시터가 올린 인증이 쌓인다 ── */
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+// 여러 날 돌봄에서는 시각만으로 어느 날인지 알 수 없다
+const dayTime = ts => {
+  const d = new Date(ts);
+  const today = new Date().toDateString() === d.toDateString();
+  return (today ? '오늘' : `${d.getMonth() + 1}.${d.getDate()}`) + ' ' + clock(ts);
+};
 const REACTIONS = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
 const DISPUTE_UI = false;   // 보호자 쪽 이의 접수 노출 여부
 
@@ -571,7 +577,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
         const out = p ? outMinutes(p) : null;
         return card([
           el('div', { class: 'tlhead' }, [
-            el('span', { class: 'tltime', text: p ? clock(p.submitted_at) : (it.fuzz_min === -1 ? '아무때나' : hm(it.at_time)) }),
+            el('span', { class: 'tltime', text: p ? dayTime(p.submitted_at) : (it.fuzz_min === -1 ? '아무때나' : hm(it.at_time)) }),
             el('span', { class: 'kchip' + (p ? ' on' : ''), text: kindName(it.kind) + (p ? ' 완료' : ' 예정') }),
             p && !p.seen && !p.verdict ? el('span', { class: 'badge', text: 'NEW' }) : null,
           ]),
@@ -641,7 +647,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
                 onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
             ]) : null,
             el('div', { class: 'excol' }, [
-              el('span', { class: 'tltime', text: clock(x.at) }),
+              el('span', { class: 'tltime', text: dayTime(x.at) }),
               x.text ? el('div', { class: 'ptext', text: x.text }) : null,
           el('div', { class: 'react' + (x.thanks_reaction ? ' locked' : '') },
             Object.entries(REACTIONS).map(([label, emoji]) =>

@@ -4,6 +4,10 @@ import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const dot = d => (d || '').replaceAll('-', '.');
 const hm = t => (t || '').slice(0, 5);
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+const dayTime = ts => {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}.${d.getDate()} ` + clock(ts);
+};
 
 // 읽기 전용이다 — 여기서는 아무것도 누를 수 없고, 있는 그대로만 보인다
 export function recordScreen(r) {
@@ -48,7 +52,7 @@ export function recordScreen(r) {
         const out = outMinutes(it);
         return card([
           el('div', { class: 'tlhead' }, [
-            el('span', { class: 'tltime', text: it.submitted_at ? clock(it.submitted_at)
+            el('span', { class: 'tltime', text: it.submitted_at ? dayTime(it.submitted_at)
               : (it.fuzz_min === -1 ? '아무때나' : hm(it.at_time)) }),
             el('span', { class: 'kchip' + (it.submitted_at ? ' on' : ''),
               text: kindName(it.kind) + (it.submitted_at ? ' 완료' : ' 예정')

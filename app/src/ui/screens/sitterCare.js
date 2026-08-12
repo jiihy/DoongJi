@@ -6,6 +6,11 @@ import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const hm = t => (t || '').slice(0, 5);
 const dot = d => (d || '').replaceAll('-', '.');
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+const dayTime = ts => {
+  const d = new Date(ts);
+  const today = new Date().toDateString() === d.toDateString();
+  return (today ? '오늘' : `${d.getMonth() + 1}.${d.getDate()}`) + ' ' + clock(ts);
+};
 const stampOf = at => `${dot(new Date(at).toISOString().slice(0, 10))} ${clock(at)}`;
 
 export function sitterCareScreen(c, ui, go, reload, rerender) {
@@ -230,7 +235,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
               it.proof ? el('span', { class: 'badge', text: '제출됨' }) : null,
             ]),
             el('div', { class: 'metacol' }, it.proof
-              ? [`${clock(it.proof.submitted_at)} 기록`
+              ? [`${dayTime(it.proof.submitted_at)} 기록`
                   + (it.proof.dispute ? ' · 이의' : it.proof.verdict?.matched ? ' · 확인됨' : ''),
                  [outMinutes(it.proof) !== null ? `밖에 있던 시간 ${outMinutes(it.proof)}분` : null,
                   !it.proof.photo_url ? '설명만' : null].filter(Boolean).join(' · '),
@@ -274,7 +279,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
                 onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
             ]) : null,
             el('div', { class: 'excol' }, [
-              el('span', { class: 'tltime', text: clock(x.at) }),
+              el('span', { class: 'tltime', text: dayTime(x.at) }),
               x.text ? el('div', { class: 'ptext', text: x.text }) : null,
             ]),
           ]),
