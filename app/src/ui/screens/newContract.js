@@ -19,7 +19,8 @@ export function newContractScreen(ctx, go, rerender) {
     start: today(), end: plus(2),
     startTime: '14:00', startBy: 'owner', endTime: '18:00', endBy: 'owner',
     items: [
-      { kind: 'meal', time: '08:00', fuzz: 60 },
+      { kind: 'meal', time: '12:00', fuzz: 60 },
+      { kind: 'walk', time: '15:00', fuzz: 120 },
       { kind: 'meal', time: '18:00', fuzz: 60 },
     ],
   };
