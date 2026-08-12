@@ -85,15 +85,48 @@ export function paint(view) {
 }
 
 // 재렌더 흐름이 없는 화면에서도 쓸 수 있게 body에 직접 얹는다
-export function openLightbox(url) {
+// 여러 장이면 좌우로 넘긴다 (버튼·스와이프·화살표 키)
+export function openLightbox(urls, start = 0) {
+  const list = Array.isArray(urls) ? urls.filter(Boolean) : [urls].filter(Boolean);
+  if (!list.length) return;
+  let i = Math.min(Math.max(start, 0), list.length - 1);
+
+  const img = el('img', { src: list[i], alt: '' });
+  const count = el('span', { class: 'lbcount', text: `${i + 1} / ${list.length}` });
+  const show = n => {
+    i = (n + list.length) % list.length;
+    img.src = list[i];
+    count.textContent = `${i + 1} / ${list.length}`;
+  };
   const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };
-  const onKey = e => { if (e.key === 'Escape') close(); };
-  const back = el('div', { class: 'lightbox', onclick: e => { if (e.target !== img) close(); } }, [
-    el('button', { class: 'lbclose', text: '✕', 'aria-label': '닫기', onclick: close }),
-    null,
+  const onKey = e => {
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowRight') show(i + 1);
+    if (e.key === 'ArrowLeft') show(i - 1);
+  };
+
+  const back = el('div', { class: 'lightbox' }, [
+    el('button', { class: 'lbclose', text: '✕', 'aria-label': '닫기',
+      onclick: e => { e.stopPropagation(); close(); } }),
+    list.length > 1 ? el('button', { class: 'lbnav prev', text: '‹', 'aria-label': '이전',
+      onclick: e => { e.stopPropagation(); show(i - 1); } }) : null,
+    list.length > 1 ? el('button', { class: 'lbnav next', text: '›', 'aria-label': '다음',
+      onclick: e => { e.stopPropagation(); show(i + 1); } }) : null,
+    list.length > 1 ? count : null,
   ]);
-  const img = el('img', { src: url, alt: '' });
   back.appendChild(img);
+  back.addEventListener('click', e => { if (e.target === back) close(); });
+
+  // 스와이프
+  let x0 = null;
+  back.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  back.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 45) show(dx < 0 ? i + 1 : i - 1);
+    x0 = null;
+  });
+
   document.addEventListener('keydown', onKey);
   document.body.appendChild(back);
 }

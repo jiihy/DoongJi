@@ -475,7 +475,8 @@ export function ownerHome(c, go, ui, rerender, bell) {
   const mine = it => !multi || it.pet_id === cur;
   const fresh = freshProofs(c).length;
 
-  const shot = (url, at) => el('button', { class: 'thumb', onclick: () => openLightbox(url) }, [
+  const shot = (url, at, all, idx) => el('button', { class: 'thumb',
+    onclick: () => openLightbox(all || url, idx || 0) }, [
     el('img', { src: url, alt: '' }),
     at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
   ]);
@@ -582,7 +583,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
             p && !p.seen && !p.verdict ? el('span', { class: 'badge', text: 'NEW' }) : null,
           ]),
           p && p.text ? el('div', { class: 'tltext', text: p.text }) : null,
-          shots.length ? el('div', { class: 'shots' }, shots.map(([u, a]) => shot(u, a))) : null,
+          shots.length ? el('div', { class: 'shots' }, shots.map(([u, a], k) => shot(u, a, shots.map(z => z[0]), k))) : null,
           el('div', { class: 'tlmeta', text: !p ? '아직 기록 없음'
             : [out !== null ? `밖에 있던 시간 ${out}분` : null,
                !p.photo_url ? '사진 없이 설명만' : null,
@@ -639,12 +640,12 @@ export function ownerHome(c, go, ui, rerender, bell) {
         ...c.extras.map(x => card([
           el('div', { class: 'exrow' }, [
             (x.extra_photos || []).length ? el('div', { class: 'exshots' }, [
-              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos[0].url) }, [
+              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos.map(ph => ph.url), 0) }, [
                 el('img', { src: x.extra_photos[0].url, alt: '' }),
                 el('span', { class: 'tag', text: x.extra_photos[0].is_album ? '앨범' : '앱 촬영' }),
               ]),
               x.extra_photos.length > 1 ? el('button', { class: 'exmore', text: `+${x.extra_photos.length - 1}`,
-                onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
+                onclick: () => openLightbox(x.extra_photos.map(ph => ph.url), 1) }) : null,
             ]) : null,
             el('div', { class: 'excol' }, [
               el('span', { class: 'tltime', text: dayTime(x.at) }),

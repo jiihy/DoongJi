@@ -274,3 +274,12 @@ a.proofline{text-decoration:none}
 .exmore{flex:none;width:36px;height:92px;border-radius:10px;border:none;background:var(--bg);
   color:var(--ink4);font-size:12px;font-weight:700}
 .excol{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.lbnav{position:fixed;top:50%;transform:translateY(-50%);z-index:41;width:44px;height:64px;
+  border:none;border-radius:12px;background:rgba(255,255,255,.16);color:#fff;font-size:26px;
+  display:flex;align-items:center;justify-content:center}
+.lbnav.prev{left:10px}
+.lbnav.next{right:10px}
+.lbcount{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + env(safe-area-inset-bottom));z-index:41;
+  font-size:13px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);
+  padding:6px 12px;border-radius:1000px}

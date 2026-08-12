@@ -61,8 +61,8 @@ export function recordScreen(r) {
             Number(it.disputes) ? el('span', { class: 'dtag', text: '사실과 달라요' }) : null,
           ]),
           it.text ? el('div', { class: 'tltext', text: it.text }) : null,
-          shots.length ? el('div', { class: 'shots' }, shots.map(([u, a]) =>
-            el('button', { class: 'thumb', onclick: () => openLightbox(u) }, [
+          shots.length ? el('div', { class: 'shots' }, shots.map(([u, a], k) =>
+            el('button', { class: 'thumb', onclick: () => openLightbox(shots.map(z => z[0]), k) }, [
               el('img', { src: u, alt: '' }),
               a ? el('span', { class: 'shotstamp', text: clock(a) }) : null,
             ]))) : null,
@@ -81,8 +81,8 @@ export function recordScreen(r) {
           el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
           el('span', { class: 'sub', text: clock(x.at) }),
         ]),
-        (x.photos || []).length ? el('div', { class: 'shots' }, x.photos.map(ph =>
-          el('button', { class: 'thumb', onclick: () => openLightbox(ph.url) }, [
+        (x.photos || []).length ? el('div', { class: 'shots' }, x.photos.map((ph, k) =>
+          el('button', { class: 'thumb', onclick: () => openLightbox(x.photos.map(z => z.url), k) }, [
             el('img', { src: ph.url, alt: '' }),
             el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
           ]))) : null,

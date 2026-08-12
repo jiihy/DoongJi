@@ -53,7 +53,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         ]) : null,
 
         shots.length ? el('div', { class: 'shots' }, shots.map((sh, i) =>
-          el('button', { class: 'shot', onclick: () => openLightbox(sh.url) }, [
+          el('button', { class: 'shot', onclick: () => openLightbox(shots.map(z => z.url), i) }, [
             el('img', { src: sh.url, alt: '' }),
             pair ? el('span', { class: 'tag', text: i === 0 ? K.cap1 : K.cap2 }) : null,
             el('span', { class: 'shotstamp', text: sh.at ? clock(sh.at) : '' }),
@@ -271,12 +271,12 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         (c.extras || []).length ? el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
           el('div', { class: 'exrow' }, [
             (x.extra_photos || []).length ? el('div', { class: 'exshots' }, [
-              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos[0].url) }, [
+              el('button', { class: 'thumb', onclick: () => openLightbox(x.extra_photos.map(ph => ph.url), 0) }, [
                 el('img', { src: x.extra_photos[0].url, alt: '' }),
                 el('span', { class: 'tag', text: x.extra_photos[0].is_album ? '앨범' : '앱 촬영' }),
               ]),
               x.extra_photos.length > 1 ? el('button', { class: 'exmore', text: `+${x.extra_photos.length - 1}`,
-                onclick: () => openLightbox(x.extra_photos[1].url) }) : null,
+                onclick: () => openLightbox(x.extra_photos.map(ph => ph.url), 1) }) : null,
             ]) : null,
             el('div', { class: 'excol' }, [
               el('span', { class: 'tltime', text: dayTime(x.at) }),
