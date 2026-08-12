@@ -1,6 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
-import { thankExtra } from '../../data/care.js';
+import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const FUZZ = { 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤', '-1': '아무때나' };
@@ -406,7 +406,36 @@ export function ownerHome(c, go, ui, rerender, bell) {
     at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
   ]);
 
-  const overlay = ui.lightbox
+  const disputeSheet = () => {
+    const it = c.items.find(i => i.proof && i.proof.id === ui.disputeFor);
+    if (!it) return null;
+    const close = () => { ui.disputeFor = null; rerender(); };
+    return el('div', { class: 'sheetback',
+      onclick: e => { if (e.target.classList.contains('sheetback')) close(); } }, [
+      el('div', { class: 'sheet' }, [
+        el('div', { class: 'grip' }),
+        el('div', { class: 'h', text: '무엇이 달랐나요?' }),
+        el('div', { class: 'sub', text: '사유를 골라야 접수됩니다. 시터에게 그대로 전달되고, 시터가 소명하면 함께 남습니다.' }),
+        el('div', { class: 'chips' }, REASONS.map(r =>
+          el('button', { class: 'chip', 'aria-pressed': ui.disputeReason === r, text: r,
+            onclick: () => { ui.disputeReason = r; rerender(); } }))),
+        el('button', { class: 'cta', disabled: !ui.disputeReason,
+          text: ui.disputeReason ? '보내기' : '사유를 골라주세요',
+          onclick: async () => {
+            try {
+              await openDispute(it.proof.id, ui.disputeReason);
+              await setVerdict(it.proof.id, { matched: false });
+              ui.disputeFor = null; ui.disputeReason = null;
+              flash('전달했어요', '시터의 소명을 기다립니다.');
+              await reload();
+            } catch (e) { flash('전달 실패', e.message); }
+          } }),
+        el('button', { class: 'linkbtn center', text: '닫기', onclick: close }),
+      ]),
+    ]);
+  };
+
+  const overlay = ui.disputeFor ? disputeSheet() : ui.lightbox
     ? el('div', { class: 'lightbox', onclick: () => { ui.lightbox = null; rerender(); } },
         el('img', { src: ui.lightbox, alt: '' }))
     : null;
@@ -485,7 +514,50 @@ export function ownerHome(c, go, ui, rerender, bell) {
           shots.length ? el('div', { class: 'shots' }, shots.map(([u, a]) => shot(u, a))) : null,
           el('div', { class: 'tlmeta', text: !p ? '아직 기록 없음'
             : [out !== null ? `밖에 있던 시간 ${out}분` : null,
-               !p.photo_url ? '사진 없이 설명만' : null].filter(Boolean).join(' · ') || '사진과 시각은 시터가 올린 그대로입니다' }),
+               !p.photo_url ? '사진 없이 설명만' : null,
+               p.resubmit_count ? `${p.resubmit_count}회 다시 제출` : null].filter(Boolean).join(' · ')
+              || '사진과 시각은 시터가 올린 그대로입니다' }),
+
+          // 리액션 어느 것이든 「확인」이다. 확인하지 않아도 불이익은 없다
+          p && !p.dispute ? el('div', { class: 'react' + (p.verdict?.matched ? ' locked' : '') },
+            Object.entries(REACTIONS).map(([label, emoji]) =>
+              el('button', {
+                'aria-pressed': p.verdict?.reaction === label,
+                disabled: !!p.verdict?.matched,
+                text: `${emoji} ${label}`,
+                onclick: async () => {
+                  if (p.verdict?.matched) return;
+                  p.verdict = { matched: true, reaction: label, decided_at: new Date().toISOString() };
+                  rerender();
+                  try { await setVerdict(p.id, { matched: true, reaction: label }); }
+                  catch (e) { flash('전달 실패', e.message); }
+                },
+              }))) : null,
+
+          p && !p.dispute && !p.verdict ? el('button', { class: 'seecap wrong', text: '사실과 달라요',
+            onclick: () => { ui.disputeFor = p.id; ui.disputeReason = null; rerender(); } }) : null,
+
+          p && p.dispute ? el('div', { class: 'dispute' }, [
+            el('div', { class: 'dhead' }, [
+              el('span', { class: 'dtag', text: '사실과 달라요' }),
+              el('span', { class: 'sub', text: p.dispute.reason }),
+            ]),
+            p.dispute.reply_at
+              ? el('div', { class: 'dreply' }, [
+                  el('span', { class: 'dlab', text: `시터 소명 · ${clock(p.dispute.reply_at)}` }),
+                  el('span', { class: 'ptext', text: p.dispute.reply_text || '' }),
+                ])
+              : el('div', { class: 'sub', text: noReply(p.dispute)
+                  ? '72시간이 지나도록 소명이 없습니다.' : '시터의 소명을 기다리는 중입니다.' }),
+            !p.dispute.reply_at ? el('button', { class: 'seecap', text: '이의 철회',
+              onclick: async () => {
+                try {
+                  await withdrawDispute(p.dispute.id);
+                  await withdrawVerdict(p.id).catch(() => {});
+                  flash('철회했어요'); await reload();
+                } catch (e) { flash('철회할 수 없어요', e.message); }
+              } }) : null,
+          ]) : null,
         ]);
       }) : []),
 

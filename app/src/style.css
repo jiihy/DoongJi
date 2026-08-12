@@ -233,3 +233,11 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .secttoggle .sect{padding:6px 4px 0;font-size:14px;font-weight:600;color:var(--ink4);letter-spacing:0}
 .tchev{padding:0 6px;font-size:18px;color:var(--ink4);transform:rotate(90deg);transition:transform .15s}
 .secttoggle[aria-expanded="true"] .tchev{transform:rotate(-90deg)}
+/* 이의 · 소명 */
+.seecap.wrong{align-self:flex-end;color:var(--ink4)}
+.dispute{border:1px solid var(--line);border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:8px}
+.dhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dtag{font-size:11px;font-weight:700;padding:4px 9px;border-radius:1000px;background:#FDECEA;color:#B3261E;
+  display:inline-flex;align-items:center}
+.dreply{display:flex;flex-direction:column;gap:4px;background:var(--bg);border-radius:10px;padding:11px 12px}
+.dlab{font-size:12px;font-weight:700;color:var(--ink3)}

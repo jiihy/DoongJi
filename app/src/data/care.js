@@ -25,7 +25,7 @@ export async function hydrate(contract) {
   let proofs = [];
   if (ids.length) {
     const { data } = await sb.from('proofs')
-      .select('*, verdicts(*), seens(*)')
+      .select('*, verdicts(*), seens(*), disputes(*)')
       .in('schedule_item_id', ids);
     proofs = data || [];
   }
@@ -36,6 +36,7 @@ export async function hydrate(contract) {
     ...p,
     verdict: Array.isArray(p.verdicts) ? (p.verdicts[0] || null) : (p.verdicts || null),
     seen:    Array.isArray(p.seens)    ? (p.seens[0]    || null) : (p.seens    || null),
+    dispute: (p.disputes || []).slice().sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at))[0] || null,
   }]));
   return {
     ...contract,
@@ -171,3 +172,40 @@ export async function listBooks(sitterId) {
 export const setRecordPublic = async (contractId, on) => {
   await sb.from('contracts').update({ record_public: on }).eq('id', contractId).throwOnError();
 };
+
+/* ── M5 판정 · 이의 · 소명 ── */
+// 리액션 어느 것이든 「확인」으로 집계한다 (F8). 확인하지 않아도 불이익은 없다
+export async function setVerdict(proofId, { matched = true, reaction = null } = {}) {
+  const { error } = await sb.from('verdicts')
+    .upsert({ proof_id: proofId, matched, reaction, decided_at: new Date().toISOString() },
+            { onConflict: 'proof_id' });
+  if (error) throw error;
+}
+// 시터가 소명한 뒤에는 서버가 막는다 (guard_verdict_withdraw)
+export async function withdrawVerdict(proofId) {
+  const { error } = await sb.from('verdicts').delete().eq('proof_id', proofId);
+  if (error) throw error;
+}
+// 사유를 고르기 전에는 접수되지 않는다 (F9)
+export async function openDispute(proofId, reason) {
+  if (!reason) throw new Error('사유를 골라주세요');
+  const { error } = await sb.from('disputes').insert({ proof_id: proofId, reason });
+  if (error) throw error;
+}
+export async function withdrawDispute(id) {
+  const { error } = await sb.from('disputes').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function replyDispute(id, text) {
+  const { error } = await sb.from('disputes')
+    .update({ reply_at: new Date().toISOString(), reply_text: text })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export const REASONS = [
+  '우리 집이 아닌 것 같아요', '예전에 찍은 사진 같아요', '그 시간에 오지 않은 것 같아요',
+  '밥이 그대로 남아 있었어요', '배변 패드가 깨끗했어요', '그 밖의 이유',
+];
+// 72시간 무응답이면 「소명 없음」 (벌점이 아니라 사실 표기다)
+export const noReply = d => !!d && !d.reply_at && (Date.now() - new Date(d.opened_at)) > 72 * 3600 * 1000;

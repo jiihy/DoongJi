@@ -1,6 +1,6 @@
 import { el, card, flash } from '../el.js';
 import * as api from '../../data/care.js';
-import { finishCare } from '../../data/care.js';
+import { finishCare, replyDispute, noReply } from '../../data/care.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const hm = t => (t || '').slice(0, 5);
@@ -151,6 +151,41 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
     ]);
   }
 
+  if (ui.replyFor) {
+    const it = c.items.find(i => i.proof && i.proof.dispute && i.proof.dispute.id === ui.replyFor);
+    if (it) {
+      const d = ui.replyDraft = ui.replyDraft || { text: '', busy: false };
+      const closeR = () => { ui.replyFor = null; ui.replyDraft = null; rerender(); };
+      overlay = el('div', { class: 'sheetback',
+        onclick: e => { if (e.target.classList.contains('sheetback') && !d.busy) closeR(); } }, [
+        el('div', { class: 'sheet' }, [
+          el('div', { class: 'grip' }),
+          el('div', { class: 'h', text: '소명하기' }),
+          el('div', { class: 'dhead' }, [
+            el('span', { class: 'dtag', text: '보호자 이의' }),
+            el('span', { class: 'sub', text: it.proof.dispute.reason }),
+          ]),
+          el('div', { class: 'sub', text: '무슨 일이 있었는지 그대로 적어주세요. 보호자 화면에 이의와 나란히 남습니다. 소명한 뒤에는 보호자가 이의를 철회할 수 없습니다.' }),
+          el('textarea', { name: 'reply_text', style: 'min-height:120px',
+            placeholder: '예) 그 시간에 두 번 갔는데 두 번째에 다 먹었습니다.',
+            value: d.text, oninput: e => { d.text = e.target.value; rerender(); } }),
+          el('button', { class: 'cta', disabled: d.busy || !d.text.trim(),
+            text: d.busy ? '보내는 중…' : '소명 보내기',
+            onclick: async () => {
+              d.busy = true; rerender();
+              try {
+                await replyDispute(it.proof.dispute.id, d.text.trim());
+                ui.replyFor = null; ui.replyDraft = null;
+                flash('소명을 보냈어요', '보호자 화면에 함께 표시됩니다.');
+                await reload();
+              } catch (e) { d.busy = false; flash('전송 실패', e.message); rerender(); }
+            } }),
+          el('button', { class: 'linkbtn center', text: '닫기', onclick: () => { if (!d.busy) closeR(); } }),
+        ]),
+      ]);
+    }
+  }
+
   return {
     title: '오늘의 돌봄',
     back: () => go('home'),
@@ -192,6 +227,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
             ]),
             el('div', { class: 'sub', text: it.proof
               ? `${clock(it.proof.submitted_at)} 기록`
+                + (it.proof.dispute ? ' · 이의' : it.proof.verdict?.matched ? ' · 확인됨' : '')
                 + (outMinutes(it.proof) !== null ? ` · 밖에 있던 시간 ${outMinutes(it.proof)}분` : '')
                 + (!it.proof.photo_url ? ' · 설명만' : '')
               : '아직 기록 없음' }),
@@ -199,6 +235,23 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
           el('button', { class: 'ctasm', text: it.proof ? '다시' : '기록하기',
             onclick: () => { ui.proofFor = it.id; ui.proofDraft = null; rerender(); } }),
         ]))),
+        // 이의가 온 항목은 목록 아래에 따로 세워 놓친 것이 없게 한다
+        ...items.filter(it => it.proof && it.proof.dispute).map(it => el('div', { class: 'dispute' }, [
+          el('div', { class: 'dhead' }, [
+            el('span', { class: 'dtag', text: '사실과 달라요' }),
+            el('span', { class: 'sub', text: `${kindName(it.kind)} · ${it.proof.dispute.reason}` }),
+          ]),
+          it.proof.dispute.reply_at
+            ? el('div', { class: 'dreply' }, [
+                el('span', { class: 'dlab', text: '내가 보낸 소명' }),
+                el('span', { class: 'ptext', text: it.proof.dispute.reply_text || '' }),
+              ])
+            : el('div', { class: 'sub', text: noReply(it.proof.dispute)
+                ? '72시간이 지났습니다 — 보호자 화면에 「소명 없음」으로 남습니다.'
+                : '아직 소명하지 않았습니다.' }),
+          !it.proof.dispute.reply_at ? el('button', { class: 'ctasm', text: '소명하기',
+            onclick: () => { ui.replyFor = it.proof.dispute.id; ui.replyDraft = null; rerender(); } }) : null,
+        ])),
         items.length ? null : el('div', { class: 'sub', text: '보호자가 아직 일정을 보내지 않았어요.' }),
       ]),
 
