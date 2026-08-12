@@ -83,3 +83,10 @@ export function paint(view) {
   }
   window.scrollTo({ top: scroll });
 }
+
+// 재렌더 흐름이 없는 화면에서도 쓸 수 있게 body에 직접 얹는다
+export function openLightbox(url) {
+  const back = el('div', { class: 'lightbox', onclick: () => back.remove() },
+    el('img', { src: url, alt: '' }));
+  document.body.appendChild(back);
+}

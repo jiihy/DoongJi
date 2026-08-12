@@ -207,3 +207,5 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .tltime{font-size:13px;font-weight:600;color:var(--ink3)}
 .tltext{font-size:15px;line-height:1.55;color:var(--ink)}
 .tlmeta{font-size:12px;font-weight:500;color:var(--ink4)}
+.imp .capture{cursor:zoom-in}
+.imp .ctasm{align-self:flex-start}

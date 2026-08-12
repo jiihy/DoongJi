@@ -37,10 +37,7 @@ export function diaryWriteScreen(c, ui, sitterId, go, reload, rerender) {
           value: d[cur] || '', oninput: e => { d[cur] = e.target.value; rerender(); } }),
       ]),
 
-      card([
-        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 씀' }),
-        el('div', { class: 'sub', text: '후기는 이 서비스가 확인한 기록이 아닙니다. 확인된 것(사진·시각)과 섞이지 않게 그렇게 표시됩니다.' }),
-      ]),
+
     ],
     foot: [el('button', { class: 'cta', disabled: !(d[cur] || '').trim(),
       text: (d[cur] || '').trim() ? `${pet.name} 후기 남기기` : '내용을 적어주세요',
@@ -73,7 +70,6 @@ export function booksScreen(books, go) {
         el('div', { class: 'sub', text: '돌본 아이마다 한 권씩입니다. 돌봄이 끝날 때마다 후기가 한 편씩 쌓여요.' }),
       ]),
       ...books.map(bk => card([
-        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 씀' }),
         el('div', { class: 'h', text: `${bk.pets?.name || '아이'}의 돌봄 일기 · 후기 ${(bk.diary_entries || []).length}편` }),
         ...(bk.diary_entries || [])
           .slice().sort((a, b) => new Date(b.written_at) - new Date(a.written_at))

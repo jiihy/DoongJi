@@ -1,4 +1,4 @@
-import { el, card, field, flash } from '../el.js';
+import { el, card, field, flash, openLightbox } from '../el.js';
 
 // 프로토타입의 「펫시터 프로필」을 그대로 옮긴다 — 숫자 3종이 주인공, 보조 지표는 그 다음
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
@@ -97,7 +97,6 @@ export function sitterProfileScreen(s, stats, back, pub) {
 
       // 일기는 「시터 본인이 씀」 — 확인된 것과 섞지 않는다 (§2-3)
       (s.diary || []).length ? card([
-        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 씀' }),
         el('div', { class: 'h', text: `돌봄 일기 · ${s.diary.length}권` }),
         el('div', { class: 'sub', text: '돌본 아이마다 한 권씩입니다. 어떤 마음으로 돌보는 사람인지 여기서 보입니다.' }),
         ...s.diary.slice(0, 2).map(bk => el('div', { class: 'imp' }, [
@@ -123,7 +122,11 @@ export function sitterProfileScreen(s, stats, back, pub) {
             v.review_date ? el('span', { class: 'date', text: v.review_date }) : null,
           ]),
           v.text ? el('div', { class: 'q', text: '“' + v.text + '”' }) : null,
-          v.capture_url ? el('img', { class: 'capture', src: v.capture_url, alt: (v.source || '') + ' 캡처' }) : null,
+          // 리뷰에 붙어 있던 사진은 그대로 보이고, 원본 캡처는 눌러서 따로 본다
+          v.attach_url ? el('img', { class: 'capture', src: v.attach_url, alt: '첨부 사진',
+            onclick: () => openLightbox(v.attach_url) }) : null,
+          v.capture_url ? el('button', { class: 'ctasm', text: '첨부 인증 보기',
+            onclick: () => openLightbox(v.capture_url) }) : null,
         ])),
       ]) : null,
     ],
