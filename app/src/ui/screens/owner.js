@@ -417,16 +417,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
     right: bell,
     overlay,
     body: [
-      (multi && cur) ? (() => {
-        const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
-        return notes.length ? el('div', { class: 'sectwrap' }, [
-          el('div', { class: 'sect', text: '내가 남긴 특이사항' }),
-          card([el('div', { class: 'rows' }, notes.map(n => el('div', { class: 'noterow' }, [
-            el('span', { class: 'notechip', text: kindName(n.kind) }),
-            el('span', { class: 'ptext', text: n.text }),
-          ])))]),
-        ]) : null;
-      })() : card([
+      (multi && cur) ? null : card([
         el('div', { class: 'profhead' }, [
           el('div', { class: 'pcol' }, [
             el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
@@ -435,6 +426,17 @@ export function ownerHome(c, go, ui, rerender, bell) {
           el('button', { class: 'ctasm', text: `${s.name} 시터`, onclick: () => go('sitterProfile') }),
         ]),
       ]),
+
+      (!multi || cur) ? (() => {
+        const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
+        return notes.length ? el('div', { class: 'sectwrap' }, [
+          el('div', { class: 'sect', text: '내가 남긴 특이사항' }),
+          card(notes.map(n => el('div', { class: 'notebox' }, [
+            el('span', { class: 'k', text: kindName(n.kind) }),
+            el('span', { class: 'v', text: n.text }),
+          ]))),
+        ]) : null;
+      })() : null,
 
       multi && !cur ? card([
         el('div', { class: 'h', text: '어느 아이의 기록을 볼까요?' }),
