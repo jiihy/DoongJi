@@ -247,3 +247,6 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .swlab{font-size:14px;font-weight:700}
 .switchrow input{width:48px;height:28px;accent-color:var(--primary)}
 a.proofline{text-decoration:none}
+.notelist .v{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.notelist .vtx{flex:1}
+.ntrash{flex:none;background:none;border:none;padding:0 2px;color:var(--ink4);font-size:13px}

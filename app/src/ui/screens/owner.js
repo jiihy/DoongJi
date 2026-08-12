@@ -118,6 +118,77 @@ export function ownerInstall(state, go, rerender) {
   };
 }
 
+/* 아이 수정 시트 — 정보 확인·아이 프로필에서 함께 쓴다 */
+function petEditSheet(c, ui, reload, rerender) {
+  if (ui.petIdx === undefined || ui.petIdx === null || !c.pets[ui.petIdx]) return null;
+  const pt = ui.petDraft || (ui.petDraft = { ...c.pets[ui.petIdx] });
+  const close = () => { ui.petIdx = null; ui.petDraft = null; rerender(); };
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) close(); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'grip' }),
+      el('div', { class: 'h', text: `${c.pets[ui.petIdx].name} 정보 수정` }),
+      field('이름', { name: 'p_name', value: pt.name || '', oninput: e => { pt.name = e.target.value; } }),
+      field('나이', { name: 'p_age', value: pt.age || '', oninput: e => { pt.age = e.target.value; } }),
+      field('추가 정보', { name: 'p_extra', value: pt.extra || '', oninput: e => { pt.extra = e.target.value; } }),
+      el('button', { class: 'cta', text: '완료', onclick: async () => {
+        await api.savePet(pt.id, { name: pt.name, age: pt.age, extra: pt.extra });
+        ui.petIdx = null; ui.petDraft = null; flash('수정했어요'); reload();
+      } }),
+    ]),
+  ]);
+}
+
+/* 특이사항 추가 시트 — 일정·아이 프로필에서 함께 쓴다 */
+function careNoteSheet(c, ui, reload, rerender, defaultPet) {
+  if (!ui.cnOpen) return null;
+  const multi = c.pets.length > 1;
+  const saved = [...new Set(c.notes.map(n => n.kind).filter(k => String(k).startsWith('c:')))];
+  const customKinds = [...new Set([...saved, ...(ui.customKinds || [])])];
+  const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: multi ? (defaultPet || null) : null, text: '' };
+  const close = () => { ui.cnOpen = false; rerender(); };
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) close(); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'grip' }),
+      el('div', { class: 'h', text: '특이사항 추가' }),
+      multi ? el('div', { class: 'chips' }, [{ id: null, name: '모든 아이' }, ...c.pets].map(p =>
+        el('button', { class: 'chip', 'aria-pressed': d.pet_id === p.id, text: p.name,
+          onclick: () => { d.pet_id = p.id; rerender(); } }))) : null,
+      el('div', { class: 'sub', text: '어느 항목을 할 때 봐야 하나요?' }),
+      el('div', { class: 'chips' }, [
+        ...[['all', '공통'], ...Object.entries(KINDS).map(([k, v]) => [k, v.name]), ...customKinds.map(k => [k, kindName(k)])]
+          .map(([k, t]) => el('button', { class: 'chip', 'aria-pressed': d.kind === k, text: t,
+            onclick: () => { d.kind = k; rerender(); } })),
+        el('button', { class: 'chip addchip', text: d.adding ? '취소' : '＋ 직접 추가',
+          onclick: () => { d.adding = !d.adding; rerender(); } }),
+      ]),
+      d.adding ? el('div', { class: 'addrow' }, [
+        el('input', { name: 'newkind', placeholder: '예) 약 챙길 때', value: d.newKind || '',
+          oninput: e => { d.newKind = e.target.value; } }),
+        el('button', { class: 'ctasm', text: '추가', onclick: () => {
+          const name = (d.newKind || '').trim();
+          if (!name) { flash('이름을 적어주세요'); return; }
+          const key = 'c:' + name;
+          if (!customKinds.includes(key)) ui.customKinds = [...customKinds, key];
+          d.kind = key; d.newKind = ''; d.adding = false; rerender();
+        } }),
+      ]) : null,
+      el('textarea', { name: 'cntext', placeholder: '예) 기저귀를 갈 때는 꼭 리드줄을 채워주세요',
+        value: d.text, oninput: e => { d.text = e.target.value; } }),
+      el('button', { class: 'cta', text: '저장', onclick: async () => {
+        if (!d.text.trim()) { flash('내용을 적어주세요'); return; }
+        const { data, error } = await api.addNote(c.owner_id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
+        if (error) { flash('저장 실패', error.message); return; }
+        c.notes.push(data);
+        ui.cnOpen = false; ui.cnDraft = null;
+        flash('특이사항이 저장되었어요', '시터의 해당 인증 화면에 참고 사항으로 보입니다.');
+        rerender();
+      } }),
+    ]),
+  ]);
+}
+
 /* ── 3. 정보 확인 ── */
 export function ownerConfirm(c, ui, go, reload, rerender) {
   const sheets = [];
@@ -127,22 +198,8 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
     el('span', { class: 'chev', text: '›' }),
   ]);
 
-  if (ui.petIdx !== undefined && ui.petIdx !== null && c.pets[ui.petIdx]) {
-    const pt = ui.petDraft || (ui.petDraft = { ...c.pets[ui.petIdx] });
-    sheets.push(el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.petIdx = null; ui.petDraft = null; rerender(); } } }, [
-      el('div', { class: 'sheet' }, [
-        el('div', { class: 'grip' }),
-        el('div', { class: 'h', text: `${c.pets[ui.petIdx].name} 정보 수정` }),
-        field('이름', { name: 'p_name', value: pt.name || '', oninput: e => { pt.name = e.target.value; } }),
-        field('나이', { name: 'p_age', value: pt.age || '', oninput: e => { pt.age = e.target.value; } }),
-        field('추가 정보', { name: 'p_extra', value: pt.extra || '', oninput: e => { pt.extra = e.target.value; } }),
-        el('button', { class: 'cta', text: '완료', onclick: async () => {
-          await api.savePet(pt.id, { name: pt.name, age: pt.age, extra: pt.extra });
-          ui.petIdx = null; ui.petDraft = null; flash('수정했어요'); reload();
-        } }),
-      ]),
-    ]));
-  }
+  const petSheet = petEditSheet(c, ui, reload, rerender);
+  if (petSheet) sheets.push(petSheet);
 
   if (ui.hoOpen) {
     // 초안을 ui에 둔다 — 칩을 누를 때마다 새로 만들면 입력하던 주소가 사라진다
@@ -273,51 +330,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
     api.delItem(it.id).catch(e => flash('삭제 실패', e.message));
   };
 
-  // 이미 쓴 특이사항에 남은 'c:' 카테고리가 곧 이 보호자의 커스텀 목록이다
-  const saved = [...new Set(c.notes.map(n => n.kind).filter(k => String(k).startsWith('c:')))];
-  const customKinds = [...new Set([...saved, ...(ui.customKinds || [])])];
-
-  const noteSheet = ui.cnOpen ? (() => {
-    const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: multi ? cur : null, text: '' };
-    return el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.cnOpen = false; rerender(); } } }, [
-      el('div', { class: 'sheet' }, [
-        el('div', { class: 'grip' }),
-        el('div', { class: 'h', text: '특이사항 추가' }),
-        multi ? el('div', { class: 'chips' }, [{ id: null, name: '모든 아이' }, ...c.pets].map(p =>
-          el('button', { class: 'chip', 'aria-pressed': d.pet_id === p.id, text: p.name,
-            onclick: () => { d.pet_id = p.id; rerender(); } }))) : null,
-        el('div', { class: 'sub', text: '어느 항목을 할 때 봐야 하나요?' }),
-        el('div', { class: 'chips' }, [
-          ...[['all', '공통'], ...Object.entries(KINDS).map(([k, v]) => [k, v.name]), ...customKinds.map(k => [k, kindName(k)])]
-            .map(([k, t]) => el('button', { class: 'chip', 'aria-pressed': d.kind === k, text: t,
-              onclick: () => { d.kind = k; rerender(); } })),
-          el('button', { class: 'chip addchip', text: d.adding ? '취소' : '＋ 직접 추가',
-            onclick: () => { d.adding = !d.adding; rerender(); } }),
-        ]),
-        d.adding ? el('div', { class: 'addrow' }, [
-          el('input', { name: 'newkind', placeholder: '예) 약 챙길 때', value: d.newKind || '',
-            oninput: e => { d.newKind = e.target.value; } }),
-          el('button', { class: 'ctasm', text: '추가', onclick: () => {
-            const name = (d.newKind || '').trim();
-            if (!name) { flash('이름을 적어주세요'); return; }
-            const key = 'c:' + name;
-            if (!customKinds.includes(key)) ui.customKinds = [...customKinds, key];
-            d.kind = key; d.newKind = ''; d.adding = false; rerender();
-          } }),
-        ]) : null,
-        el('textarea', { name: 'cntext', placeholder: '예) 기저귀를 갈 때는 꼭 리드줄을 채워주세요',
-          value: d.text, oninput: e => { d.text = e.target.value; } }),
-        el('button', { class: 'cta', text: '저장', onclick: async () => {
-          if (!d.text.trim()) { flash('내용을 적어주세요'); return; }
-          const { data, error } = await api.addNote(c.owner_id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
-          if (error) { flash('저장 실패', error.message); return; }
-          c.notes.push(data);
-          ui.cnOpen = false; ui.cnDraft = null; flash('특이사항이 저장되었어요', '시터의 해당 인증 화면에 참고 사항으로 보입니다.');
-          rerender();
-        } }),
-      ]),
-    ]);
-  })() : null;
+  const noteSheet = careNoteSheet(c, ui, reload, rerender, cur);
 
   return {
     title: c.sent_at ? '일정·특이사항' : '돌봄 일정',
@@ -381,6 +394,52 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
         await reload(); go(installSeen() ? 'home' : 'install');
       } })],
     hint: '보호자 화면입니다. 찍을 대상을 보호자가 정합니다.',
+  };
+}
+
+/* ── F2 아이 프로필 — 아이 정보와 저장된 특이사항 ── */
+export function ownerPetProfile(c, ui, go, reload, rerender) {
+  const multi = c.pets.length > 1;
+  const nameOf = id => (c.pets.find(p => p.id === id) || {}).name || '';
+
+  return {
+    title: '아이 프로필',
+    back: () => go('home'),
+    overlay: petEditSheet(c, ui, reload, rerender) || careNoteSheet(c, ui, reload, rerender, null),
+    body: [
+      card([
+        el('div', { class: 'h', text: '돌보는 아이' }),
+        el('div', { class: 'kvlist' }, c.pets.map((pt, i) =>
+          el('button', { class: 'kvrow', onclick: () => { ui.petIdx = i; ui.petDraft = null; rerender(); } }, [
+            el('div', { class: 'lrmain' }, [
+              el('div', { class: 'lrtitle' }, [el('span', { text: pt.name })]),
+              el('div', { class: 'sub', text: [pt.age, pt.extra].filter(Boolean).join(' · ') || '정보 없음' }),
+            ]),
+            el('span', { class: 'kvval', text: '수정' }),
+            el('span', { class: 'chev', text: '›' }),
+          ]))),
+        el('div', { class: 'sub', text: '내 프로필에 저장된 아이입니다. 다음 돌봄에도 그대로 쓰여요.' }),
+      ]),
+
+      el('div', { class: 'sect', text: '저장된 특이사항' }),
+      el('div', { class: 'sectsub', text: '여기 저장해두면 다음 돌봄 일정을 만들 때 그대로 불러와집니다. 시터가 바뀌어도 다시 쓸 필요가 없어요.' }),
+      card([
+        c.notes.length ? el('div', { class: 'notelist' }, c.notes.flatMap((n, i) => [
+          el('span', { class: 'k' + (i ? ' sep' : ''),
+            text: kindName(n.kind) + (multi && n.pet_id ? ` · ${nameOf(n.pet_id)}` : '') }),
+          el('span', { class: 'v' + (i ? ' sep' : '') }, [
+            el('span', { class: 'vtx', text: n.text }),
+            el('button', { class: 'ntrash', 'aria-label': '삭제', text: '✕', onclick: async () => {
+              c.notes.splice(c.notes.indexOf(n), 1); rerender();
+              try { await api.delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
+            } }),
+          ]),
+        ])) : el('div', { class: 'sub', text: '아직 저장된 특이사항이 없습니다.' }),
+        el('button', { class: 'add', text: '＋ 특이사항 추가',
+          onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
+      ]),
+    ],
+    hint: '여기서 고치면 돌봄 일정과 시터 화면에 바로 반영됩니다.',
   };
 }
 
@@ -616,7 +675,10 @@ export function ownerHome(c, go, ui, rerender, bell) {
         ]) : null,
       ]) : null,
 
-      el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),
+      el('div', { class: 'hgrid' }, [
+        el('button', { class: 'add', text: '아이 프로필', onclick: () => go('petProfile') }),
+        el('button', { class: 'add', text: '일정·특이사항', onclick: () => go('schedule') }),
+      ]),
       installSeen() ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') }) : null,
     ],
     hint: '사진과 시각은 시터가 올린 그대로입니다.',

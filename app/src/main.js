@@ -7,7 +7,7 @@ import { loginScreen } from './ui/screens/login.js';
 import { profileScreen } from './ui/screens/profile.js';
 import { sitterHomeScreen } from './ui/screens/sitterHome.js';
 import { loadContract } from './data/owner.js';
-import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen, freshProofs } from './ui/screens/owner.js';
+import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, ownerPetProfile, installSeen, markInstallSeen, freshProofs } from './ui/screens/owner.js';
 import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
 import { bellButton, bellScreen } from './ui/screens/bell.js';
 import { diaryWriteScreen, booksScreen } from './ui/screens/diary.js';
@@ -200,6 +200,7 @@ function renderOwner() {
   if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
+  if (screen === 'petProfile') return paint(ownerPetProfile(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'sitterProfile') {
     const sp = owner.pub || c.sitters || {};
     return paint(sitterProfileScreen(sp, sp.stats, () => go('home')));
