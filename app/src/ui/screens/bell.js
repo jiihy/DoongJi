@@ -15,7 +15,9 @@ export const bellButton = (count, onClick) => el('button', { class: 'bell', oncl
   count ? el('span', { class: 'bbadge', text: count > 9 ? '9+' : String(count) }) : null,
 ]);
 
-export function bellScreen(events, back, title, empty) {
+export function bellScreen(events, back, title, empty, opts = {}) {
+  const label = opts.label || (() => null);
+  const onPick = opts.onPick || null;
   const unread = events.filter(e => !e.read_at);
   return {
     title: title || '알림',
@@ -27,15 +29,22 @@ export function bellScreen(events, back, title, empty) {
       ]) : null,
       card([
         el('div', { class: 'h', text: '알림' }),
-        events.length ? el('div', { class: 'rows' }, events.map(e => el('div', { class: 'listrow' }, [
-          el('div', { class: 'lrmain' }, [
-            el('div', { class: 'lrtitle' }, [
-              el('span', { text: e.text }),
-              !e.read_at ? el('span', { class: 'badge', text: 'NEW' }) : null,
+        events.length ? el('div', { class: 'rows' }, events.map(e => {
+          const who = label(e);
+          const kids = [
+            el('div', { class: 'lrmain' }, [
+              el('div', { class: 'lrtitle' }, [
+                el('span', { text: e.text }),
+                !e.read_at ? el('span', { class: 'badge', text: 'NEW' }) : null,
+              ]),
+              el('div', { class: 'sub', text: [who, when(e.at)].filter(Boolean).join(' · ') }),
             ]),
-            el('div', { class: 'sub', text: when(e.at) }),
-          ]),
-        ]))) : el('div', { class: 'sub', text: empty || '아직 알림이 없어요.' }),
+            onPick ? el('span', { class: 'chev', text: '›' }) : null,
+          ];
+          return onPick
+            ? el('button', { class: 'listrow', onclick: () => onPick(e) }, kids)
+            : el('div', { class: 'listrow' }, kids);
+        })) : el('div', { class: 'sub', text: empty || '아직 알림이 없어요.' }),
       ]),
     ],
     hint: '알림은 서버가 남깁니다 — 앱을 안 켜둬도 쌓입니다.',

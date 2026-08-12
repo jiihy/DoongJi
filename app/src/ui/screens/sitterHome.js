@@ -59,7 +59,8 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
         el('div', { class: 'sub', text: '의뢰가 오면 아이 정보·기간·픽드롭을 미리 채우고 링크를 보냅니다. 보호자는 확인만 하면 돼요.' }),
       ]),
 
-      el('button', { class: 'add', onclick: () => go('newContract'), text: '＋ 돌봄 준비하기' }),
+      el('button', { class: 'add', text: '＋ 돌봄 준비하기',
+        onclick: () => { ctx.fromInquiry = null; ctx.form = null; go('newContract'); } }),
     ],
     hint: '보호자가 일정을 보내면 「기록하기」가 열립니다.',
   };

@@ -87,8 +87,17 @@ function render() {
   if (!ctx.sitter) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
 
   if (ctx.screen === 'bell') {
+    const byId = Object.fromEntries((ctx.contracts || []).map(c => [c.id,
+      `${c.owners?.nickname || '보호자'} · ${(c.contract_pets || []).map(cp => cp.pets?.name).filter(Boolean).join('·')}`]));
     return paint(bellScreen(ctx.events || [], () => go('home'), '보호자 알림',
-      '보호자가 확인·전달·리액션을 하면 여기에 쌓입니다.'));
+      '보호자가 확인·전달·리액션을 하면 여기에 쌓입니다.', {
+        label: e => byId[e.contract_id] || null,
+        onPick: e => {
+          const c = (ctx.contracts || []).find(x => x.id === e.contract_id);
+          if (!c) return;
+          go(c.sent_at ? 'care' : 'contract', c.id);
+        },
+      }));
   }
   if (ctx.screen === 'profile') return paint(profileScreen(ctx, rerender, go));
   if (ctx.screen === 'newContract') return paint(newContractScreen(ctx, go, rerender));
@@ -215,7 +224,10 @@ function renderOwner() {
     return paint(sitterProfileScreen(sp, sp.stats, () => go('home')));
   }
   if (screen === 'live') return paint(bellScreen(owner.events, () => go('home'), '지금 오는 인증',
-    '시터가 인증을 보내면 여기에 먼저 뜹니다.'));
+    '시터가 인증을 보내면 여기에 먼저 뜹니다.', {
+      label: () => `${(c.sitters || {}).name} 시터 · ${c.pets.map(p => p.name).join('·')}`,
+      onPick: () => go('home'),
+    }));
   const unseen = freshProofs(c);
   const unreadEv = owner.events.filter(e => !e.read_at).length;
   return paint(ownerHome(c, go, owner.ui, rr, bellButton(Math.max(unseen.length, unreadEv), () => go('live'))));

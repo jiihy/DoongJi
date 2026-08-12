@@ -1,5 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import { createContract, listClients } from '../../data/contracts.js';
+import { markInquiry } from '../../data/sitter.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const plus = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };
@@ -11,9 +12,10 @@ const HO_START = { owner: '보호자가 데려다줘요', sitter: '펫시터가 
 const HO_END = { owner: '보호자가 데리러 와요', sitter: '펫시터가 데려다줘요' };
 
 export function newContractScreen(ctx, go, rerender) {
+  const q = ctx.fromInquiry || null;          // 받은 의뢰에서 넘어온 경우
   const f = ctx.form = ctx.form || {
-    nickname: '', ownerId: null, petIds: null,
-    pets: [{ name: '', age: '', extra: '' }],
+    nickname: q ? `${q.contact} 보호자님` : '', ownerId: null, petIds: null,
+    pets: [{ name: '', age: '', extra: q ? (q.msg || '') : '' }],
     start: today(), end: plus(2),
     startTime: '14:00', startBy: 'owner', endTime: '18:00', endBy: 'owner',
     items: [
@@ -40,6 +42,19 @@ export function newContractScreen(ctx, go, rerender) {
     })));
 
   const body = [];
+
+  // 의뢰 내용은 그대로 보여준다 — 시터가 옮겨 적으며 날짜만 정하면 된다
+  if (q) body.push(card([
+    el('div', { class: 'h', text: '받은 의뢰에서 가져왔어요' }),
+    el('div', { class: 'notelist' }, [
+      el('span', { class: 'k', text: '연락처' }), el('span', { class: 'v', text: q.contact }),
+      ...(q.when_text ? [el('span', { class: 'k sep', text: '원하는 시기' }),
+                        el('span', { class: 'v sep', text: q.when_text })] : []),
+      ...(q.msg ? [el('span', { class: 'k sep', text: '한 줄 소개' }),
+                   el('span', { class: 'v sep', text: q.msg })] : []),
+    ]),
+    el('div', { class: 'sub', text: '아이 이름과 기간만 채우면 됩니다. 링크를 만들면 이 의뢰는 처리됨으로 바뀝니다.' }),
+  ]));
 
   if ((ctx.clients || []).length) body.push(card([
     el('div', { class: 'h', text: '다시 맡기는 고객인가요?' }),
@@ -153,7 +168,7 @@ export function newContractScreen(ctx, go, rerender) {
 
   return {
     title: '돌봄 준비하기',
-    back: () => go('home'),
+    back: () => { ctx.fromInquiry = null; go(q ? 'profile' : 'home'); },
     body,
     foot: [(sync(), cta.addEventListener('click', async () => {
       if (!ready() || ctx.busy) return;
@@ -162,7 +177,8 @@ export function newContractScreen(ctx, go, rerender) {
         const c = await createContract(ctx.sitter.id, {
           ...f, nickname: (f.nickname || '').trim() || `${f.pets.map(p => p.name).filter(Boolean).join('·')} 보호자`,
         });
-        ctx.busy = false; ctx.form = null; ctx.lastToken = c.invite_token;
+        if (q) { try { await markInquiry(q.id, true); } catch (e) {} }
+        ctx.busy = false; ctx.form = null; ctx.fromInquiry = null; ctx.lastToken = c.invite_token;
         flash('초대 링크가 만들어졌어요', '보호자에게 링크를 보내세요.');
         go('home');
       } catch (e) { ctx.busy = false; sync(); flash('저장 실패', e.message); }
