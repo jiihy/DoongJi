@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         + ' — ' + (v.sent ? '사진 인증이 도착하면 여기에 쌓입니다.'
                 : v.confirmed ? '돌봄 일정을 알려주시면 시작합니다.'
                 : '가입 없이 열어서 확인만 하시면 됩니다.');
-      if (v.photo_url) image = v.photo_url;
+      image = `${origin}/og-invite.jpg?v=1`;
     } else {
       title = '열 수 없는 초대입니다 · 둥지';
       desc = '링크를 다시 확인해주세요.';
