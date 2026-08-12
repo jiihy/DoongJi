@@ -63,7 +63,7 @@ export function ownerInstall(state, go, rerender) {
   const step1 = () => sheet([
     el('div', { class: 'grip' }),
     el('div', { class: 'a2head' }, [
-      el('div', { class: 'appicon' }, el('img', { class: 'appimg', src: '/app-icon-180.png?v=4', alt: '' })),
+      el('div', { class: 'appicon' }, el('img', { class: 'appimg', src: '/app-icon-180.png?v=5', alt: '' })),
       el('div', { class: 'pcol' }, [
         el('div', { class: 'h', text: '홈 화면에 앱으로 추가' }),
         el('div', { class: 'sub', text: '설치하면 앱처럼 전체화면으로 열려요.' }),
