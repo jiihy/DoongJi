@@ -8,7 +8,9 @@
 ## 1. 지금 어디까지 왔나
 
 - **Phase 0 완료** — `prototype/index.html` (localStorage `petcare.proto.v3`, 22화면, 3역할)
-- **Phase 1 진행 예정** — Supabase 이식. **완료 조건은 `docs/11-PRD-v3.md` §9 체크리스트**
+- **Phase 1 기술 항목 완료** (2026-08-12) — Supabase 이식. `app/`(Vite) → https://doongji-kappa.vercel.app
+  M1~M7 + P0 기능 20개 이식, RLS 침투 3케이스 확인. **남은 완료 조건은 현장 검증**
+  (실제 알바 1건 투입 · 보호자 인터뷰 1명) — `docs/11-PRD-v3.md` §9
 - 정본 순서: **`docs/11-PRD-v3.md` > `docs/09-방향전환.md` > 나머지**
   (`07-PRD`, `02~06`은 폐기·이력 보관용. 충돌 시 위가 이긴다)
 - 유일한 1차 근거: `docs/08-사용자-인터뷰.md` — **여기와 충돌하는 추론은 버린다**
