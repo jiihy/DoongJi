@@ -1,5 +1,5 @@
 import { el, card, field, flash, copyText } from '../el.js';
-import { sb } from '../../lib/supabase.js';
+import { sb, shareOrigin } from '../../lib/supabase.js';
 import { saveSitter, uploadAvatar, listInquiries, markInquiry } from '../../data/sitter.js';
 
 export function profileScreen(ctx, rerender, go) {
@@ -9,7 +9,7 @@ export function profileScreen(ctx, rerender, go) {
     type: 'text', placeholder: ph, value: s[key] || '',
     oninput: e => { patch[key] = e.target.value; },
   });
-  const publicUrl = `${location.origin}/s/${s.invite_slug}`;
+  const publicUrl = `${shareOrigin()}/s/${s.invite_slug}`;
   const inq = ctx.inquiries || [];
 
   return {

@@ -1,4 +1,4 @@
-import { sb } from '../lib/supabase.js';
+import { sb, shareOrigin } from '../lib/supabase.js';
 
 // 고객 장부 — 시터가 만든 owners(+pets). 보호자는 계속 무계정이다
 export async function listClients(sitterId) {
@@ -70,4 +70,4 @@ export async function createContract(sitterId, form) {
   return contract;
 }
 
-export const inviteUrlOf = token => `${location.origin}/?t=${token}`;
+export const inviteUrlOf = token => `${shareOrigin()}/?t=${token}`;

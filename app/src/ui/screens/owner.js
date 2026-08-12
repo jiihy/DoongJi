@@ -1,6 +1,7 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
 import { copyText } from '../el.js';
+import { shareOrigin } from '../../lib/supabase.js';
 import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
@@ -668,9 +669,9 @@ export function ownerHome(c, go, ui, rerender, bell) {
         c.record_public ? el('div', { class: 'okbox' }, [
           el('div', { class: 'sub', text: '공개 링크' }),
           el('input', { class: 'linkinput', name: 'reclink', readonly: 'readonly',
-            value: `${location.origin}/r/${c.record_token}`, onclick: e => e.target.select() }),
+            value: `${shareOrigin()}/r/${c.record_token}`, onclick: e => e.target.select() }),
           el('button', { class: 'ctasm', text: '링크 복사', onclick: async () => {
-            flash(await copyText(`${location.origin}/r/${c.record_token}`) ? '복사했어요' : '길게 눌러 복사해주세요');
+            flash(await copyText(`${shareOrigin()}/r/${c.record_token}`) ? '복사했어요' : '길게 눌러 복사해주세요');
           } }),
         ]) : null,
       ]) : null,
