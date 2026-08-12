@@ -6,6 +6,8 @@ import { listClients, listContracts } from './data/contracts.js';
 import { loginScreen } from './ui/screens/login.js';
 import { profileScreen } from './ui/screens/profile.js';
 import { sitterHomeScreen } from './ui/screens/sitterHome.js';
+import { loadContract } from './data/owner.js';
+import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen } from './ui/screens/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 
 const ctx = { sitter: null, session: null, screen: 'home', clients: [], contracts: [] };
@@ -23,13 +25,7 @@ async function refresh() {
 }
 
 function render() {
-  if (inviteToken) {
-    paint({ title: '초대장', body: [card([
-      el('div', { class: 'h', text: '보호자 초대 링크로 들어오셨어요' }),
-      el('div', { class: 'sub', text: `토큰 ${inviteToken.slice(0, 8)}… 확인됨. 보호자 화면은 다음 단계(M3)에서 열립니다.` }),
-    ])], hint: 'M3 — 보호자 무계정 진입' });
-    return;
-  }
+  if (inviteToken) return renderOwner();
   if (!ctx.session) return paint(loginScreen(uiState, rerender));
   if (!ctx.sitter) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
 
@@ -49,7 +45,44 @@ sb.auth.onAuthStateChange(async (event, session) => {
   render();
 });
 
+/* ── 보호자(무계정) 경로 ── */
+const owner = { c: null, screen: null, ui: {}, err: null };
+const ownerGo = s => {
+  if (s === 'home') markInstallSeen();   // 설치 안내를 지나쳤으면 다시 막지 않는다
+  if (s === 'install') owner.ui.step = 1;
+  owner.screen = s; renderOwner();
+};
+const ownerReload = async () => { try { owner.c = await loadContract(); } catch (e) { owner.err = e.message; } };
+
+function ownerDefault(c) {
+  if (!c.confirmed_at) return 'welcome';
+  if (!c.sent_at) return 'schedule';
+  if (!installSeen()) return 'install';
+  return 'home';
+}
+
+function renderOwner() {
+  if (owner.err) return paint({ title: '열 수 없어요', body: [card([
+    el('div', { class: 'h', text: '초대 링크를 확인해주세요' }),
+    el('div', { class: 'sub', text: owner.err }),
+  ])] });
+  if (!owner.c) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+
+  const c = owner.c;
+  const screen = owner.screen || ownerDefault(c);
+  const go = ownerGo;
+  const reload = async () => { await ownerReload(); };
+  const rr = () => renderOwner();
+
+  if (screen === 'welcome')  return paint(ownerWelcome(c, go));
+  if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
+  if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
+  if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
+  return paint(ownerHome(c, go));
+}
+
 (async () => {
+  if (inviteToken) { await ownerReload(); renderOwner(); return; }
   const { data: { session } } = await sb.auth.getSession();
   ctx.session = session;
   if (session) { ctx.sitter = await ensureSitter(); await refresh(); }

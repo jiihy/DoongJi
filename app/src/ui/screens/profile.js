@@ -1,6 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import { sb } from '../../lib/supabase.js';
-import { saveSitter } from '../../data/sitter.js';
+import { saveSitter, uploadAvatar } from '../../data/sitter.js';
 
 export function profileScreen(ctx, rerender, go) {
   const s = ctx.sitter;
@@ -17,8 +17,29 @@ export function profileScreen(ctx, rerender, go) {
     right: { label: '로그아웃', on: async () => { await sb.auth.signOut(); location.reload(); } },
     body: [
       card([
-        el('div', { class: 'h', text: s.name }),
-        el('div', { class: 'sub', text: [s.type, s.region].filter(Boolean).join(' · ') || '정보를 채워주세요' }),
+        el('div', { class: 'profhead' }, [
+          el('label', { class: 'avaedit' }, [
+            el('div', { class: 'avatar' + (s.photo_url ? ' hasimg' : ''), style: s.photo_url ? `background-image:url(${s.photo_url})` : null }),
+            el('span', { class: 'avacam', text: '＋' }),
+            el('input', { type: 'file', accept: 'image/*', 'aria-label': '프로필 사진 변경',
+              onchange: async e => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                try {
+                  flash('사진 올리는 중…');
+                  const url = await uploadAvatar(file);
+                  ctx.sitter = await saveSitter(s.id, { photo_url: url });
+                  flash('사진을 바꿨어요');
+                  rerender();
+                } catch (err) { flash('사진 업로드 실패', err.message); }
+              } }),
+          ]),
+          el('div', { class: 'pcol' }, [
+            el('div', { class: 'h', text: s.name }),
+            el('div', { class: 'sub', text: [s.type, s.region].filter(Boolean).join(' · ') || '정보를 채워주세요' }),
+            el('div', { class: 'sub', text: s.photo_url ? '사진을 누르면 바꿀 수 있어요' : '보호자가 초대장에서 보는 사진이에요' }),
+          ]),
+        ]),
       ]),
       card([
         el('div', { class: 'h', text: '보호자에게 보이는 정보' }),

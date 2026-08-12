@@ -9,7 +9,7 @@ export const inviteToken = new URLSearchParams(location.search).get('t') || null
 
 export const sb = createClient(url, key, {
   auth: { persistSession: true, autoRefreshToken: true },
-  global: { headers: inviteToken ? { 'request.invite_token': inviteToken } : {} },
+  global: { headers: inviteToken ? { 'x-invite-token': inviteToken } : {} },
 });
 
 export async function health() {

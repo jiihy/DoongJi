@@ -66,6 +66,7 @@ export function paint(view) {
     el('div', { class: 'body' }, (view.body || []).filter(Boolean)),
     (view.foot || []).filter(Boolean).length ? el('div', { class: 'foot' }, view.foot.filter(Boolean)) : null,
     view.hint ? el('div', { class: 'hint', text: view.hint }) : null,
+    view.overlay || null,          // 하단 시트 — 화면 위에 겹쳐 그린다
   ].filter(Boolean));
 
   if (keep) {

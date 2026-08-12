@@ -21,3 +21,15 @@ export async function saveSitter(id, patch) {
   if (error) throw error;
   return data;
 }
+
+// 프로필 사진 — avatars 버킷의 {auth_uid}/ 폴더에만 쓸 수 있다 (Storage RLS)
+export async function uploadAvatar(file) {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) throw new Error('로그인이 필요해요');
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${user.id}/avatar.${ext}`;
+  const { error } = await sb.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = sb.storage.from('avatars').getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;   // 같은 경로 덮어쓰기 — 캐시 무력화
+}

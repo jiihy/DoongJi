@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm --prefix app ci || npm --prefix app install",
+  "buildCommand": "npm --prefix app run build",
+  "outputDirectory": "app/dist",
+  "build": {
+    "env": {
+      "VITE_SUPABASE_URL": "https://maipblnldvmvttfjbmsc.supabase.co",
+      "VITE_SUPABASE_KEY": "sb_publishable_W_2Ry1BgRQFu9QRswvi3iA_jMQ1Dzvy"
+    }
+  }
+}
