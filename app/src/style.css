@@ -148,3 +148,25 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .ptext{font-size:13px;line-height:1.55;color:var(--ink2)}
 .lightbox{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:16px}
 .lightbox img{max-width:100%;max-height:100%;object-fit:contain}
+/* 먼저 챙긴 순간 — 앨범/앱 촬영 표기와 리액션 */
+.shot .tag{position:absolute;left:6px;top:6px;padding:3px 7px;border-radius:1000px;
+  font-size:10px;font-weight:700;color:#fff;background:rgba(23,23,25,.62)}
+.thumb .tag{position:absolute;left:6px;top:6px;padding:3px 7px;border-radius:1000px;
+  font-size:10px;font-weight:700;color:#fff;background:rgba(23,23,25,.62)}
+.shot .rm{position:absolute;right:4px;top:4px;width:22px;height:22px;border:none;border-radius:1000px;
+  background:rgba(23,23,25,.62);color:#fff;font-size:12px;line-height:1}
+.react{display:flex;gap:6px;flex-wrap:wrap}
+.react button{flex:1;min-width:96px;height:38px;border-radius:1000px;border:1px solid var(--line);
+  background:#fff;color:var(--ink2);font-size:13px;font-weight:600}
+.react button[aria-pressed="true"]{background:var(--tint);border-color:var(--primary);color:var(--primary-ink)}
+.thxdone{font-size:12px;font-weight:600;color:var(--primary-ink)}
+/* 펫시터 프로필 — 숫자가 주인공 */
+.herolab{font-size:13px;font-weight:600;color:var(--ink4)}
+.herobig{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.herosub{font-size:14px;font-weight:700;color:var(--ink3)}
+.veri{align-self:flex-start;font-size:11px;font-weight:700;padding:5px 10px;border-radius:1000px;
+  background:var(--tint);color:var(--primary-ink)}
+.minor{display:flex;flex-direction:column}
+.minorrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px}
+.minorrow+.minorrow{border-top:1px solid var(--line)}
+.minorv{font-weight:600;color:var(--ink2);text-align:right}

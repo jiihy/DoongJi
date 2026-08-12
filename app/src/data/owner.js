@@ -9,12 +9,19 @@ export async function loadContract() {
     .select(`id, start_date, end_date, confirmed_at, sent_at, finished_at,
              handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
              owner_place_addr, owner_place_detail, owner_id,
-             sitters(name, type, region, bio, addr, addr_detail, photo_url),
+             sitters(id, name, type, region, bio, addr, addr_detail, photo_url),
              owners(nickname),
              contract_pets(pets(id, name, age, extra))`)
     .eq('invite_token', inviteToken).single();
   if (error) throw error;
   return hydrate(data);          // 일정·특이사항·인증을 시터 쪽과 같은 모양으로 붙인다
+}
+
+// 시터 프로필의 숫자 — 개별 행이 아니라 집계만 서버가 내준다 (마이그레이션 14)
+export async function sitterStats(sitterId) {
+  const { data, error } = await sb.rpc('sitter_stats', { p_sitter: sitterId });
+  if (error) throw error;
+  return data;
 }
 
 export const savePet   = async (id, patch) => { await sb.from('pets').update(patch).eq('id', id).throwOnError(); };

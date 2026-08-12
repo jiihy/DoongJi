@@ -4,7 +4,7 @@ import { sb } from '../lib/supabase.js';
 const SEL = `id, start_date, end_date, confirmed_at, sent_at, finished_at,
   handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
   owner_place_addr, owner_place_detail, owner_id,
-  sitters(name, type, region, bio, addr, addr_detail, photo_url),
+  sitters(id, name, type, region, bio, addr, addr_detail, photo_url),
   owners(nickname),
   contract_pets(pets(id, name, age, extra))`;
 
@@ -28,12 +28,16 @@ export async function hydrate(contract) {
       .in('schedule_item_id', ids);
     proofs = data || [];
   }
+  const { data: extras } = await sb.from('extras')
+    .select('*, extra_photos(*)').eq('contract_id', contract.id).order('at');
+
   const byItem = Object.fromEntries(proofs.map(p => [p.schedule_item_id, p]));
   return {
     ...contract,
     pets: (contract.contract_pets || []).map(cp => cp.pets),
     items: (items || []).map(i => ({ ...i, proof: byItem[i.id] || null })),
     notes: notes || [],
+    extras: extras || [],
   };
 }
 
@@ -46,6 +50,36 @@ export async function uploadPhoto(contractId, itemId, slot, file) {
   return sb.storage.from('proofs').getPublicUrl(path).data.publicUrl;
 }
 const stampKey = () => new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+
+/* ── 먼저 챙긴 순간 — 일정 밖의 기록. 약속 회계에는 들어가지 않는다 ── */
+// 앨범에서 고른 사진은 찍힌 시각을 보증할 수 없다 → is_album으로 구분해 화면에 그대로 표기한다
+export async function addExtra(contractId, text, photos) {
+  const { data: extra, error } = await sb.from('extras')
+    .insert({ contract_id: contractId, at: new Date().toISOString(), text: text || null })
+    .select().single();
+  if (error) throw error;
+  if (photos.length) {
+    const { error: e2 } = await sb.from('extra_photos').insert(photos.map(ph => ({
+      extra_id: extra.id, url: ph.url, is_album: !!ph.album, stamp: ph.stamp || null,
+    })));
+    if (e2) throw e2;
+  }
+  return extra;
+}
+export const delExtra = async id => { await sb.from('extras').delete().eq('id', id).throwOnError(); };
+export const thankExtra = async (id, reaction) => {
+  await sb.from('extras').update({ thanks_at: new Date().toISOString(), thanks_reaction: reaction })
+    .eq('id', id).throwOnError();
+};
+
+export async function uploadExtraPhoto(contractId, file, album) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${contractId}/${stampKey()}-${Math.floor(performance.now())}.${ext}`;
+  const { error } = await sb.storage.from('extras').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  return { url: sb.storage.from('extras').getPublicUrl(path).data.publicUrl,
+           album, stamp: album ? null : new Date().toISOString() };
+}
 
 export async function submitProof(itemId, row) {
   const { data, error } = await sb.from('proofs')

@@ -1,5 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
+import { thankExtra } from '../../data/care.js';
 
 const KINDS = { meal: '밥', walk: '산책', poop: '배변', med: '약', play: '놀이', sleep: '취침' };
 const FUZZ = { 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤', '-1': '아무때나' };
@@ -365,6 +366,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
 
 /* ── 5. 돌봄 일지 — 시터가 올린 인증이 쌓인다 ── */
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+const REACTIONS = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
 
 export function ownerHome(c, go, ui, rerender) {
   const s = c.sitters || {};
@@ -377,34 +379,10 @@ export function ownerHome(c, go, ui, rerender) {
     at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
   ]);
 
-  // 보호자가 가는 계약일 때만 시터 주소를 보여준다 (확인 화면과 같은 규칙)
-  const showSitterAddr = (c.handoff_start_by === 'owner' || c.handoff_end_by === 'owner') && s.addr;
-  const sitterSheet = () => el('div', { class: 'sheetback',
-    onclick: e => { if (e.target.classList.contains('sheetback')) { ui.sitterOpen = false; rerender(); } } }, [
-    el('div', { class: 'sheet' }, [
-      el('div', { class: 'grip' }),
-      el('div', { class: 'profhead' }, [
-        el('div', { class: 'avatar' + (s.photo_url ? ' hasimg' : ''), style: s.photo_url ? `background-image:url(${s.photo_url})` : null }),
-        el('div', { class: 'pcol' }, [
-          el('div', { class: 'h', text: `${s.name} 시터` }),
-          el('div', { class: 'sub', text: [s.type, s.region].filter(Boolean).join(' · ') || '정보 없음' }),
-        ]),
-      ]),
-      s.bio ? el('div', { class: 'lead', text: s.bio }) : null,
-      showSitterAddr ? el('div', { class: 'hogrp' }, [
-        el('label', { text: '약속 장소' }),
-        el('div', { class: 'mapbox' }, [el('span', { text: '📍' }),
-          el('span', { class: 'maptx', text: s.addr + (s.addr_detail ? ` · ${s.addr_detail}` : '') })]),
-        el('button', { class: 'ctasm', text: '지도에서 보기', onclick: () => window.open(mapUrl(s.addr), '_blank') }),
-      ]) : null,
-      el('button', { class: 'cta', text: '닫기', onclick: () => { ui.sitterOpen = false; rerender(); } }),
-    ]),
-  ]);
-
   const overlay = ui.lightbox
     ? el('div', { class: 'lightbox', onclick: () => { ui.lightbox = null; rerender(); } },
         el('img', { src: ui.lightbox, alt: '' }))
-    : (ui.sitterOpen ? sitterSheet() : null);
+    : null;
 
   return {
     title: '돌봄 일지',
@@ -416,8 +394,7 @@ export function ownerHome(c, go, ui, rerender) {
             el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
             el('div', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
           ]),
-          el('button', { class: 'ctasm', text: `${s.name} 시터`,
-            onclick: () => { ui.sitterOpen = true; rerender(); } }),
+          el('button', { class: 'ctasm', text: `${s.name} 시터`, onclick: () => go('sitterProfile') }),
         ]),
       ]),
 
@@ -442,6 +419,31 @@ export function ownerHome(c, go, ui, rerender) {
           it.proof && it.proof.text ? el('div', { class: 'ptext', text: it.proof.text }) : null,
         ]))),
       ]),
+
+      (c.extras || []).length ? card([
+        el('div', { class: 'h', text: '먼저 챙긴 순간' }),
+        el('div', { class: 'sub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
+        el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
+          el('div', { class: 'phead' }, [
+            el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
+            el('span', { class: 'sub', text: clock(x.at) }),
+          ]),
+          (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
+            el('button', { class: 'thumb', onclick: () => { ui.lightbox = ph.url; rerender(); } }, [
+              el('img', { src: ph.url, alt: '' }),
+              el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
+            ]))) : null,
+          x.text ? el('div', { class: 'ptext', text: x.text }) : null,
+          el('div', { class: 'react' }, Object.entries(REACTIONS).map(([label, emoji]) =>
+            el('button', { 'aria-pressed': (x.thanks_reaction || '') === label, text: `${emoji} ${label}`,
+              onclick: async () => {
+                x.thanks_reaction = label; x.thanks_at = new Date().toISOString();
+                rerender();
+                try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
+              } }))),
+          x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
+        ]))),
+      ]) : null,
 
       el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),
       installSeen() ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') }) : null,

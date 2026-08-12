@@ -8,6 +8,8 @@ import { profileScreen } from './ui/screens/profile.js';
 import { sitterHomeScreen } from './ui/screens/sitterHome.js';
 import { loadContract } from './data/owner.js';
 import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen } from './ui/screens/owner.js';
+import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
+import { sitterStats } from './data/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 import { loadCare, hydrate } from './data/care.js';
 import { sitterCareScreen } from './ui/screens/sitterCare.js';
@@ -70,12 +72,17 @@ function watchCare() {
       async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'care_notes' },
       async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'extras', filter: `contract_id=eq.${ctx.careId}` },
+      async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
     .subscribe();
 }
 
 /* ── 보호자(무계정) 경로 ── */
 const owner = { c: null, screen: null, ui: {}, err: null };
-const ownerGo = s => {
+const ownerGo = async s => {
+  if (s === 'sitterProfile' && !owner.stats && owner.c?.sitters?.id) {
+    try { owner.stats = await sitterStats(owner.c.sitters.id); } catch (e) { owner.stats = {}; }
+  }
   if (s === 'home') markInstallSeen();   // 설치 안내를 지나쳤으면 다시 막지 않는다
   if (s === 'install') owner.ui.step = 1;
   owner.screen = s; renderOwner();
@@ -87,6 +94,8 @@ function watchOwner() {
   if (ownerChannel || !owner.c) return;
   ownerChannel = sb.channel(`owner:${owner.c.id}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'proofs' },
+      async () => { await ownerReload(); renderOwner(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'extras', filter: `contract_id=eq.${owner.c.id}` },
       async () => { await ownerReload(); renderOwner(); })
     .subscribe();
 }
@@ -115,6 +124,7 @@ function renderOwner() {
   if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
+  if (screen === 'sitterProfile') return paint(sitterProfileScreen(c.sitters || {}, owner.stats, () => go('home')));
   return paint(ownerHome(c, go, owner.ui, rr));
 }
 

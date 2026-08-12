@@ -14,9 +14,9 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
   const done = c.items.filter(i => i.proof).length;
 
   const notesFor = kind => c.notes.filter(n =>
-    (n.kind === 'all' || n.kind === kind) && (!multi || !n.pet_id || n.pet_id === cur));
+    n.kind === kind && (!multi || !n.pet_id || n.pet_id === cur));
 
-  /* 기록 시트 */
+  /* 시트 — 항목 기록 / 먼저 챙긴 순간 */
   let overlay = null;
   const openItem = c.items.find(i => i.id === ui.proofFor);
   if (openItem) {
@@ -88,6 +88,57 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
     ]);
   }
 
+  /* 먼저 챙긴 순간 시트 */
+  if (ui.extraOpen) {
+    const d = ui.extraDraft = ui.extraDraft || { photos: [], text: '', busy: false };
+    const closeX = () => { ui.extraOpen = false; ui.extraDraft = null; rerender(); };
+    const pick = (album) => el('label', { class: 'shotadd' }, [
+      el('span', { text: album ? '🖼 앨범에서 선택' : '📷 지금 촬영' }),
+      el('input', { type: 'file', accept: 'image/*', multiple: album ? 'multiple' : null,
+        capture: album ? null : 'environment',
+        onchange: async e => {
+          const files = [...(e.target.files || [])];
+          if (!files.length) return;
+          d.busy = true; rerender();
+          try {
+            for (const f of files) d.photos.push(await api.uploadExtraPhoto(c.id, f, album));
+          } catch (err) { flash('사진 업로드 실패', err.message); }
+          d.busy = false; rerender();
+        } }),
+    ]);
+
+    overlay = el('div', { class: 'sheetback',
+      onclick: e => { if (e.target.classList.contains('sheetback') && !d.busy) closeX(); } }, [
+      el('div', { class: 'sheet' }, [
+        el('div', { class: 'grip' }),
+        el('div', { class: 'h', text: '먼저 챙긴 순간' }),
+        el('div', { class: 'sub', text: '일정에 없어도 보여주고 싶은 순간을 남겨주세요. 약속 기록과는 따로 쌓입니다.' }),
+        d.photos.length ? el('div', { class: 'shots' }, d.photos.map((ph, i) =>
+          el('div', { class: 'shot' }, [
+            el('img', { src: ph.url, alt: '' }),
+            el('span', { class: 'tag', text: ph.album ? '앨범' : '앱 촬영' }),
+            el('button', { class: 'rm', text: '✕', 'aria-label': '삭제',
+              onclick: () => { d.photos.splice(i, 1); rerender(); } }),
+          ]))) : null,
+        el('div', { class: 'hgrid' }, [pick(false), pick(true)]),
+        el('textarea', { name: 'extra_text', placeholder: '예) 낮잠을 아주 편하게 자네요. 배 보이고 잡니다.',
+          value: d.text, oninput: e => { d.text = e.target.value; } }),
+        el('button', { class: 'cta', disabled: d.busy || (!d.photos.length && !d.text.trim()),
+          text: d.busy ? '올리는 중…' : '이 순간 보내기',
+          onclick: async () => {
+            d.busy = true; rerender();
+            try {
+              await api.addExtra(c.id, d.text.trim(), d.photos);
+              flash('전달되었어요', '보호자 화면에 바로 보입니다.');
+              ui.extraOpen = false; ui.extraDraft = null;
+              await reload();
+            } catch (err) { d.busy = false; flash('전달 실패', err.message); rerender(); }
+          } }),
+        el('button', { class: 'linkbtn center', text: '닫기', onclick: () => { if (!d.busy) closeX(); } }),
+      ]),
+    ]);
+  }
+
   return {
     title: '오늘의 돌봄',
     back: () => go('home'),
@@ -107,6 +158,16 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         el('button', { class: 'ptab', 'aria-pressed': cur === p.id, text: p.name,
           onclick: () => { ui.petTab = p.id; rerender(); } }))) : null,
 
+      (() => {
+        const common = c.notes.filter(n => n.kind === 'all' && (!multi || !n.pet_id || n.pet_id === cur));
+        return common.length ? card([
+          el('div', { class: 'h', text: '보호자가 남긴 참고 사항 · 공통' }),
+          el('div', { class: 'rows' }, common.map(n => el('div', { class: 'prow' }, [
+            el('div', { class: 'ptext', text: n.text }),
+          ]))),
+        ]) : null;
+      })(),
+
       card([
         el('div', { class: 'h', text: '오늘 해야 할 것' }),
         el('div', { class: 'sub', text: '항목을 누르면 사진과 시각이 그대로 보호자에게 갑니다.' }),
@@ -124,9 +185,33 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         ]))),
         items.length ? null : el('div', { class: 'sub', text: '보호자가 아직 일정을 보내지 않았어요.' }),
       ]),
+
+      card([
+        el('div', { class: 'h', text: '먼저 챙긴 순간' }),
+        el('div', { class: 'sub', text: '부탁받지 않았어도 보여주고 싶은 순간. 보호자의 리액션은 프로필에 쌓입니다.' }),
+        (c.extras || []).length ? el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
+          el('div', { class: 'phead' }, [
+            el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
+            el('span', { class: 'sub', text: clock(x.at) }),
+          ]),
+          (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
+            el('div', { class: 'shot' }, [
+              el('img', { src: ph.url, alt: '' }),
+              el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
+            ]))) : null,
+          x.text ? el('div', { class: 'ptext', text: x.text }) : null,
+          x.thanks_at
+            ? el('span', { class: 'thxdone', text: `${REACT_EMOJI[x.thanks_reaction] || '💙'} 보호자가 「${x.thanks_reaction || '고마워요'}」를 보냈어요` })
+            : el('button', { class: 'linkbtn', text: '지우기',
+                onclick: async () => { await api.delExtra(x.id); await reload(); } }),
+        ]))) : null,
+        el('button', { class: 'add', text: '＋ 순간 남기기',
+          onclick: () => { ui.extraOpen = true; ui.extraDraft = null; rerender(); } }),
+      ]),
     ],
     hint: '사진을 올린 시각이 그대로 남습니다. 늦어도 벌점은 없어요.',
   };
 }
 
 const FUZZTX = f => ({ 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤' }[f] || '');
+export const REACT_EMOJI = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
