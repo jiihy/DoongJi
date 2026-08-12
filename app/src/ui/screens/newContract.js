@@ -4,7 +4,7 @@ import { createContract, listClients } from '../../data/contracts.js';
 const today = () => new Date().toISOString().slice(0, 10);
 const plus = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };
 
-const KINDS = { meal: '밥', walk: '산책', poop: '배변', med: '약', play: '놀이', sleep: '취침' };
+import { KINDS } from '../../lib/kinds.js';
 const FUZZ = { 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤', '-1': '아무때나' };
 
 const HO_START = { owner: '보호자가 데려다줘요', sitter: '펫시터가 데리러 와요' };
@@ -134,7 +134,7 @@ export function newContractScreen(ctx, go, rerender) {
         it.kind = e.target.value;
         if (it.kind === 'med') it.fuzz = 0;
         rerender();
-      } }, Object.entries(KINDS).map(([k, t]) => el('option', { value: k, selected: it.kind === k, text: t }))),
+      } }, Object.entries(KINDS).map(([k, t]) => el('option', { value: k, selected: it.kind === k, text: t.name }))),
       it.fuzz === -1 ? null : el('input', { name: `it${i}_time`, type: 'time', value: it.time,
         onchange: e => { it.time = e.target.value || it.time; } }),
       el('select', { name: `it${i}_fuzz`, 'aria-label': '시간 범위',

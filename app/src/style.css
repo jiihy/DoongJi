@@ -170,3 +170,9 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .minorrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px}
 .minorrow+.minorrow{border-top:1px solid var(--line)}
 .minorv{font-weight:600;color:var(--ink2);text-align:right}
+.shoot{background:var(--bg);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600;color:var(--ink2)}
+.outmin{font-size:13px;font-weight:700;color:var(--primary-ink)}
+.addchip{border-style:dashed;color:var(--ink4)}
+.addrow{display:flex;gap:8px;align-items:center}
+.addrow input{flex:1;min-width:0}
+.addrow .ctasm{align-self:center;height:48px}

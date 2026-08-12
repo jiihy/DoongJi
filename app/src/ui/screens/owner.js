@@ -2,7 +2,7 @@ import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
 import { thankExtra } from '../../data/care.js';
 
-const KINDS = { meal: '밥', walk: '산책', poop: '배변', med: '약', play: '놀이', sleep: '취침' };
+import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const FUZZ = { 0: '정각', 30: '~30분쯤', 60: '~1시간쯤', 120: '~2시간쯤', '-1': '아무때나' };
 const HO_START = { owner: '보호자가 데려다줘요', sitter: '펫시터가 데리러 와요' };
 const HO_END = { owner: '보호자가 데리러 와요', sitter: '펫시터가 데려다줘요' };
@@ -272,6 +272,10 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
     api.delItem(it.id).catch(e => flash('삭제 실패', e.message));
   };
 
+  // 이미 쓴 특이사항에 남은 'c:' 카테고리가 곧 이 보호자의 커스텀 목록이다
+  const saved = [...new Set(c.notes.map(n => n.kind).filter(k => String(k).startsWith('c:')))];
+  const customKinds = [...new Set([...saved, ...(ui.customKinds || [])])];
+
   const noteSheet = ui.cnOpen ? (() => {
     const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: multi ? cur : null, text: '' };
     return el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.cnOpen = false; rerender(); } } }, [
@@ -282,9 +286,24 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
           el('button', { class: 'chip', 'aria-pressed': d.pet_id === p.id, text: p.name,
             onclick: () => { d.pet_id = p.id; rerender(); } }))) : null,
         el('div', { class: 'sub', text: '어느 항목을 할 때 봐야 하나요?' }),
-        el('div', { class: 'chips' }, [['all', '공통'], ...Object.entries(KINDS)].map(([k, t]) =>
-          el('button', { class: 'chip', 'aria-pressed': d.kind === k, text: t,
-            onclick: () => { d.kind = k; rerender(); } }))),
+        el('div', { class: 'chips' }, [
+          ...[['all', '공통'], ...Object.entries(KINDS).map(([k, v]) => [k, v.name]), ...customKinds.map(k => [k, kindName(k)])]
+            .map(([k, t]) => el('button', { class: 'chip', 'aria-pressed': d.kind === k, text: t,
+              onclick: () => { d.kind = k; rerender(); } })),
+          el('button', { class: 'chip addchip', text: d.adding ? '취소' : '＋ 직접 추가',
+            onclick: () => { d.adding = !d.adding; rerender(); } }),
+        ]),
+        d.adding ? el('div', { class: 'addrow' }, [
+          el('input', { name: 'newkind', placeholder: '예) 약 챙길 때', value: d.newKind || '',
+            oninput: e => { d.newKind = e.target.value; } }),
+          el('button', { class: 'ctasm', text: '추가', onclick: () => {
+            const name = (d.newKind || '').trim();
+            if (!name) { flash('이름을 적어주세요'); return; }
+            const key = 'c:' + name;
+            if (!customKinds.includes(key)) ui.customKinds = [...customKinds, key];
+            d.kind = key; d.newKind = ''; d.adding = false; rerender();
+          } }),
+        ]) : null,
         el('textarea', { name: 'cntext', placeholder: '예) 기저귀를 갈 때는 꼭 리드줄을 채워주세요',
           value: d.text, oninput: e => { d.text = e.target.value; } }),
         el('button', { class: 'cta', text: '저장', onclick: async () => {
@@ -325,7 +344,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
             const kind = e.target.value;
             patchItem(it, kind === 'med' ? { kind, fuzz_min: 0 } : { kind });
           } }, Object.entries(KINDS).map(([k, t]) =>
-            el('option', { value: k, selected: it.kind === k, text: t }))),
+            el('option', { value: k, selected: it.kind === k, text: t.name }))),
           it.fuzz_min === -1 ? null : el('input', { name: `t_${it.id}`, type: 'time', value: hm(it.at_time),
             onchange: e => patchItem(it, { at_time: e.target.value }) }),
           el('select', { name: `f_${it.id}`, 'aria-label': '시간 범위',
@@ -341,7 +360,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
         el('div', { class: 'sub', text: '한 번 적어두면 시터가 그 일을 하는 순간 「참고 사항」으로 함께 보입니다. 아이 프로필에 저장되어 다음 돌봄에도 쓰입니다.' }),
         ...c.notes.filter(n => !multi || !n.pet_id || n.pet_id === cur).map(n => el('div', { class: 'note' }, [
           el('div', { class: 'notehead' }, [
-            el('span', { class: 'notechip', text: (n.kind === 'all' ? '공통' : KINDS[n.kind] || n.kind) + (multi && n.pet_id ? ` · ${petOf(n.pet_id)?.name}` : '') }),
+            el('span', { class: 'notechip', text: kindName(n.kind) + (multi && n.pet_id ? ` · ${petOf(n.pet_id)?.name}` : '') }),
             el('button', { class: 'linkbtn', text: '삭제', onclick: () => {
               c.notes.splice(c.notes.indexOf(n), 1); rerender();
               api.delNote(n.id).catch(e => flash('삭제 실패', e.message));
@@ -408,14 +427,17 @@ export function ownerHome(c, go, ui, rerender) {
         el('div', { class: 'rows' }, c.items.map(it => el('div', { class: 'prow' }, [
           el('div', { class: 'phead' }, [
             el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
-            el('span', { class: 'tk', text: KINDS[it.kind] + (multi ? ` · ${nameOf(it.pet_id)}` : '') }),
+            el('span', { class: 'tk', text: kindName(it.kind) + (multi ? ` · ${nameOf(it.pet_id)}` : '') }),
             it.proof
-              ? el('span', { class: 'sub', text: `${clock(it.proof.submitted_at)} 도착` })
+              ? el('span', { class: 'sub', text: `${clock(it.proof.submitted_at)} 도착`
+                  + (outMinutes(it.proof) !== null ? ` · 밖에 있던 시간 ${outMinutes(it.proof)}분` : '') })
               : el('span', { class: 'sub', text: '아직 기록 없음' }),
           ]),
-          it.proof ? el('div', { class: 'shots' },
+          it.proof && it.proof.photo_url ? el('div', { class: 'shots' },
             [[it.proof.photo_url, it.proof.shot_at], [it.proof.photo2_url, it.proof.shot2_at]]
               .filter(([u]) => u).map(([u, a]) => shot(u, a))) : null,
+          it.proof && !it.proof.photo_url
+            ? el('span', { class: 'notechip', text: 'ⓘ 사진 없이 설명만' }) : null,
           it.proof && it.proof.text ? el('div', { class: 'ptext', text: it.proof.text }) : null,
         ]))),
       ]),

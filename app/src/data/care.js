@@ -1,5 +1,6 @@
 // Supabase 쿼리 빌더는 then만 있고 catch가 없다 — 쓰기 함수는 async로 감싼다 (44차 참고)
 import { sb } from '../lib/supabase.js';
+import { prepare } from '../lib/photo.js';
 
 const SEL = `id, start_date, end_date, confirmed_at, sent_at, finished_at,
   handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
@@ -42,12 +43,13 @@ export async function hydrate(contract) {
 }
 
 // 사진은 계약 폴더 아래로 — 파일명이 겹치지 않게 항목 id와 순번을 쓴다
+// 올리기 전에 시각을 픽셀에 굽는다(prepare) — 나중에 다른 사진으로 바꾸면 워터마크가 안 맞는다
 export async function uploadPhoto(contractId, itemId, slot, file) {
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const path = `${contractId}/${itemId}-${slot}-${stampKey()}.${ext}`;
-  const { error } = await sb.storage.from('proofs').upload(path, file, { contentType: file.type });
+  const { blob, at, stamp } = await prepare(file, { burn: true, tag: '앱 촬영' });
+  const path = `${contractId}/${itemId}-${slot}-${stampKey()}.jpg`;
+  const { error } = await sb.storage.from('proofs').upload(path, blob, { contentType: 'image/jpeg' });
   if (error) throw error;
-  return sb.storage.from('proofs').getPublicUrl(path).data.publicUrl;
+  return { url: sb.storage.from('proofs').getPublicUrl(path).data.publicUrl, at, stamp };
 }
 const stampKey = () => new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 
@@ -72,13 +74,13 @@ export const thankExtra = async (id, reaction) => {
     .eq('id', id).throwOnError();
 };
 
+// 앨범 사진은 찍힌 시각을 보증할 수 없다 → 굽지 않고 태그만 붙인다
 export async function uploadExtraPhoto(contractId, file, album) {
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const path = `${contractId}/${stampKey()}-${Math.floor(performance.now())}.${ext}`;
-  const { error } = await sb.storage.from('extras').upload(path, file, { contentType: file.type });
+  const { blob, stamp } = await prepare(file, { burn: !album, tag: '앱 촬영' });
+  const path = `${contractId}/${stampKey()}-${Math.floor(performance.now())}.jpg`;
+  const { error } = await sb.storage.from('extras').upload(path, blob, { contentType: 'image/jpeg' });
   if (error) throw error;
-  return { url: sb.storage.from('extras').getPublicUrl(path).data.publicUrl,
-           album, stamp: album ? null : new Date().toISOString() };
+  return { url: sb.storage.from('extras').getPublicUrl(path).data.publicUrl, album, stamp };
 }
 
 export async function submitProof(itemId, row) {

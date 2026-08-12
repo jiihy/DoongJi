@@ -1,7 +1,7 @@
 import { el, card, flash } from '../el.js';
 import * as api from '../../data/care.js';
 
-const KINDS = { meal: '밥', walk: '산책', poop: '배변', med: '약', play: '놀이', sleep: '취침' };
+import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const hm = t => (t || '').slice(0, 5);
 const dot = d => (d || '').replaceAll('-', '.');
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -23,57 +23,68 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
     const d = ui.proofDraft = ui.proofDraft || {
       photos: [], text: openItem.proof?.text || '', busy: false,
     };
+    const K = KINDS[openItem.kind] || {};
+    const pair = !!K.pair;
     const refs = notesFor(openItem.kind);
     const shots = d.photos.length ? d.photos
-      : (openItem.proof ? [openItem.proof.photo_url, openItem.proof.photo2_url].filter(Boolean).map(u => ({ url: u, at: openItem.proof.shot_at })) : []);
+      : (openItem.proof
+          ? [[openItem.proof.photo_url, openItem.proof.shot_at], [openItem.proof.photo2_url, openItem.proof.shot2_at]]
+              .filter(([u]) => u).map(([u, a]) => ({ url: u, at: a, stamp: openItem.proof.stamp_text }))
+          : []);
 
     const close = () => { ui.proofFor = null; ui.proofDraft = null; rerender(); };
 
     overlay = el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback') && !d.busy) close(); } }, [
       el('div', { class: 'sheet' }, [
         el('div', { class: 'grip' }),
-        el('div', { class: 'h', text: `${KINDS[openItem.kind]} 기록하기` }),
+        el('div', { class: 'h', text: `${kindName(openItem.kind)} 기록하기` }),
         el('div', { class: 'sub', text: openItem.fuzz_min === -1 ? '아무때나' : `${hm(openItem.at_time)} ${FUZZTX(openItem.fuzz_min)}` }),
+        el('div', { class: 'shoot', text: `📷 ${(KINDS[openItem.kind] || {}).shoot || '한 장 남겨주세요'}` }),
 
         refs.length ? el('div', { class: 'a2box' }, [
           el('div', { class: 'qh', text: '보호자가 남긴 참고 사항' }),
           ...refs.map(n => el('div', { class: 'btx', text: n.text })),
         ]) : null,
 
-        shots.length ? el('div', { class: 'shots' }, shots.map(s =>
+        shots.length ? el('div', { class: 'shots' }, shots.map((sh, i) =>
           el('div', { class: 'shot' }, [
-            el('img', { src: s.url, alt: '' }),
-            el('span', { class: 'shotstamp', text: s.at ? clock(s.at) : '' }),
+            el('img', { src: sh.url, alt: '' }),
+            pair ? el('span', { class: 'tag', text: i === 0 ? K.cap1 : K.cap2 }) : null,
+            el('span', { class: 'shotstamp', text: sh.at ? clock(sh.at) : '' }),
           ]))) : null,
 
-        shots.length < 2 ? el('label', { class: 'shotadd' }, [
-          el('span', { text: shots.length ? '＋ 사진 한 장 더' : '＋ 사진 찍기 · 고르기' }),
+        (pair && shots.length === 2) ? el('div', { class: 'outmin',
+          text: `🚶 밖에 있던 시간 ${outMinutes({ shot_at: shots[0].at, shot2_at: shots[1].at }) ?? 0}분` }) : null,
+
+        shots.length < (pair ? 2 : 2) ? el('label', { class: 'shotadd' }, [
+          el('span', { text: pair ? `＋ ${shots.length ? K.cap2 : K.cap1}` : (shots.length ? '＋ 사진 한 장 더' : '＋ 사진 찍기') }),
           el('input', { type: 'file', accept: 'image/*', capture: 'environment',
             onchange: async e => {
               const file = e.target.files && e.target.files[0];
               if (!file) return;
               d.busy = true; rerender();
               try {
-                const url = await api.uploadPhoto(c.id, openItem.id, d.photos.length + 1, file);
-                d.photos = [...shots.map(s => ({ url: s.url, at: s.at })), { url, at: new Date().toISOString() }];
+                const shot = await api.uploadPhoto(c.id, openItem.id, d.photos.length + 1, file);
+                d.photos = [...shots.map(x => ({ url: x.url, at: x.at, stamp: x.stamp })), shot];
               } catch (err) { flash('사진 업로드 실패', err.message); }
               d.busy = false; rerender();
             } }),
         ]) : null,
 
-        el('textarea', { name: 'proof_text', placeholder: '한 줄 남겨도 좋아요 (선택)',
-          value: d.text, oninput: e => { d.text = e.target.value; } }),
+        el('textarea', { name: 'proof_text', placeholder: '사진을 못 찍었다면 설명만 남겨도 됩니다',
+          value: d.text, oninput: e => { d.text = e.target.value; rerender(); } }),
+        shots.length ? null : el('div', { class: 'sub', text: '사진 없이 설명만 보내도 1건으로 셉니다. 벌점은 없어요.' }),
 
-        el('button', { class: 'cta', disabled: d.busy || !shots.length,
-          text: d.busy ? '올리는 중…' : (openItem.proof ? '다시 제출' : '제출'),
+        el('button', { class: 'cta', disabled: d.busy || (!shots.length && !d.text.trim()),
+          text: d.busy ? '올리는 중…' : (openItem.proof ? '다시 제출' : (shots.length ? '제출' : '설명만 제출')),
           onclick: async () => {
             d.busy = true; rerender();
             try {
               const now = new Date().toISOString();
               await api.submitProof(openItem.id, {
-                photo_url: shots[0]?.url || null, shot_at: shots[0]?.at || now,
+                photo_url: shots[0]?.url || null, shot_at: shots[0]?.at || null,
                 photo2_url: shots[1]?.url || null, shot2_at: shots[1]?.at || null,
-                stamp_text: stampOf(shots[0]?.at || now),
+                stamp_text: shots[0]?.stamp || stampOf(now),
                 text: d.text.trim() || null,
                 is_late: api.lateOf(openItem),
                 submitted_at: now,
@@ -175,10 +186,14 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
           el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
           el('div', { class: 'lrmain' }, [
             el('div', { class: 'lrtitle' }, [
-              el('span', { text: KINDS[it.kind] }),
+              el('span', { text: kindName(it.kind) }),
               it.proof ? el('span', { class: 'badge', text: '제출됨' }) : null,
             ]),
-            el('div', { class: 'sub', text: it.proof ? `${clock(it.proof.submitted_at)} 기록` : '아직 기록 없음' }),
+            el('div', { class: 'sub', text: it.proof
+              ? `${clock(it.proof.submitted_at)} 기록`
+                + (outMinutes(it.proof) !== null ? ` · 밖에 있던 시간 ${outMinutes(it.proof)}분` : '')
+                + (!it.proof.photo_url ? ' · 설명만' : '')
+              : '아직 기록 없음' }),
           ]),
           el('button', { class: 'ctasm', text: it.proof ? '다시' : '기록하기',
             onclick: () => { ui.proofFor = it.id; ui.proofDraft = null; rerender(); } }),
