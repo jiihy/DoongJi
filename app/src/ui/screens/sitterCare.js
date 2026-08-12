@@ -1,4 +1,4 @@
-import { el, card, flash } from '../el.js';
+import { el, card, flash, openLightbox } from '../el.js';
 import * as api from '../../data/care.js';
 import { finishCare, replyDispute, noReply } from '../../data/care.js';
 
@@ -48,7 +48,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         ]) : null,
 
         shots.length ? el('div', { class: 'shots' }, shots.map((sh, i) =>
-          el('div', { class: 'shot' }, [
+          el('button', { class: 'shot', onclick: () => openLightbox(sh.url) }, [
             el('img', { src: sh.url, alt: '' }),
             pair ? el('span', { class: 'tag', text: i === 0 ? K.cap1 : K.cap2 }) : null,
             el('span', { class: 'shotstamp', text: sh.at ? clock(sh.at) : '' }),
@@ -268,7 +268,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
             el('span', { class: 'tltime', text: clock(x.at) }),
           ]),
           (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
-            el('div', { class: 'shot' }, [
+            el('button', { class: 'shot', onclick: () => openLightbox(ph.url) }, [
               el('img', { src: ph.url, alt: '' }),
               el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
             ]))) : null,

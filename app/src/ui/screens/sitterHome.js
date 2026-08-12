@@ -44,7 +44,10 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
                 el('span', { text: pets || '아이 미지정' }),
                 el('span', { class: 'badge', text: state }),
               ]),
-              el('div', { class: 'sub', text: `${c.owners?.nickname || '보호자'} · ${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
+              el('div', { class: 'metacol' }, [
+                el('span', { class: 'sub', text: c.owners?.nickname || '보호자' }),
+                el('span', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
+              ]),
             ]),
             el('span', { class: 'ctasm', text: c.sent_at ? '기록하기' : '정보 수정' }),
             el('span', { class: 'chev', text: '›' }),

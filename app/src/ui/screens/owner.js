@@ -1,6 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
-import { copyText } from '../el.js';
+import { copyText, openLightbox } from '../el.js';
 import { shareOrigin } from '../../lib/supabase.js';
 import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
@@ -69,6 +69,10 @@ export function ownerInstall(state, go, rerender) {
         el('div', { class: 'h', text: '홈 화면에 앱으로 추가' }),
         el('div', { class: 'sub', text: '설치하면 앱처럼 전체화면으로 열려요.' }),
       ]),
+    ]),
+    el('div', { class: 'warnbox' }, [
+      el('span', { class: 'wt', text: '카톡·당근에서 열었다면 먼저 이걸 해주세요' }),
+      el('span', { class: 'wd', text: '우측 하단 ⋯ 버튼 → 「Safari로 열기」(안드로이드는 「다른 브라우저로 열기」). 카톡·당근 안에서는 홈 화면에 추가할 수 없습니다.' }),
     ]),
     el('div', { class: 'a2box' }, [
       bullet('1. Safari 하단의 공유 버튼을 탭하세요'),
@@ -459,7 +463,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
   const mine = it => !multi || it.pet_id === cur;
   const fresh = freshProofs(c).length;
 
-  const shot = (url, at) => el('button', { class: 'thumb', onclick: () => { ui.lightbox = url; rerender(); } }, [
+  const shot = (url, at) => el('button', { class: 'thumb', onclick: () => openLightbox(url) }, [
     el('img', { src: url, alt: '' }),
     at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
   ]);
@@ -493,10 +497,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
     ]);
   };
 
-  const overlay = ui.disputeFor ? disputeSheet() : ui.lightbox
-    ? el('div', { class: 'lightbox', onclick: () => { ui.lightbox = null; rerender(); } },
-        el('img', { src: ui.lightbox, alt: '' }))
-    : null;
+  const overlay = ui.disputeFor ? disputeSheet() : null;
 
   return {
     title: multi && cur ? `${nameOf(cur)} 돌봄 일지` : '돌봄 일지',
@@ -627,7 +628,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
             el('span', { class: 'tltime', text: clock(x.at) }),
           ]),
           (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
-            el('button', { class: 'thumb', onclick: () => { ui.lightbox = ph.url; rerender(); } }, [
+            el('button', { class: 'thumb', onclick: () => openLightbox(ph.url) }, [
               el('img', { src: ph.url, alt: '' }),
               el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
             ]))) : null,

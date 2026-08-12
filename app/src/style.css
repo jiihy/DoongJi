@@ -257,3 +257,11 @@ a.proofline{text-decoration:none}
 .notelist .vtx{flex:1}
 .ntrash{flex:none;background:none;border:none;padding:0 2px;color:var(--ink4);font-size:13px}
 .metacol{display:flex;flex-direction:column;gap:2px}
+.warnbox{background:#FFF8F0;border:1px solid #E8C9A8;border-radius:12px;padding:13px 14px;
+  display:flex;flex-direction:column;gap:5px}
+.warnbox .wt{font-size:14px;font-weight:700;color:#8A5518}
+.warnbox .wd{font-size:13px;font-weight:500;line-height:1.5;color:#8A5518}
+.lbclose{position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:41;
+  width:40px;height:40px;border-radius:1000px;border:none;background:rgba(255,255,255,.18);
+  color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center}
+.shot{cursor:zoom-in}

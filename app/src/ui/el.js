@@ -86,7 +86,14 @@ export function paint(view) {
 
 // 재렌더 흐름이 없는 화면에서도 쓸 수 있게 body에 직접 얹는다
 export function openLightbox(url) {
-  const back = el('div', { class: 'lightbox', onclick: () => back.remove() },
-    el('img', { src: url, alt: '' }));
+  const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const back = el('div', { class: 'lightbox', onclick: e => { if (e.target !== img) close(); } }, [
+    el('button', { class: 'lbclose', text: '✕', 'aria-label': '닫기', onclick: close }),
+    null,
+  ]);
+  const img = el('img', { src: url, alt: '' });
+  back.appendChild(img);
+  document.addEventListener('keydown', onKey);
   document.body.appendChild(back);
 }
