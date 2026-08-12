@@ -170,9 +170,10 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .addrow input{flex:1;min-width:0}
 .addrow .ctasm{align-self:center;height:48px}
 /* 알림 종 */
-.bell{position:relative;background:none;border:none;padding:6px 4px;font-size:19px;line-height:1}
-.bbadge{position:absolute;top:0;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:1000px;
-  background:#e5484d;color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center}
+.bell{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;padding:0;color:var(--ink)}
+.bbadge{position:absolute;top:1px;right:0;min-width:15px;height:15px;padding:0 4px;border-radius:8px;
+  background:#D32020;color:#fff;font-size:10px;font-weight:700;line-height:15px;text-align:center}
 /* 펫시터 프로필 — 프로토타입 verify() 그대로 */
 .hero{display:flex;flex-direction:column;gap:2px}
 .hero .l{font-size:12px;font-weight:600;color:var(--ink4);letter-spacing:.01em}

@@ -1,4 +1,5 @@
 import { el, card } from '../el.js';
+import { icon } from '../../lib/icons.js';
 
 const when = ts => {
   const d = new Date(ts), now = new Date();
@@ -7,10 +8,10 @@ const when = ts => {
   return same ? t : `${d.getMonth() + 1}.${d.getDate()} ${t}`;
 };
 
-// 종 버튼 — 안 읽은 수를 배지로 얹는다
+// 종 버튼 — 안 읽은 수를 배지로 얹는다 (시안 v2와 같은 alert 아이콘 20px)
 export const bellButton = (count, onClick) => el('button', { class: 'bell', onclick: onClick,
   'aria-label': count ? `알림 ${count}건` : '알림' }, [
-  el('span', { class: 'bicon', text: '🔔' }),
+  icon('alert', 20),
   count ? el('span', { class: 'bbadge', text: count > 9 ? '9+' : String(count) }) : null,
 ]);
 
