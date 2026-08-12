@@ -43,3 +43,26 @@ export async function listInquiries() {
 export const markInquiry = async (id, handled) => {
   await sb.from('inquiries').update({ handled }).eq('id', id).throwOnError();
 };
+
+// 가져온 후기 — 캡처가 있어야 등록된다 (F20). 「확인하지 않음」 라벨은 화면이 붙인다
+export async function listImported(sitterId) {
+  const { data, error } = await sb.from('imported_reviews')
+    .select('*').eq('sitter_id', sitterId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function uploadCapture(sitterId, file) {
+  const { prepare } = await import('../lib/photo.js');
+  const { blob } = await prepare(file, { burn: false });
+  const path = `${sitterId}/${Date.now()}.jpg`;
+  const { error } = await sb.storage.from('imports').upload(path, blob, { contentType: 'image/jpeg' });
+  if (error) throw error;
+  return sb.storage.from('imports').getPublicUrl(path).data.publicUrl;
+}
+export async function addImported(sitterId, row) {
+  const { error } = await sb.from('imported_reviews').insert({ sitter_id: sitterId, ...row });
+  if (error) throw error;
+}
+export const delImported = async id => {
+  await sb.from('imported_reviews').delete().eq('id', id).throwOnError();
+};

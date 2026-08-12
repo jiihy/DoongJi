@@ -384,7 +384,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
 }
 
 /* ── 5. 돌봄 일지 — 시터가 올린 인증이 쌓인다 ── */
-const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
 const REACTIONS = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
 
 // 종 배지 = 아직 안 본 인증 (반응한 것은 「새 인증」이 아니다 — 38차 회귀 방지)
@@ -396,6 +396,9 @@ export function ownerHome(c, go, ui, rerender, bell) {
   const s = c.sitters || {};
   const multi = c.pets.length > 1;
   const nameOf = id => (c.pets.find(p => p.id === id) || {}).name || '';
+  // 다견이면 아이를 골라야 그 아이의 일지가 열린다 (한 마리면 바로 열린다)
+  const cur = multi ? (ui.diaryPet && c.pets.some(p => p.id === ui.diaryPet) ? ui.diaryPet : null) : c.pets[0]?.id;
+  const mine = it => !multi || it.pet_id === cur;
   const fresh = freshProofs(c).length;
 
   const shot = (url, at) => el('button', { class: 'thumb', onclick: () => { ui.lightbox = url; rerender(); } }, [
@@ -409,44 +412,66 @@ export function ownerHome(c, go, ui, rerender, bell) {
     : null;
 
   return {
-    title: '돌봄 일지',
+    title: multi && cur ? `${nameOf(cur)} 돌봄 일지` : '돌봄 일지',
+    back: multi && cur ? () => { ui.diaryPet = null; rerender(); } : null,
     right: bell,
     overlay,
     body: [
       card([
         el('div', { class: 'profhead' }, [
           el('div', { class: 'pcol' }, [
-            el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
+            el('div', { class: 'h', text: multi && cur ? nameOf(cur) : c.pets.map(p => p.name).join(' · ') }),
             el('div', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
           ]),
           el('button', { class: 'ctasm', text: `${s.name} 시터`, onclick: () => go('sitterProfile') }),
         ]),
       ]),
 
+      multi && !cur ? card([
+        el('div', { class: 'h', text: '어느 아이의 기록을 볼까요?' }),
+        el('div', { class: 'rows' }, c.pets.map(p => {
+          const its = c.items.filter(it => it.pet_id === p.id);
+          const arrived = its.filter(it => it.proof).length;
+          return el('button', { class: 'kvrow', onclick: () => { ui.diaryPet = p.id; rerender(); } }, [
+            el('div', { class: 'lrmain' }, [
+              el('div', { class: 'lrtitle' }, [
+                el('span', { text: p.name }),
+                its.some(it => it.proof && !it.proof.seen && !it.proof.verdict)
+                  ? el('span', { class: 'badge', text: 'NEW' }) : null,
+              ]),
+              el('div', { class: 'sub', text: [p.age, p.extra].filter(Boolean).join(' · ') || '정보 없음' }),
+            ]),
+            el('span', { class: 'kvval', text: `${arrived} / ${its.length}` }),
+            el('span', { class: 'chev', text: '›' }),
+          ]);
+        })),
+      ]) : null,
+
       fresh ? el('div', { class: 'ding' }, [
         el('span', { class: 't', text: `방금 인증 ${fresh}건이 도착했어요` }),
         el('span', { class: 'd', text: '확인하지 않아도 불이익은 없어요. 보고 싶을 때 보시면 됩니다.' }),
       ]) : null,
 
-      card([
-        el('div', { class: 'h', text: '오늘의 기록' }),
-        el('div', { class: 'rows' }, c.items.map(it => el('div', { class: 'prow' }, [
-          el('div', { class: 'phead' }, [
-            el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
-            el('span', { class: 'tk', text: kindName(it.kind) + (multi ? ` · ${nameOf(it.pet_id)}` : '') }),
-            it.proof
-              ? el('span', { class: 'sub', text: `${clock(it.proof.submitted_at)} 도착`
-                  + (outMinutes(it.proof) !== null ? ` · 밖에 있던 시간 ${outMinutes(it.proof)}분` : '') })
-              : el('span', { class: 'sub', text: '아직 기록 없음' }),
+      (!multi || cur) ? el('div', { class: 'sect', text: '활동 타임라인' }) : null,
+
+      // 항목 하나가 카드 하나 — 시간순으로 쌓인다
+      ...((!multi || cur) ? c.items.filter(mine).map(it => {
+        const p = it.proof;
+        const shots = p ? [[p.photo_url, p.shot_at], [p.photo2_url, p.shot2_at]].filter(([u]) => u) : [];
+        const out = p ? outMinutes(p) : null;
+        return card([
+          el('div', { class: 'tlhead' }, [
+            el('span', { class: 'kchip' + (p ? ' on' : ''), text: kindName(it.kind) + (p ? ' 완료' : '') }),
+            el('span', { class: 'tltime', text: p ? clock(p.submitted_at) : (it.fuzz_min === -1 ? '아무때나' : `${hm(it.at_time)} 예정`) }),
+            p && !p.seen && !p.verdict ? el('span', { class: 'badge', text: 'NEW' }) : null,
           ]),
-          it.proof && it.proof.photo_url ? el('div', { class: 'shots' },
-            [[it.proof.photo_url, it.proof.shot_at], [it.proof.photo2_url, it.proof.shot2_at]]
-              .filter(([u]) => u).map(([u, a]) => shot(u, a))) : null,
-          it.proof && !it.proof.photo_url
-            ? el('span', { class: 'notechip', text: 'ⓘ 사진 없이 설명만' }) : null,
-          it.proof && it.proof.text ? el('div', { class: 'ptext', text: it.proof.text }) : null,
-        ]))),
-      ]),
+          p && p.text ? el('div', { class: 'tltext', text: p.text }) : null,
+          shots.length ? el('div', { class: 'shots' }, shots.map(([u, a]) => shot(u, a))) : null,
+          el('div', { class: 'tlmeta', text: !p ? '아직 기록 없음'
+            : [out !== null ? `밖에 있던 시간 ${out}분` : null,
+               !p.photo_url ? '사진 없이 설명만' : null].filter(Boolean).join(' · ') || '사진과 시각은 시터가 올린 그대로입니다' }),
+        ]);
+      }) : []),
 
       (c.extras || []).length ? card([
         el('div', { class: 'h', text: '먼저 챙긴 순간' }),

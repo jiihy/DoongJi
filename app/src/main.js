@@ -11,6 +11,8 @@ import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, ins
 import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
 import { bellButton, bellScreen } from './ui/screens/bell.js';
 import { diaryWriteScreen, booksScreen } from './ui/screens/diary.js';
+import { importedScreen } from './ui/screens/imported.js';
+import { listImported } from './data/sitter.js';
 import { listBooks, writtenPets } from './data/care.js';
 import { listEvents, readEvents, markSeen } from './data/care.js';
 import { sitterStats, publicProfile, sendInquiry } from './data/owner.js';
@@ -37,6 +39,7 @@ const go = async (screen, arg) => {
     uiState.writeFor = null;
   }
   if (screen === 'books') ctx.books = await listBooks(ctx.sitter.id);
+  if (screen === 'imported') ctx.imported = await listImported(ctx.sitter.id);
   if (screen === 'care') { ctx.careId = arg || ctx.careId; ctx.care = null; render(); ctx.care = await loadCare(ctx.careId); watchCare(); }
   else { unwatch(); await refresh(); }
   render();
@@ -89,6 +92,8 @@ function render() {
       async () => { ctx.care = await loadCare(ctx.careId); ctx.books = await listBooks(ctx.sitter.id); }, rerender));
   }
   if (ctx.screen === 'books') return paint(booksScreen(ctx.books || [], go));
+  if (ctx.screen === 'imported') return paint(importedScreen(ctx, go, rerender,
+    async () => { ctx.imported = await listImported(ctx.sitter.id); }));
   const unread = (ctx.events || []).filter(e => !e.read_at).length;
   return paint(sitterHomeScreen(ctx, go, rerender, bellButton(unread, () => go('bell'))));
 }

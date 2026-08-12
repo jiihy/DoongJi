@@ -50,8 +50,15 @@ export function profileScreen(ctx, rerender, go) {
         f('기본 약속 장소', 'addr', '예) 서울 마포구 월드컵북로 12'),
         f('장소 상세', 'addr_detail', '예) 1층 카페 앞'),
         f('한 줄 소개', 'bio', '예) 기록으로 신뢰를 쌓습니다'),
+        field('앱 밖에서 마친 돌봄 (건)', { name: 'offsite', type: 'number', inputmode: 'numeric',
+          value: s.offsite_done ?? 0,
+          oninput: e => { patch.offsite_done = Number(e.target.value) || 0; } }),
+        el('div', { class: 'sub', text: '당근 알바 등 이 앱을 쓰기 전에 마친 건수입니다. 프로필의 「약속 이행」에 함께 셉니다.' }),
       ]),
-      el('button', { class: 'add', text: '돌봄 일기 보기', onclick: () => go('books') }),
+      el('div', { class: 'hgrid' }, [
+        el('button', { class: 'add', text: '돌봄 일기', onclick: () => go('books') }),
+        el('button', { class: 'add', text: '가져온 후기', onclick: () => go('imported') }),
+      ]),
 
       card([
         el('div', { class: 'h', text: '공개 프로필 링크' }),

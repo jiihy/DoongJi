@@ -25,6 +25,9 @@ export function sitterProfileScreen(s, stats, back, pub) {
   const c = stats || {};
   const n = k => Number(c[k] || 0);
   const ui = pub?.ui;
+  const offsite = Number(s.offsite_done || 0);
+  const doneAll = n('submitted') + offsite;
+  const totalAll = n('total') + offsite;
 
   const inqSheet = () => {
     const d = ui.inq = ui.inq || { contact: '', when: '', msg: '', busy: false };
@@ -75,11 +78,10 @@ export function sitterProfileScreen(s, stats, back, pub) {
         s.bio ? el('div', { class: 'lead', text: s.bio }) : null,
       ]),
 
-      // ── 숫자가 주인공
-      hero('약속 이행', pct(n('submitted'), n('total')), `${n('submitted')} / ${n('total')}건`,
-        '보호자가 정한 항목 중 인증을 올린 비율입니다.'),
-      hero('보호자 확인', pct(n('checked'), n('submitted')), `${n('checked')} / ${n('submitted')}건`,
-        '보낸 것을 보호자가 직접 보고 확인한 비율입니다. 보낸 것과 확인된 것은 다릅니다.'),
+      // ── 숫자가 주인공. 앱 밖(당근)에서 마친 건수를 함께 센다
+      hero('약속 이행', pct(doneAll, totalAll), `${doneAll} / ${totalAll}건`,
+        offsite ? `당근 알바에서 마친 ${offsite}건을 포함합니다.`
+                : '보호자가 정한 항목 중 인증을 올린 비율입니다.'),
 
       pub ? card([
         el('div', { class: 'h', text: '이 시터에게 맡기고 싶다면' }),
@@ -92,29 +94,6 @@ export function sitterProfileScreen(s, stats, back, pub) {
           : el('button', { class: 'cta', text: '돌봄 의뢰 보내기',
               onclick: () => { ui.inqOpen = true; pub.rerender(); } }),
       ]) : null,
-
-      card([
-        el('div', { class: 'h', text: '이 세 숫자만 보셔도 됩니다' }),
-        el('div', { class: 'sub', text: '약속한 것을 얼마나 했고, 그중 얼마가 보호자에게 확인됐고, 어긋난 것은 어떻게 됐는지. 실시간 영상은 그 순간만 보여주고 사라지지만 이 숫자는 남습니다.' }),
-      ]),
-
-      // ── 보조 지표
-      card([
-        el('span', { class: 'veri', text: '✓ 이 서비스에서 확인됨' }),
-        el('div', { class: 'minor' }, [
-          minor('앱 촬영 인증', '전 건 앱 카메라 · 시각 새김'),
-          minor('가짜 인증 신고', `${n('disputes')}건 중 ${n('resolved')}건 해소`
-            + (n('noreply') ? ` · 무응답 ${n('noreply')}` : '')),
-          minor('사진 인증', `${n('photos')}건`),
-          minor('설명 인증', `${n('notes')}건`),
-          minor('다시 제출', `${n('resub')}건`),
-          minor('도착 직후 열람', `${n('seen')} / ${n('submitted')}건`),
-          minor('산책 왕복 인증', '나갈 때·들어올 때 두 컷 · 시각 차이 기록'),
-          minor('받은 리액션', `${n('reactions')}개 (😍 😌 💙)`),
-          minor('먼저 챙긴 순간', `${n('extras')}건 · 보호자 고마워요 ${n('thanks')}`),
-        ]),
-        el('div', { class: 'sub', text: '사진과 설명의 비율을 그대로 공개합니다. 사진이 많은 시터인지는 숫자로 바로 보입니다.' }),
-      ]),
 
       // 일기는 「시터 본인이 씀」 — 확인된 것과 섞지 않는다 (§2-3)
       (s.diary || []).length ? card([
@@ -133,10 +112,20 @@ export function sitterProfileScreen(s, stats, back, pub) {
         s.diary.length > 2 ? el('div', { class: 'sub', text: `외 ${s.diary.length - 2}권` }) : null,
       ]) : null,
 
-      card([
-        el('div', { class: 'h', text: '왜 「사고 0건」이 아닌가' }),
-        el('div', { class: 'sub', text: '무사고를 자랑 지표로 쓰면 이상을 알린 시터가 손해를 봅니다. 여기서는 신고된 건과 해소된 건을 함께 셉니다. 소명하지 않은 것도 숨기지 않습니다.' }),
-      ]),
+      // 「본인이 올림 · 이 서비스가 확인하지 않음」 — 확인된 것과 섞지 않는다 (§2-3)
+      (s.imported || []).length ? card([
+        el('span', { class: 'unver', text: 'ⓘ 시터 본인이 올림 · 이 서비스가 확인하지 않음' }),
+        el('div', { class: 'h', text: '다른 곳에서 받은 후기' }),
+        el('div', { class: 'sub', text: '캡처를 직접 보고 판단해주세요.' }),
+        ...s.imported.map(v => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: v.source || '출처 미기재' }),
+            v.review_date ? el('span', { class: 'date', text: v.review_date }) : null,
+          ]),
+          v.text ? el('div', { class: 'q', text: '“' + v.text + '”' }) : null,
+          v.capture_url ? el('img', { class: 'capture', src: v.capture_url, alt: (v.source || '') + ' 캡처' }) : null,
+        ])),
+      ]) : null,
     ],
     hint: '숫자는 이 시터의 모든 돌봄을 합친 것입니다.',
   };

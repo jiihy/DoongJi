@@ -197,3 +197,12 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .proofline{align-self:flex-start;font-size:12px;font-weight:700;color:var(--primary-ink);
   background:var(--tint);border-radius:1000px;padding:7px 12px}
 .tight{display:flex;flex-direction:column;gap:0}
+.capture{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+/* 돌봄 일지 — 활동 타임라인 */
+.sect{font-size:17px;font-weight:800;letter-spacing:-.01em;padding:6px 4px 0}
+.tlhead{display:flex;align-items:center;gap:9px}
+.kchip{font-size:12px;font-weight:700;padding:6px 11px;border-radius:1000px;background:var(--bg);color:var(--ink4)}
+.kchip.on{background:var(--tint);color:var(--primary-ink)}
+.tltime{font-size:13px;font-weight:600;color:var(--ink3)}
+.tltext{font-size:15px;line-height:1.55;color:var(--ink)}
+.tlmeta{font-size:12px;font-weight:500;color:var(--ink4)}
