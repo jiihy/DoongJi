@@ -37,7 +37,8 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
         el('div', { class: 'rows' }, list.map(c => {
           const pets = (c.contract_pets || []).map(cp => cp.pets?.name).filter(Boolean).join('·');
           const state = c.finished_at ? '완료' : c.sent_at ? '진행 중' : c.confirmed_at ? '일정 대기' : '보호자 확인 대기';
-          return el('div', { class: 'listrow' }, [
+          return el('button', { class: 'listrow',
+            onclick: () => go(c.sent_at ? 'care' : 'contract', c.id) }, [
             el('div', { class: 'lrmain' }, [
               el('div', { class: 'lrtitle' }, [
                 el('span', { text: pets || '아이 미지정' }),
@@ -45,13 +46,8 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
               ]),
               el('div', { class: 'sub', text: `${c.owners?.nickname || '보호자'} · ${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
             ]),
-            el('div', { class: 'lrbtns' }, [
-              c.sent_at
-                ? el('button', { class: 'ctasm', text: '기록하기', onclick: () => go('care', c.id) })
-                : el('button', { class: 'ctasm', text: '정보 수정', onclick: () => go('contract', c.id) }),
-              el('button', { class: 'seecap', text: c.sent_at ? '돌봄 정보' : '보호자 링크',
-                onclick: () => c.sent_at ? go('contract', c.id) : copy(inviteUrlOf(c.invite_token)) }),
-            ]),
+            el('span', { class: 'ctasm', text: c.sent_at ? '기록하기' : '정보 수정' }),
+            el('span', { class: 'chev', text: '›' }),
           ]);
         })),
       ]) : card([

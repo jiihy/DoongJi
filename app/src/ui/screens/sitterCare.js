@@ -189,6 +189,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
   return {
     title: '오늘의 돌봄',
     back: () => go('home'),
+    right: { label: '돌봄 정보', on: () => go('contract', c.id) },
     overlay,
     body: [
       card([
