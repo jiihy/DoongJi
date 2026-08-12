@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm --prefix app ci || npm --prefix app install",
-  "buildCommand": "npm --prefix app run build",
-  "outputDirectory": "app/dist",
+  "framework": "vite",
   "build": {
     "env": {
       "VITE_SUPABASE_URL": "https://maipblnldvmvttfjbmsc.supabase.co",

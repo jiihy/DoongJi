@@ -91,6 +91,7 @@ export function ownerInstall(state, go, rerender) {
 
   return {
     title: '앱처럼 쓰기',
+    back: () => go('schedule'),
     right: { label: '건너뛰기', on: () => go('home') },
     overlay: state.step === 2 ? step2() : step1(),
     body: [card([
@@ -258,7 +259,7 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
 
   return {
     title: c.sent_at ? '일정·특이사항' : '돌봄 일정',
-    back: c.sent_at ? () => go('home') : null,
+    back: () => go(c.sent_at ? 'home' : 'confirm'),
     overlay: noteSheet,
     body: [
       multi ? el('div', { class: 'pettabs' }, c.pets.map(p =>
