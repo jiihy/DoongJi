@@ -1,6 +1,7 @@
 // Supabase 쿼리 빌더는 then만 있고 catch가 없다 — 붙여놓고 잊는 호출(.catch)이 조용히 죽는다.
 // 그래서 쓰기 함수는 모두 async로 감싸 진짜 Promise를 돌려준다.
 import { sb, inviteToken } from '../lib/supabase.js';
+import { hydrate } from './care.js';
 
 // 보호자(무계정)가 토큰으로 자기 계약 하나만 읽는다 — 범위는 RLS가 강제한다
 export async function loadContract() {
@@ -13,12 +14,7 @@ export async function loadContract() {
              contract_pets(pets(id, name, age, extra))`)
     .eq('invite_token', inviteToken).single();
   if (error) throw error;
-
-  const [{ data: items }, { data: notes }] = await Promise.all([
-    sb.from('schedule_items').select('*').eq('contract_id', data.id).order('sort_key'),
-    sb.from('care_notes').select('*').eq('owner_id', data.owner_id).order('created_at'),
-  ]);
-  return { ...data, pets: (data.contract_pets || []).map(cp => cp.pets), items: items || [], notes: notes || [] };
+  return hydrate(data);          // 일정·특이사항·인증을 시터 쪽과 같은 모양으로 붙인다
 }
 
 export const savePet   = async (id, patch) => { await sb.from('pets').update(patch).eq('id', id).throwOnError(); };

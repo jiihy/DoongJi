@@ -363,34 +363,65 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
   };
 }
 
-/* ── 5. 전달 후 홈 (M4에서 일지로 확장) ── */
-export function ownerHome(c, go) {
+/* ── 5. 돌봄 일지 — 시터가 올린 인증이 쌓인다 ── */
+const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+export function ownerHome(c, go, ui, rerender) {
   const s = c.sitters || {};
+  const multi = c.pets.length > 1;
+  const nameOf = id => (c.pets.find(p => p.id === id) || {}).name || '';
+  const fresh = c.items.filter(it => it.proof && !(it.proof.seens || []).length).length;
+
+  const shot = (url, at) => el('button', { class: 'thumb', onclick: () => { ui.lightbox = url; rerender(); } }, [
+    el('img', { src: url, alt: '' }),
+    at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
+  ]);
+
+  const overlay = ui.lightbox
+    ? el('div', { class: 'lightbox', onclick: () => { ui.lightbox = null; rerender(); } },
+        el('img', { src: ui.lightbox, alt: '' }))
+    : null;
+
   return {
     title: '돌봄 일지',
+    overlay,
     body: [
       card([
         el('div', { class: 'profhead' }, [
-          el('div', { class: 'avatar' }),
+          el('div', { class: 'avatar' + (s.photo_url ? ' hasimg' : ''), style: s.photo_url ? `background-image:url(${s.photo_url})` : null }),
           el('div', { class: 'pcol' }, [
             el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
             el('div', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
           ]),
-          el('button', { class: 'ctasm', text: `${s.name} 시터` }),
+          el('span', { class: 'ctasm', text: `${s.name} 시터` }),
         ]),
       ]),
+
+      fresh ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: `방금 인증 ${fresh}건이 도착했어요` }),
+        el('span', { class: 'd', text: '확인하지 않아도 불이익은 없어요. 보고 싶을 때 보시면 됩니다.' }),
+      ]) : null,
+
       card([
-        el('div', { class: 'h', text: '일정을 전달했어요' }),
-        el('div', { class: 'sub', text: '시터가 인증을 보내면 여기에 사진과 시각이 쌓입니다. (인증 화면은 M4에서 열립니다)' }),
-        el('div', { class: 'tl' }, c.items.map(it => el('div', { class: 'titem' }, [
-          el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
-          el('span', { class: 'tk', text: KINDS[it.kind] + (c.pets.length > 1 ? ` · ${(c.pets.find(p => p.id === it.pet_id) || {}).name || ''}` : '') }),
-          el('span', { class: 'sub', text: '아직 기록 없음' }),
-        ]))),
+        el('div', { class: 'h', text: '오늘의 기록' }),
+        ...c.items.map(it => el('div', { class: 'prow' }, [
+          el('div', { class: 'phead' }, [
+            el('span', { class: 'tt', text: it.fuzz_min === -1 ? '아무때나' : hm(it.at_time) }),
+            el('span', { class: 'tk', text: KINDS[it.kind] + (multi ? ` · ${nameOf(it.pet_id)}` : '') }),
+            it.proof
+              ? el('span', { class: 'sub', text: `${clock(it.proof.submitted_at)} 도착` })
+              : el('span', { class: 'sub', text: '아직 기록 없음' }),
+          ]),
+          it.proof ? el('div', { class: 'shots' },
+            [[it.proof.photo_url, it.proof.shot_at], [it.proof.photo2_url, it.proof.shot2_at]]
+              .filter(([u]) => u).map(([u, a]) => shot(u, a))) : null,
+          it.proof && it.proof.text ? el('div', { class: 'ptext', text: it.proof.text }) : null,
+        ])),
       ]),
+
       el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),
       installSeen() ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') }) : null,
     ],
-    hint: 'M3 완료 — 다음 단계에서 인증이 도착합니다.',
+    hint: '사진과 시각은 시터가 올린 그대로입니다.',
   };
 }

@@ -44,7 +44,9 @@ export function sitterHomeScreen(ctx, go, rerender) {
               ]),
               el('div', { class: 'sub', text: `${c.owners?.nickname || '보호자'} · ${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
             ]),
-            el('button', { class: 'ctasm', text: '링크 복사', onclick: () => copy(inviteUrlOf(c.invite_token)) }),
+            c.sent_at
+              ? el('button', { class: 'ctasm', text: '기록하기', onclick: () => go('care', c.id) })
+              : el('button', { class: 'ctasm', text: '링크 복사', onclick: () => copy(inviteUrlOf(c.invite_token)) }),
           ]);
         }),
       ]) : card([
@@ -54,6 +56,6 @@ export function sitterHomeScreen(ctx, go, rerender) {
 
       el('button', { class: 'add', onclick: () => go('newContract'), text: '＋ 돌봄 준비하기' }),
     ],
-    hint: 'M2 — 계약 준비와 초대 링크 발급',
+    hint: '보호자가 일정을 보내면 「기록하기」가 열립니다.',
   };
 }

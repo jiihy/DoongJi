@@ -9,11 +9,18 @@ import { sitterHomeScreen } from './ui/screens/sitterHome.js';
 import { loadContract } from './data/owner.js';
 import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen } from './ui/screens/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
+import { loadCare, hydrate } from './data/care.js';
+import { sitterCareScreen } from './ui/screens/sitterCare.js';
 
 const ctx = { sitter: null, session: null, screen: 'home', clients: [], contracts: [] };
 const uiState = {};
 const rerender = () => render();
-const go = async (screen) => { ctx.screen = screen; await refresh(); render(); };
+const go = async (screen, arg) => {
+  ctx.screen = screen;
+  if (screen === 'care') { ctx.careId = arg || ctx.careId; ctx.care = null; render(); ctx.care = await loadCare(ctx.careId); watchCare(); }
+  else { unwatch(); await refresh(); }
+  render();
+};
 
 async function refresh() {
   if (!ctx.sitter) return;
@@ -31,6 +38,11 @@ function render() {
 
   if (ctx.screen === 'profile') return paint(profileScreen(ctx, rerender, go));
   if (ctx.screen === 'newContract') return paint(newContractScreen(ctx, go, rerender));
+  if (ctx.screen === 'care') {
+    if (!ctx.care) return paint({ title: '오늘의 돌봄', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+    return paint(sitterCareScreen(ctx.care, uiState, go,
+      async () => { ctx.care = await loadCare(ctx.careId); render(); }, rerender));
+  }
   return paint(sitterHomeScreen(ctx, go, rerender));
 }
 
@@ -45,6 +57,22 @@ sb.auth.onAuthStateChange(async (event, session) => {
   render();
 });
 
+/* ── 실시간 — 상대가 올린 것이 30초 안에 이 화면에 뜨게 한다 ── */
+let channel = null;
+function unwatch() { if (channel) { sb.removeChannel(channel); channel = null; } }
+function watchCare() {
+  unwatch();
+  if (!ctx.careId) return;
+  channel = sb.channel(`care:${ctx.careId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'proofs' },
+      async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'schedule_items', filter: `contract_id=eq.${ctx.careId}` },
+      async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'care_notes' },
+      async () => { if (ctx.screen === 'care') { ctx.care = await loadCare(ctx.careId); render(); } })
+    .subscribe();
+}
+
 /* ── 보호자(무계정) 경로 ── */
 const owner = { c: null, screen: null, ui: {}, err: null };
 const ownerGo = s => {
@@ -53,6 +81,15 @@ const ownerGo = s => {
   owner.screen = s; renderOwner();
 };
 const ownerReload = async () => { try { owner.c = await loadContract(); } catch (e) { owner.err = e.message; } };
+
+let ownerChannel = null;
+function watchOwner() {
+  if (ownerChannel || !owner.c) return;
+  ownerChannel = sb.channel(`owner:${owner.c.id}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'proofs' },
+      async () => { await ownerReload(); renderOwner(); })
+    .subscribe();
+}
 
 function ownerDefault(c) {
   if (!c.confirmed_at) return 'welcome';
@@ -78,11 +115,11 @@ function renderOwner() {
   if (screen === 'install')  return paint(ownerInstall(owner.ui, go, rr));
   if (screen === 'confirm')  return paint(ownerConfirm(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
   if (screen === 'schedule') return paint(ownerSchedule(c, owner.ui, go, async () => { await reload(); rr(); }, rr));
-  return paint(ownerHome(c, go));
+  return paint(ownerHome(c, go, owner.ui, rr));
 }
 
 (async () => {
-  if (inviteToken) { await ownerReload(); renderOwner(); return; }
+  if (inviteToken) { await ownerReload(); renderOwner(); watchOwner(); return; }
   const { data: { session } } = await sb.auth.getSession();
   ctx.session = session;
   if (session) { ctx.sitter = await ensureSitter(); await refresh(); }

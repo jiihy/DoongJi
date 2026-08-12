@@ -128,3 +128,19 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .avacam{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:1000px;border:2px solid #fff;
   background:var(--primary);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
 .avaedit input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+/* 인증 사진 */
+.shots{display:flex;gap:8px;flex-wrap:wrap}
+.shot,.thumb{position:relative;width:104px;height:104px;border-radius:10px;overflow:hidden;background:var(--bg);border:none;padding:0}
+.shot img,.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.shotstamp{position:absolute;left:0;right:0;bottom:0;padding:4px 6px;font-size:11px;font-weight:700;
+  color:#fff;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);text-align:left}
+.shotadd{position:relative;display:flex;align-items:center;justify-content:center;height:46px;
+  border:1px dashed var(--line);border-radius:10px;color:var(--ink3);font-size:14px;font-weight:600}
+.shotadd input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+.prow{display:flex;flex-direction:column;gap:9px;padding:14px 0}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow:last-child{padding-bottom:0}
+.phead{display:flex;align-items:center;gap:10px}
+.ptext{font-size:13px;line-height:1.55;color:var(--ink2)}
+.lightbox{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:16px}
+.lightbox img{max-width:100%;max-height:100%;object-fit:contain}
