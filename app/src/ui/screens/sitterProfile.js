@@ -114,7 +114,6 @@ export function sitterProfileScreen(s, stats, back, pub) {
       // 「본인이 올림 · 이 서비스가 확인하지 않음」 — 확인된 것과 섞지 않는다 (§2-3)
       (s.imported || []).length ? card([
         el('div', { class: 'h', text: '다른 곳에서 받은 후기' }),
-        el('div', { class: 'sub', text: '캡처를 직접 보고 판단해주세요.' }),
         ...s.imported.map(v => el('div', { class: 'imp' }, [
           el('div', { class: 'top' }, [
             el('span', { class: 'src', text: v.source || '출처 미기재' }),

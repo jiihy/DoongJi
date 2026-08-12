@@ -417,10 +417,21 @@ export function ownerHome(c, go, ui, rerender, bell) {
     right: bell,
     overlay,
     body: [
-      card([
+      (multi && cur) ? (() => {
+        const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
+        return notes.length ? card([
+          el('div', { class: 'tight' }, [
+            el('div', { class: 'h', text: '내가 남긴 특이사항' }),
+            ...notes.map(n => el('div', { class: 'noterow' }, [
+              el('span', { class: 'notechip', text: kindName(n.kind) }),
+              el('span', { class: 'ptext', text: n.text }),
+            ])),
+          ]),
+        ]) : null;
+      })() : card([
         el('div', { class: 'profhead' }, [
           el('div', { class: 'pcol' }, [
-            el('div', { class: 'h', text: multi && cur ? nameOf(cur) : c.pets.map(p => p.name).join(' · ') }),
+            el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
             el('div', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
           ]),
           el('button', { class: 'ctasm', text: `${s.name} 시터`, onclick: () => go('sitterProfile') }),

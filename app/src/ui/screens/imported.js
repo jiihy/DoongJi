@@ -3,7 +3,7 @@ import { addImported, delImported, uploadCapture } from '../../data/sitter.js';
 
 // 캡처 없이는 등록되지 않는다 — 「본인이 올림」이라도 근거는 남긴다
 export function importedScreen(ctx, go, rerender, reload) {
-  const d = ctx.impDraft = ctx.impDraft || { source: '당근 알바', text: '', review_date: '', capture_url: null, busy: false };
+  const d = ctx.impDraft = ctx.impDraft || { source: '당근 알바', text: '', review_date: '', reviewed_at: '', capture_url: null, busy: false };
   const list = ctx.imported || [];
 
   return {
@@ -16,8 +16,10 @@ export function importedScreen(ctx, go, rerender, reload) {
         el('div', { class: 'sub', text: '당근·카톡 등에서 받은 후기를 캡처와 함께 올립니다. 공개 프로필에 「본인이 올림」으로 표시되고, 이 서비스가 확인한 기록과 섞이지 않습니다.' }),
         field('출처', { name: 'imp_source', value: d.source, placeholder: '예) 당근 알바',
           oninput: e => { d.source = e.target.value; } }),
-        field('날짜 (선택)', { name: 'imp_date', value: d.review_date, placeholder: '예) 2026.07',
+        field('날짜 표기 (선택)', { name: 'imp_date', value: d.review_date, placeholder: '예) 2개월 전 · 6/26 돌봄',
           oninput: e => { d.review_date = e.target.value; } }),
+        field('정렬용 날짜 (선택)', { name: 'imp_at', type: 'date', value: d.reviewed_at || '',
+          onchange: e => { d.reviewed_at = e.target.value; } }),
         el('textarea', { name: 'imp_text', placeholder: '후기 내용을 옮겨 적어주세요',
           value: d.text, oninput: e => { d.text = e.target.value; rerender(); } }),
 
@@ -41,6 +43,7 @@ export function importedScreen(ctx, go, rerender, reload) {
               await addImported(ctx.sitter.id, {
                 source: d.source.trim() || null, text: d.text.trim(),
                 review_date: d.review_date.trim() || null, capture_url: d.capture_url,
+                reviewed_at: d.reviewed_at || null,
               });
               ctx.impDraft = null;
               flash('담았어요', '공개 프로필에 표시됩니다.');
