@@ -241,3 +241,9 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
   display:inline-flex;align-items:center}
 .dreply{display:flex;flex-direction:column;gap:4px;background:var(--bg);border-radius:10px;padding:11px 12px}
 .dlab{font-size:12px;font-weight:700;color:var(--ink3)}
+/* 공개 동의 토글 */
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--bg);border-radius:12px;padding:13px 14px}
+.swlab{font-size:14px;font-weight:700}
+.switchrow input{width:48px;height:28px;accent-color:var(--primary)}
+a.proofline{text-decoration:none}

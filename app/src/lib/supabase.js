@@ -7,6 +7,12 @@ if (!url || !key) throw new Error('.env.local에 VITE_SUPABASE_URL / VITE_SUPABA
 // 보호자는 무계정 — 초대 토큰을 헤더로 실어 보내면 RLS(request.invite_token)가 계약 범위를 연다
 export const inviteToken = new URLSearchParams(location.search).get('t') || null;
 // 공개 프로필 경로 — SNS에 뿌리는 주소는 /s/<slug>, ?s=<slug>도 받는다
+// 공개 돌봄 기록 — /r/<record_token>
+export const recordToken = (() => {
+  const m = location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)\/?$/);
+  return m ? m[1] : (new URLSearchParams(location.search).get('r') || null);
+})();
+
 export const publicSlug = (() => {
   const m = location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)\/?$/);
   return m ? m[1] : (new URLSearchParams(location.search).get('s') || null);

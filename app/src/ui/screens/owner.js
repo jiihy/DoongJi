@@ -1,5 +1,6 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
+import { copyText } from '../el.js';
 import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
@@ -590,6 +591,29 @@ export function ownerHome(c, go, ui, rerender, bell) {
               }))),
           x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
         ])),
+      ]) : null,
+
+      (!multi || !cur) ? card([
+        el('div', { class: 'h', text: '이 돌봄 기록을 공개할까요?' }),
+        el('div', { class: 'sub', text: '켜면 사진·시각·확인 여부가 그대로 담긴 읽기 전용 링크가 만들어집니다. 다음에 이 시터를 알아보는 다른 보호자가 「말이 아니라 기록」으로 판단할 수 있어요. 언제든 다시 끌 수 있고, 끄면 링크는 바로 열리지 않습니다.' }),
+        el('label', { class: 'switchrow' }, [
+          el('span', { class: 'swlab', text: c.record_public ? '공개 중' : '비공개' }),
+          el('input', { type: 'checkbox', checked: c.record_public ? 'checked' : null,
+            onchange: async e => {
+              const on = e.target.checked;
+              c.record_public = on; rerender();
+              try { await api.setRecordPublic(c.id, on); flash(on ? '공개했어요' : '비공개로 바꿨어요'); }
+              catch (err) { flash('바꾸지 못했어요', err.message); }
+            } }),
+        ]),
+        c.record_public ? el('div', { class: 'okbox' }, [
+          el('div', { class: 'sub', text: '공개 링크' }),
+          el('input', { class: 'linkinput', name: 'reclink', readonly: 'readonly',
+            value: `${location.origin}/r/${c.record_token}`, onclick: e => e.target.select() }),
+          el('button', { class: 'ctasm', text: '링크 복사', onclick: async () => {
+            flash(await copyText(`${location.origin}/r/${c.record_token}`) ? '복사했어요' : '길게 눌러 복사해주세요');
+          } }),
+        ]) : null,
       ]) : null,
 
       el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),

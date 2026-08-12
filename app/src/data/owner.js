@@ -8,7 +8,7 @@ export async function loadContract() {
   const { data, error } = await sb.from('contracts')
     .select(`id, start_date, end_date, confirmed_at, sent_at, finished_at,
              handoff_start_time, handoff_start_by, handoff_end_time, handoff_end_by,
-             owner_place_addr, owner_place_detail, owner_id,
+             owner_place_addr, owner_place_detail, owner_id, record_public, record_token,
              sitters(id, name, type, region, bio, addr, addr_detail, photo_url, invite_slug),
              owners(nickname),
              contract_pets(pets(id, name, age, extra))`)
@@ -29,6 +29,17 @@ export async function sendInquiry(slug, contact, when, msg) {
   if (error) throw error;
   return data;
 }
+
+// 공개 돌봄 기록 — 동의한 계약만 서버가 내준다 (마이그레이션 25)
+export async function publicRecord(token) {
+  const { data, error } = await sb.rpc('public_record', { p_token: token });
+  if (error) throw error;
+  return data;
+}
+export const setRecordPublic = async (contractId, on) => {
+  const { error } = await sb.from('contracts').update({ record_public: on }).eq('id', contractId);
+  if (error) throw error;
+};
 
 // 시터 프로필의 숫자 — 개별 행이 아니라 집계만 서버가 내준다 (마이그레이션 14)
 export async function sitterStats(sitterId) {

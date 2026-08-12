@@ -5,7 +5,7 @@ const publicProfileFallback = () => ({
   name: 'public-profile-fallback',
   configureServer(server) {
     server.middlewares.use((req, _res, next) => {
-      if (/^\/s\/[A-Za-z0-9_-]+\/?$/.test((req.url || '').split('?')[0])) req.url = '/';
+      if (/^\/(s|r)\/[A-Za-z0-9_-]+\/?$/.test((req.url || '').split('?')[0])) req.url = '/';
       next();
     });
   },

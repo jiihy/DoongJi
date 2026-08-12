@@ -1,5 +1,5 @@
 import './style.css';
-import { sb, inviteToken, publicSlug } from './lib/supabase.js';
+import { sb, inviteToken, publicSlug, recordToken } from './lib/supabase.js';
 import { paint, el, card } from './ui/el.js';
 import { ensureSitter, listInquiries } from './data/sitter.js';
 import { listClients, listContracts } from './data/contracts.js';
@@ -15,7 +15,8 @@ import { importedScreen } from './ui/screens/imported.js';
 import { listImported } from './data/sitter.js';
 import { listBooks, writtenPets } from './data/care.js';
 import { listEvents, readEvents, markSeen } from './data/care.js';
-import { sitterStats, publicProfile, sendInquiry } from './data/owner.js';
+import { sitterStats, publicProfile, sendInquiry, publicRecord } from './data/owner.js';
+import { recordScreen } from './ui/screens/record.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 import { loadCare, hydrate } from './data/care.js';
 import { sitterCareScreen } from './ui/screens/sitterCare.js';
@@ -69,7 +70,13 @@ const renderPublic = () => {
   }));
 };
 
+const recState = { r: null, loaded: false };
+const renderRecord = () => recState.loaded
+  ? paint(recordScreen(recState.r))
+  : paint({ title: '돌봄 기록', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+
 function render() {
+  if (recordToken) return renderRecord();
   if (publicSlug) return renderPublic();
   if (inviteToken) return renderOwner();
   if (!ctx.session) return paint(loginScreen(uiState, rerender));
@@ -205,6 +212,11 @@ function renderOwner() {
 }
 
 (async () => {
+  if (recordToken) {
+    try { recState.r = await publicRecord(recordToken); } catch (e) { recState.r = null; }
+    recState.loaded = true; renderRecord();
+    return;
+  }
   if (publicSlug) {
     try { pubState.p = await publicProfile(publicSlug); if (!pubState.p) pubState.err = 'notfound'; }
     catch (e) { pubState.err = e.message; }
