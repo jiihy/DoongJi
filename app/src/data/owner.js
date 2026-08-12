@@ -1,3 +1,5 @@
+// Supabase 쿼리 빌더는 then만 있고 catch가 없다 — 붙여놓고 잊는 호출(.catch)이 조용히 죽는다.
+// 그래서 쓰기 함수는 모두 async로 감싸 진짜 Promise를 돌려준다.
 import { sb, inviteToken } from '../lib/supabase.js';
 
 // 보호자(무계정)가 토큰으로 자기 계약 하나만 읽는다 — 범위는 RLS가 강제한다
@@ -19,16 +21,16 @@ export async function loadContract() {
   return { ...data, pets: (data.contract_pets || []).map(cp => cp.pets), items: items || [], notes: notes || [] };
 }
 
-export const savePet   = (id, patch) => sb.from('pets').update(patch).eq('id', id).throwOnError();
-export const saveContract = (id, patch) => sb.from('contracts').update(patch).eq('id', id).throwOnError();
+export const savePet   = async (id, patch) => { await sb.from('pets').update(patch).eq('id', id).throwOnError(); };
+export const saveContract = async (id, patch) => { await sb.from('contracts').update(patch).eq('id', id).throwOnError(); };
 export const confirmContract = id => saveContract(id, { confirmed_at: new Date().toISOString() });
 export const sendSchedule    = id => saveContract(id, { sent_at: new Date().toISOString() });
 
 export const addItem = (contractId, petId, row) =>
   sb.from('schedule_items').insert({ contract_id: contractId, pet_id: petId, ...row }).select().single();
-export const saveItem = (id, patch) => sb.from('schedule_items').update(patch).eq('id', id).throwOnError();
-export const delItem  = id => sb.from('schedule_items').delete().eq('id', id).throwOnError();
+export const saveItem = async (id, patch) => { await sb.from('schedule_items').update(patch).eq('id', id).throwOnError(); };
+export const delItem  = async id => { await sb.from('schedule_items').delete().eq('id', id).throwOnError(); };
 
 export const addNote = (ownerId, row) =>
   sb.from('care_notes').insert({ owner_id: ownerId, ...row }).select().single();
-export const delNote = id => sb.from('care_notes').delete().eq('id', id).throwOnError();
+export const delNote = async id => { await sb.from('care_notes').delete().eq('id', id).throwOnError(); };

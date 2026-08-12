@@ -8,6 +8,17 @@ const HO_END = { owner: '보호자가 데리러 와요', sitter: '펫시터가 �
 const dot = d => (d || '').replaceAll('-', '.');
 const hm = t => (t || '').slice(0, 5);
 const mapUrl = q => 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+// 날짜 문자열만 다루므로 UTC로 고정해 시간대에 따라 하루가 밀리지 않게 한다
+const nightsOf = (a, b) => {
+  if (!a || !b) return null;
+  const d = (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000;
+  return Number.isFinite(d) ? Math.max(0, Math.round(d)) : null;
+};
+const spanLabel = (a, b) => {
+  const n = nightsOf(a, b);
+  if (n === null) return '기간';
+  return n === 0 ? '1일' : `${n}박 ${n + 1}일`;
+};
 // 계정이 없으므로 앱 설치 안내를 봤는지는 이 기기에만 남긴다
 const INSTALL_KEY = 'doongji.install.seen';
 export const installSeen = () => localStorage.getItem(INSTALL_KEY) === '1';
@@ -115,43 +126,48 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
   ]);
 
   if (ui.petIdx !== undefined && ui.petIdx !== null && c.pets[ui.petIdx]) {
-    const pt = { ...c.pets[ui.petIdx] };
-    sheets.push(el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.petIdx = null; rerender(); } } }, [
+    const pt = ui.petDraft || (ui.petDraft = { ...c.pets[ui.petIdx] });
+    sheets.push(el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.petIdx = null; ui.petDraft = null; rerender(); } } }, [
       el('div', { class: 'sheet' }, [
         el('div', { class: 'grip' }),
-        el('div', { class: 'h', text: `${pt.name} 정보 수정` }),
+        el('div', { class: 'h', text: `${c.pets[ui.petIdx].name} 정보 수정` }),
         field('이름', { name: 'p_name', value: pt.name || '', oninput: e => { pt.name = e.target.value; } }),
         field('나이', { name: 'p_age', value: pt.age || '', oninput: e => { pt.age = e.target.value; } }),
         field('추가 정보', { name: 'p_extra', value: pt.extra || '', oninput: e => { pt.extra = e.target.value; } }),
         el('button', { class: 'cta', text: '완료', onclick: async () => {
           await api.savePet(pt.id, { name: pt.name, age: pt.age, extra: pt.extra });
-          ui.petIdx = null; flash('수정했어요'); reload();
+          ui.petIdx = null; ui.petDraft = null; flash('수정했어요'); reload();
         } }),
       ]),
     ]));
   }
 
   if (ui.hoOpen) {
-    const p = { ...c };
-    sheets.push(el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.hoOpen = false; rerender(); } } }, [
+    // 초안을 ui에 둔다 — 칩을 누를 때마다 새로 만들면 입력하던 주소가 사라진다
+    const p = ui.hoDraft || (ui.hoDraft = {
+      handoff_start_time: hm(c.handoff_start_time), handoff_start_by: c.handoff_start_by,
+      handoff_end_time: hm(c.handoff_end_time), handoff_end_by: c.handoff_end_by,
+      owner_place_addr: c.owner_place_addr || '', owner_place_detail: c.owner_place_detail || '',
+    });
+    sheets.push(el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.hoOpen = false; ui.hoDraft = null; rerender(); } } }, [
       el('div', { class: 'sheet' }, [
         el('div', { class: 'grip' }),
         el('div', { class: 'h', text: '픽·드롭 약속 수정' }),
         el('div', { class: 'hogrp' }, [
           el('label', { text: '맡기는 날' }),
-          field('', { name: 'ho_s', type: 'time', value: hm(p.handoff_start_time), onchange: e => { p.handoff_start_time = e.target.value; } }),
+          field('', { name: 'ho_s', type: 'time', value: p.handoff_start_time, onchange: e => { p.handoff_start_time = e.target.value; } }),
           el('div', { class: 'chips' }, Object.entries(HO_START).map(([v, t]) =>
             el('button', { class: 'chip', 'aria-pressed': p.handoff_start_by === v, text: t,
-              onclick: () => { p.handoff_start_by = v; c.handoff_start_by = v; rerender(); } }))),
+              onclick: () => { p.handoff_start_by = v; rerender(); } }))),
         ]),
         el('div', { class: 'hogrp' }, [
           el('label', { text: '돌아오는 날' }),
-          field('', { name: 'ho_e', type: 'time', value: hm(p.handoff_end_time), onchange: e => { p.handoff_end_time = e.target.value; } }),
+          field('', { name: 'ho_e', type: 'time', value: p.handoff_end_time, onchange: e => { p.handoff_end_time = e.target.value; } }),
           el('div', { class: 'chips' }, Object.entries(HO_END).map(([v, t]) =>
             el('button', { class: 'chip', 'aria-pressed': p.handoff_end_by === v, text: t,
-              onclick: () => { p.handoff_end_by = v; c.handoff_end_by = v; rerender(); } }))),
+              onclick: () => { p.handoff_end_by = v; rerender(); } }))),
         ]),
-        (c.handoff_start_by === 'sitter' || c.handoff_end_by === 'sitter') ? el('div', { class: 'hogrp' }, [
+        (p.handoff_start_by === 'sitter' || p.handoff_end_by === 'sitter') ? el('div', { class: 'hogrp' }, [
           el('label', { text: '우리 집 주소 (펫시터가 올 때)' }),
           el('div', { class: 'sub', text: '이 주소는 맡긴 시터에게만 보입니다.' }),
           field('주소', { name: 'oaddr', value: p.owner_place_addr || '', oninput: e => { p.owner_place_addr = e.target.value; } }),
@@ -159,11 +175,11 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
         ]) : null,
         el('button', { class: 'cta', text: '완료', onclick: async () => {
           await api.saveContract(c.id, {
-            handoff_start_time: p.handoff_start_time, handoff_start_by: c.handoff_start_by,
-            handoff_end_time: p.handoff_end_time, handoff_end_by: c.handoff_end_by,
-            owner_place_addr: p.owner_place_addr, owner_place_detail: p.owner_place_detail,
+            handoff_start_time: p.handoff_start_time, handoff_start_by: p.handoff_start_by,
+            handoff_end_time: p.handoff_end_time, handoff_end_by: p.handoff_end_by,
+            owner_place_addr: p.owner_place_addr || null, owner_place_detail: p.owner_place_detail || null,
           });
-          ui.hoOpen = false; flash('저장했어요'); reload();
+          ui.hoOpen = false; ui.hoDraft = null; flash('저장했어요'); reload();
         } }),
       ]),
     ]));
@@ -171,6 +187,8 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
 
   const s = c.sitters || {};
   const sitterPlace = (c.handoff_start_by === 'owner' || c.handoff_end_by === 'owner') && s.addr;
+  const needOwnerPlace = c.handoff_start_by === 'sitter' || c.handoff_end_by === 'sitter';
+  const openHo = () => { ui.hoOpen = true; ui.hoDraft = null; rerender(); };
 
   return {
     title: '정보 확인',
@@ -183,19 +201,19 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
       ]),
       card([
         el('div', { class: 'h', text: '돌보는 아이' }),
-        ...c.pets.map((pt, i) => row(pt.name, [pt.age, pt.extra].filter(Boolean).join(' · ') || '정보 없음',
-          () => { ui.petIdx = i; rerender(); })),
+        el('div', { class: 'kvlist' }, c.pets.map((pt, i) => row(pt.name, [pt.age, pt.extra].filter(Boolean).join(' · ') || '정보 없음',
+          () => { ui.petIdx = i; ui.petDraft = null; rerender(); }))),
       ]),
       card([
         el('div', { class: 'h', text: '돌봄 기간' }),
         el('div', { class: 'kv' }, [
-          el('span', { class: 'sub', text: '기간' }),
+          el('span', { class: 'sub', text: spanLabel(c.start_date, c.end_date) }),
           el('b', { text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
         ]),
       ]),
       card([
         el('div', { class: 'h', text: '픽·드롭 약속' }),
-        el('button', { class: 'kvrow', onclick: () => { ui.hoOpen = true; rerender(); } }, [
+        el('button', { class: 'kvrow', onclick: () => { ui.hoOpen = true; ui.hoDraft = null; rerender(); } }, [
           el('div', { class: 'horows' }, [
             el('div', { class: 'hrow2' }, [el('span', { class: 'sub', text: `맡기는 날 · ${HO_START[c.handoff_start_by]}` }), el('b', { text: `${dot(c.start_date).slice(5)} ${hm(c.handoff_start_time)}` })]),
             el('div', { class: 'hrow2' }, [el('span', { class: 'sub', text: `돌아오는 날 · ${HO_END[c.handoff_end_by]}` }), el('b', { text: `${dot(c.end_date).slice(5)} ${hm(c.handoff_end_time)}` })]),
@@ -203,6 +221,15 @@ export function ownerConfirm(c, ui, go, reload, rerender) {
           el('span', { class: 'chev', text: '›' }),
         ]),
       ]),
+      needOwnerPlace ? card([
+        el('div', { class: 'h', text: '약속 장소 · 우리 집' }),
+        el('div', { class: 'sub', text: '펫시터가 오는 날 찾아올 주소예요. 맡긴 시터에게만 보입니다.' }),
+        c.owner_place_addr
+          ? el('div', { class: 'mapbox' }, [el('span', { text: '📍' }),
+              el('span', { class: 'maptx', text: c.owner_place_addr + (c.owner_place_detail ? ` · ${c.owner_place_detail}` : '') })])
+          : null,
+        el('button', { class: 'add', text: c.owner_place_addr ? '주소 수정' : '＋ 주소 입력', onclick: openHo }),
+      ]) : null,
       sitterPlace ? card([
         el('div', { class: 'h', text: '약속 장소 · 시터 쪽' }),
         el('div', { class: 'mapbox' }, [el('span', { text: '📍' }), el('span', { class: 'maptx', text: s.addr + (s.addr_detail ? ` · ${s.addr_detail}` : '') })]),
@@ -226,14 +253,26 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
   const cur = ui.petTab && c.pets.some(p => p.id === ui.petTab) ? ui.petTab : c.pets[0]?.id;
   const items = c.items.filter(i => !multi || i.pet_id === cur);
 
+  // 낙관적 갱신 — 화면을 먼저 바꾸고 저장은 뒤에서 한다 (매번 전체 재조회하면 입력이 버벅인다)
+  const patchItem = (it, patch) => {
+    Object.assign(it, patch);
+    rerender();
+    api.saveItem(it.id, patch).catch(e => flash('저장 실패', e.message));
+  };
   const addRow = async () => {
     const { data, error } = await api.addItem(c.id, cur, { kind: 'meal', at_time: '12:00', fuzz_min: 60, sort_key: c.items.length });
     if (error) { flash('추가 실패', error.message); return; }
-    await reload();
+    c.items.push(data);
+    rerender();
+  };
+  const dropRow = (it) => {
+    c.items.splice(c.items.indexOf(it), 1);
+    rerender();
+    api.delItem(it.id).catch(e => flash('삭제 실패', e.message));
   };
 
   const noteSheet = ui.cnOpen ? (() => {
-    const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: null, text: '' };
+    const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: multi ? cur : null, text: '' };
     return el('div', { class: 'sheetback', onclick: e => { if (e.target.classList.contains('sheetback')) { ui.cnOpen = false; rerender(); } } }, [
       el('div', { class: 'sheet' }, [
         el('div', { class: 'grip' }),
@@ -249,9 +288,11 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
           value: d.text, oninput: e => { d.text = e.target.value; } }),
         el('button', { class: 'cta', text: '저장', onclick: async () => {
           if (!d.text.trim()) { flash('내용을 적어주세요'); return; }
-          await api.addNote(c.owner_id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
+          const { data, error } = await api.addNote(c.owner_id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
+          if (error) { flash('저장 실패', error.message); return; }
+          c.notes.push(data);
           ui.cnOpen = false; ui.cnDraft = null; flash('특이사항이 저장되었어요', '시터의 해당 인증 화면에 참고 사항으로 보입니다.');
-          await reload();
+          rerender();
         } }),
       ]),
     ]);
@@ -275,20 +316,17 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
           el('button', { class: 'addmini', text: '＋', 'aria-label': '항목 추가', onclick: addRow }),
         ]),
         ...items.map(it => el('div', { class: 'srow' }, [
-          el('select', { name: `k_${it.id}`, onchange: async e => {
+          el('select', { name: `k_${it.id}`, onchange: e => {
             const kind = e.target.value;
-            const patch = kind === 'med' ? { kind, fuzz_min: 0 } : { kind };
-            await api.saveItem(it.id, patch); await reload();
+            patchItem(it, kind === 'med' ? { kind, fuzz_min: 0 } : { kind });
           } }, Object.entries(KINDS).map(([k, t]) =>
             el('option', { value: k, selected: it.kind === k, text: t }))),
           it.fuzz_min === -1 ? null : el('input', { name: `t_${it.id}`, type: 'time', value: hm(it.at_time),
-            onchange: async e => { await api.saveItem(it.id, { at_time: e.target.value }); await reload(); } }),
-          el('select', { name: `f_${it.id}`, 'aria-label': '시간 범위', onchange: async e => {
-            await api.saveItem(it.id, { fuzz_min: Number(e.target.value) }); await reload();
-          } }, Object.entries(FUZZ).map(([v, t]) =>
+            onchange: e => patchItem(it, { at_time: e.target.value }) }),
+          el('select', { name: `f_${it.id}`, 'aria-label': '시간 범위',
+            onchange: e => patchItem(it, { fuzz_min: Number(e.target.value) }) }, Object.entries(FUZZ).map(([v, t]) =>
             el('option', { value: v, selected: String(it.fuzz_min) === v, text: t }))),
-          el('button', { class: 'del', text: '✕', 'aria-label': '삭제',
-            onclick: async () => { await api.delItem(it.id); await reload(); } }),
+          el('button', { class: 'del', text: '✕', 'aria-label': '삭제', onclick: () => dropRow(it) }),
         ])),
         items.length ? null : el('div', { class: 'sub', text: '＋ 를 눌러 항목을 추가해주세요.' }),
       ]),
@@ -299,11 +337,15 @@ export function ownerSchedule(c, ui, go, reload, rerender) {
         ...c.notes.filter(n => !multi || !n.pet_id || n.pet_id === cur).map(n => el('div', { class: 'note' }, [
           el('div', { class: 'notehead' }, [
             el('span', { class: 'notechip', text: (n.kind === 'all' ? '공통' : KINDS[n.kind] || n.kind) + (multi && n.pet_id ? ` · ${petOf(n.pet_id)?.name}` : '') }),
-            el('button', { class: 'linkbtn', text: '삭제', onclick: async () => { await api.delNote(n.id); await reload(); } }),
+            el('button', { class: 'linkbtn', text: '삭제', onclick: () => {
+              c.notes.splice(c.notes.indexOf(n), 1); rerender();
+              api.delNote(n.id).catch(e => flash('삭제 실패', e.message));
+            } }),
           ]),
           el('span', { class: 'r', text: n.text }),
         ])),
-        el('button', { class: 'add', text: '＋ 특이사항 추가', onclick: () => { ui.cnOpen = true; rerender(); } }),
+        el('button', { class: 'add', text: '＋ 특이사항 추가',
+          onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
       ]),
     ],
     foot: [el('button', { class: 'cta', disabled: !c.items.length,

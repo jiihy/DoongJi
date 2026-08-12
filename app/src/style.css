@@ -53,7 +53,7 @@ select{height:48px;padding:0 10px}
 .chip{font-size:13px;font-weight:500;padding:9px 13px;border-radius:1000px;background:#fff;border:1px solid var(--line);color:var(--ink2)}
 .chip[aria-pressed="true"]{background:var(--tint);border-color:var(--primary);color:var(--primary-ink);font-weight:600}
 .add{height:46px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink3);font-size:14px;font-weight:600}
-.listrow{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.listrow{display:flex;align-items:center;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
 .listrow:last-child{padding-bottom:0}
 .lrmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .lrtitle{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
@@ -68,6 +68,8 @@ select{height:48px;padding:0 10px}
 .kvrow{display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;background:none;border:none;text-align:left}
 .kvrow+.kvrow{border-top:1px solid var(--line)}
 .kvrow:last-child{padding-bottom:0}
+/* 카드의 gap과 행 padding이 겹치면 첫 행만 좁아 보인다 — 목록은 자체 간격만 쓴다 */
+.kvlist{display:flex;flex-direction:column}
 .kvval{flex:1;text-align:right;font-size:14px;font-weight:600}
 .chev{flex:none;color:var(--ink4);font-size:18px}
 .horows{flex:1;display:flex;flex-direction:column;gap:5px}
