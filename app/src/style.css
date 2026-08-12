@@ -217,13 +217,19 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .seecap{align-self:center;background:none;border:none;padding:6px 0;font-size:12px;font-weight:500;
   color:var(--ink4);text-decoration:underline;text-underline-offset:3px}
 /* 항목 하나가 상자 하나 — 제목 굵게, 내용은 아래 회색 */
-/* 카테고리와 내용을 한 줄로, 행 사이는 선으로만 나눈다 */
-.notebox{display:flex;align-items:baseline;gap:10px;padding:13px 0}
-.card>.notebox+.notebox{border-top:1px solid var(--line);margin-top:-12px;padding-top:13px}
-.card>.notebox:first-child{padding-top:0}
-.card>.notebox:last-child{padding-bottom:0}
-.notebox .k{flex:none;min-width:50px;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
-.notebox .v{font-size:14px;font-weight:500;line-height:1.5;color:var(--ink3)}
+/* 카테고리 열을 그리드로 묶어 모든 행의 내용 시작점을 맞춘다 */
+.notelist{display:grid;grid-template-columns:max-content 1fr}
+.notelist .k{padding:13px 14px 13px 0;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.notelist .v{padding:13px 0;font-size:14px;font-weight:500;line-height:1.5;color:var(--ink3)}
+.notelist .sep{border-top:1px solid var(--line)}
+.notelist>:nth-child(1),.notelist>:nth-child(2){padding-top:0}
+.notelist>:nth-last-child(1),.notelist>:nth-last-child(2){padding-bottom:0}
 .lrbtns{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .sectwrap{display:flex;flex-direction:column;gap:12px}
 .sectsub{padding:0 4px;font-size:13px;font-weight:500;line-height:1.55;color:var(--ink4);margin-top:-6px}
+/* 접히는 섹션 제목 */
+.secttoggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:0;background:none;border:none;text-align:left}
+.secttoggle .sect{padding:6px 4px 0;font-size:14px;font-weight:600;color:var(--ink4);letter-spacing:0}
+.tchev{padding:0 6px;font-size:18px;color:var(--ink4);transform:rotate(90deg);transition:transform .15s}
+.secttoggle[aria-expanded="true"] .tchev{transform:rotate(-90deg)}

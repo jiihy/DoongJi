@@ -429,12 +429,17 @@ export function ownerHome(c, go, ui, rerender, bell) {
 
       (!multi || cur) ? (() => {
         const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
+        const open = !!ui.notesOpen;
         return notes.length ? el('div', { class: 'sectwrap' }, [
-          el('div', { class: 'sect', text: '내가 남긴 특이사항' }),
-          card(notes.map(n => el('div', { class: 'notebox' }, [
-            el('span', { class: 'k', text: kindName(n.kind) }),
-            el('span', { class: 'v', text: n.text }),
-          ]))),
+          el('button', { class: 'secttoggle', 'aria-expanded': open,
+            onclick: () => { ui.notesOpen = !open; rerender(); } }, [
+            el('span', { class: 'sect', text: `내가 남긴 특이사항 ${notes.length}` }),
+            el('span', { class: 'tchev', text: '›' }),
+          ]),
+          open ? card([el('div', { class: 'notelist' }, notes.flatMap((n, i) => [
+            el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
+            el('span', { class: 'v' + (i ? ' sep' : ''), text: n.text }),
+          ]))]) : null,
         ]) : null;
       })() : null,
 
@@ -484,7 +489,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
         ]);
       }) : []),
 
-      (c.extras || []).length ? el('div', { class: 'sectwrap' }, [
+      ((c.extras || []).length && (!multi || !cur)) ? el('div', { class: 'sectwrap' }, [
         el('div', { class: 'sect', text: '먼저 챙긴 순간' }),
         el('div', { class: 'sectsub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
         ...c.extras.map(x => card([
