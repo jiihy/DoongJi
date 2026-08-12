@@ -1,6 +1,6 @@
-import { el, card, field, flash } from '../el.js';
+import { el, card, field, flash, copyText } from '../el.js';
 import { sb } from '../../lib/supabase.js';
-import { saveSitter, uploadAvatar } from '../../data/sitter.js';
+import { saveSitter, uploadAvatar, listInquiries, markInquiry } from '../../data/sitter.js';
 
 export function profileScreen(ctx, rerender, go) {
   const s = ctx.sitter;
@@ -9,7 +9,8 @@ export function profileScreen(ctx, rerender, go) {
     type: 'text', placeholder: ph, value: s[key] || '',
     oninput: e => { patch[key] = e.target.value; },
   });
-  const inviteUrl = `${location.origin}/?t=`;   // M2에서 계약 토큰이 붙는다
+  const publicUrl = `${location.origin}/s/${s.invite_slug}`;
+  const inq = ctx.inquiries || [];
 
   return {
     title: '내 프로필',
@@ -51,9 +52,30 @@ export function profileScreen(ctx, rerender, go) {
         f('한 줄 소개', 'bio', '예) 기록으로 신뢰를 쌓습니다'),
       ]),
       card([
-        el('div', { class: 'h', text: '초대 링크' }),
-        el('div', { class: 'sub', text: '다음 단계(M2)에서 계약을 만들면 이 주소에 토큰이 붙습니다.' }),
-        el('div', { class: 'mono', text: inviteUrl + '…' }),
+        el('div', { class: 'h', text: '공개 프로필 링크' }),
+        el('div', { class: 'sub', text: 'SNS·당근 소개글에 이 주소를 올리면, 본 사람이 바로 의뢰를 보낼 수 있어요. 주소와 연락처는 공개되지 않습니다.' }),
+        el('input', { class: 'linkinput', name: 'publiclink', readonly: 'readonly', value: publicUrl,
+          onclick: e => e.target.select() }),
+        el('div', { class: 'hgrid' }, [
+          el('button', { class: 'ctasm', text: '링크 복사', onclick: async () => {
+            flash(await copyText(publicUrl) ? '복사했어요' : '길게 눌러 복사해주세요');
+          } }),
+          el('button', { class: 'ctasm', text: '미리 보기', onclick: () => window.open(publicUrl, '_blank') }),
+        ]),
+      ]),
+
+      card([
+        el('div', { class: 'h', text: `받은 의뢰${inq.length ? ` · ${inq.filter(q => !q.handled).length}건 대기` : ''}` }),
+        inq.length ? el('div', { class: 'rows' }, inq.map(q => el('div', { class: 'prow' }, [
+          el('div', { class: 'phead' }, [
+            el('span', { class: 'tk', text: q.contact }),
+            el('span', { class: 'sub', text: new Date(q.at).toLocaleDateString('ko-KR') }),
+          ]),
+          q.when_text ? el('div', { class: 'ptext', text: `원하는 시기 · ${q.when_text}` }) : null,
+          q.msg ? el('div', { class: 'ptext', text: q.msg }) : null,
+          el('button', { class: 'linkbtn', text: q.handled ? '처리됨 · 되돌리기' : '처리함으로 표시',
+            onclick: async () => { await markInquiry(q.id, !q.handled); ctx.inquiries = await listInquiries(); rerender(); } }),
+        ]))) : el('div', { class: 'sub', text: '아직 받은 의뢰가 없어요.' }),
       ]),
     ],
     foot: [el('button', {
@@ -67,6 +89,6 @@ export function profileScreen(ctx, rerender, go) {
         } catch (e) { flash('저장 실패', e.message); }
       },
     })],
-    hint: 'M1 — 로그인·프로필이 서버에 저장됩니다.',
+    hint: '공개 링크로 들어온 사람에게는 이름·소개·회계 숫자만 보입니다.',
   };
 }

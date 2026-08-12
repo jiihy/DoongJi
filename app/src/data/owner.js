@@ -17,6 +17,19 @@ export async function loadContract() {
   return hydrate(data);          // 일정·특이사항·인증을 시터 쪽과 같은 모양으로 붙인다
 }
 
+// 공개 프로필 — 주소·연락처는 서버가 빼고 내준다 (마이그레이션 15)
+export async function publicProfile(slug) {
+  const { data, error } = await sb.rpc('sitter_public', { p_slug: slug });
+  if (error) throw error;
+  return data;
+}
+export async function sendInquiry(slug, contact, when, msg) {
+  const { data, error } = await sb.rpc('send_inquiry',
+    { p_slug: slug, p_contact: contact, p_when: when || null, p_msg: msg || null });
+  if (error) throw error;
+  return data;
+}
+
 // 시터 프로필의 숫자 — 개별 행이 아니라 집계만 서버가 내준다 (마이그레이션 14)
 export async function sitterStats(sitterId) {
   const { data, error } = await sb.rpc('sitter_stats', { p_sitter: sitterId });

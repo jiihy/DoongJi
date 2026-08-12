@@ -1,7 +1,7 @@
 import './style.css';
-import { sb, inviteToken } from './lib/supabase.js';
+import { sb, inviteToken, publicSlug } from './lib/supabase.js';
 import { paint, el, card } from './ui/el.js';
-import { ensureSitter } from './data/sitter.js';
+import { ensureSitter, listInquiries } from './data/sitter.js';
 import { listClients, listContracts } from './data/contracts.js';
 import { loginScreen } from './ui/screens/login.js';
 import { profileScreen } from './ui/screens/profile.js';
@@ -9,7 +9,7 @@ import { sitterHomeScreen } from './ui/screens/sitterHome.js';
 import { loadContract } from './data/owner.js';
 import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen } from './ui/screens/owner.js';
 import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
-import { sitterStats } from './data/owner.js';
+import { sitterStats, publicProfile, sendInquiry } from './data/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 import { loadCare, hydrate } from './data/care.js';
 import { sitterCareScreen } from './ui/screens/sitterCare.js';
@@ -27,13 +27,29 @@ const go = async (screen, arg) => {
 async function refresh() {
   if (!ctx.sitter) return;
   try {
-    [ctx.clients, ctx.contracts] = await Promise.all([
-      listClients(ctx.sitter.id), listContracts(ctx.sitter.id),
+    [ctx.clients, ctx.contracts, ctx.inquiries] = await Promise.all([
+      listClients(ctx.sitter.id), listContracts(ctx.sitter.id), listInquiries(),
     ]);
   } catch (e) { console.error(e); }
 }
 
+/* ── 공개 프로필 (SNS 링크) — 계정도 토큰도 없다 ── */
+const pubState = { p: null, err: null, ui: {} };
+const renderPublic = () => {
+  if (pubState.err) return paint({ title: '펫시터 프로필', body: [card([
+    el('div', { class: 'h', text: '프로필을 찾을 수 없어요' }),
+    el('div', { class: 'sub', text: '링크를 다시 확인해주세요.' }),
+  ])] });
+  if (!pubState.p) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+  return paint(sitterProfileScreen(pubState.p, pubState.p.stats, null, {
+    ui: pubState.ui,
+    rerender: renderPublic,
+    send: (contact, when, msg) => sendInquiry(publicSlug, contact, when, msg),
+  }));
+};
+
 function render() {
+  if (publicSlug) return renderPublic();
   if (inviteToken) return renderOwner();
   if (!ctx.session) return paint(loginScreen(uiState, rerender));
   if (!ctx.sitter) return paint({ title: '둥지', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
@@ -129,6 +145,12 @@ function renderOwner() {
 }
 
 (async () => {
+  if (publicSlug) {
+    try { pubState.p = await publicProfile(publicSlug); if (!pubState.p) pubState.err = 'notfound'; }
+    catch (e) { pubState.err = e.message; }
+    renderPublic();
+    return;
+  }
   if (inviteToken) { await ownerReload(); renderOwner(); watchOwner(); return; }
   const { data: { session } } = await sb.auth.getSession();
   ctx.session = session;

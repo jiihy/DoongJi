@@ -1,4 +1,4 @@
-import { el, card } from '../el.js';
+import { el, card, field, flash } from '../el.js';
 
 // 프로토타입의 「펫시터 프로필」을 그대로 옮긴다 — 숫자 3종이 주인공, 보조 지표는 그 다음
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0) + '%';
@@ -15,13 +15,48 @@ const minor = (k, v) => el('div', { class: 'minorrow' }, [
   el('span', { class: 'minorv', text: v }),
 ]);
 
-export function sitterProfileScreen(s, stats, back) {
+// pub이 있으면 공개 경로(SNS)로 들어온 화면 — 의뢰 폼이 붙는다
+export function sitterProfileScreen(s, stats, back, pub) {
   const c = stats || {};
   const n = k => Number(c[k] || 0);
+  const ui = pub?.ui;
+
+  const inqSheet = () => {
+    const d = ui.inq = ui.inq || { contact: '', when: '', msg: '', busy: false };
+    const close = () => { ui.inqOpen = false; pub.rerender(); };
+    const f = (label, key, ph) => field(label, {
+      name: `inq_${key}`, placeholder: ph, value: d[key],
+      oninput: e => { d[key] = e.target.value; },
+    });
+    return el('div', { class: 'sheetback',
+      onclick: e => { if (e.target.classList.contains('sheetback') && !d.busy) close(); } }, [
+      el('div', { class: 'sheet' }, [
+        el('div', { class: 'grip' }),
+        el('div', { class: 'h', text: '돌봄 의뢰 보내기' }),
+        el('div', { class: 'sub', text: '보내주시면 시터가 연락드려요. 계약 전에는 아무것도 결제되지 않습니다.' }),
+        f('연락받을 방법', 'contact', '예) 전화번호, 이메일'),
+        f('원하는 시기 (선택)', 'when', '예) 8월 마지막 주 2박 3일'),
+        f('한 줄 소개 (선택)', 'msg', '예) 말티즈 4살, 낯가림 있어요'),
+        el('button', { class: 'cta', disabled: d.busy, text: d.busy ? '보내는 중…' : '보내기',
+          onclick: async () => {
+            if (!d.contact.trim()) { flash('연락받을 방법을 적어주세요'); return; }
+            d.busy = true; pub.rerender();
+            try {
+              await pub.send(d.contact.trim(), d.when.trim(), d.msg.trim());
+              ui.inq = null; ui.inqOpen = false; ui.inqDone = true;
+              flash('의뢰를 보냈어요', '시터가 확인하면 연락드립니다.');
+            } catch (e) { flash('전송 실패', e.message); }
+            d.busy = false; pub.rerender();
+          } }),
+        el('button', { class: 'linkbtn center', text: '닫기', onclick: () => { if (!d.busy) close(); } }),
+      ]),
+    ]);
+  };
 
   return {
     title: '펫시터 프로필',
     back,
+    overlay: pub && ui.inqOpen ? inqSheet() : null,
     body: [
       card([
         el('div', { class: 'profhead' }, [
@@ -39,6 +74,18 @@ export function sitterProfileScreen(s, stats, back) {
         '보호자가 정한 항목 중 인증을 올린 비율입니다.'),
       hero('보호자 확인', pct(n('checked'), n('submitted')), `${n('checked')} / ${n('submitted')}건`,
         '보낸 것을 보호자가 직접 보고 확인한 비율입니다. 보낸 것과 확인된 것은 다릅니다.'),
+
+      pub ? card([
+        el('div', { class: 'h', text: '이 시터에게 맡기고 싶다면' }),
+        el('div', { class: 'sub', text: 'SNS에서 이 프로필을 보고 오셨나요? 의뢰를 남기면 시터가 직접 연락드립니다.' }),
+        ui.inqDone
+          ? el('div', { class: 'okbox' }, [
+              el('div', { class: 'h', text: '의뢰를 보냈어요' }),
+              el('div', { class: 'sub', text: '시터가 확인하면 남겨주신 연락처로 연락드립니다.' }),
+            ])
+          : el('button', { class: 'cta', text: '돌봄 의뢰 보내기',
+              onclick: () => { ui.inqOpen = true; pub.rerender(); } }),
+      ]) : null,
 
       card([
         el('div', { class: 'h', text: '이 두 숫자만 보셔도 됩니다' }),

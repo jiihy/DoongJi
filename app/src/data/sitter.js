@@ -33,3 +33,13 @@ export async function uploadAvatar(file) {
   const { data } = sb.storage.from('avatars').getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;   // 같은 경로 덮어쓰기 — 캐시 무력화
 }
+
+// 받은 의뢰 (공개 프로필 → send_inquiry). 내 것만 읽힌다 (RLS inq_read)
+export async function listInquiries() {
+  const { data, error } = await sb.from('inquiries').select('*').order('at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export const markInquiry = async (id, handled) => {
+  await sb.from('inquiries').update({ handled }).eq('id', id).throwOnError();
+};
