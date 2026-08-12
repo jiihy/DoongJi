@@ -453,6 +453,7 @@ export function ownerPetProfile(c, ui, go, reload, rerender) {
 /* ── 5. 돌봄 일지 — 시터가 올린 인증이 쌓인다 ── */
 const clock = ts => new Date(ts).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
 const REACTIONS = { '귀여워요': '😍', '안심돼요': '😌', '고마워요': '💙' };
+const DISPUTE_UI = false;   // 보호자 쪽 이의 접수 노출 여부
 
 // 종 배지 = 아직 안 본 인증 (반응한 것은 「새 인증」이 아니다 — 38차 회귀 방지)
 export const freshProofs = c => c.items
@@ -598,7 +599,8 @@ export function ownerHome(c, go, ui, rerender, bell) {
                 },
               }))) : null,
 
-          p && !p.dispute && !p.verdict ? el('button', { class: 'seecap wrong', text: '사실과 달라요',
+          // 이의 접수 버튼은 지금 버전에서 감춘다 (DISPUTE_UI를 true로 되돌리면 다시 나온다)
+          (DISPUTE_UI && p && !p.dispute && !p.verdict) ? el('button', { class: 'seecap wrong', text: '사실과 달라요',
             onclick: () => { ui.disputeFor = p.id; ui.disputeReason = null; rerender(); } }) : null,
 
           p && p.dispute ? el('div', { class: 'dispute' }, [
