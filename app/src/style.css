@@ -212,3 +212,6 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
   color:var(--ink4);text-decoration:underline;text-underline-offset:3px}
 .noterow{display:flex;align-items:flex-start;gap:9px;padding:10px 0}
 .noterow .notechip{flex:none;margin-top:1px}
+.lrbtns{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.sectwrap{display:flex;flex-direction:column;gap:12px}
+.sectsub{padding:0 4px;font-size:13px;font-weight:500;line-height:1.55;color:var(--ink4);margin-top:-6px}

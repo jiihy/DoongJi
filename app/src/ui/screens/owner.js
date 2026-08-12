@@ -419,14 +419,12 @@ export function ownerHome(c, go, ui, rerender, bell) {
     body: [
       (multi && cur) ? (() => {
         const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
-        return notes.length ? card([
-          el('div', { class: 'tight' }, [
-            el('div', { class: 'h', text: '내가 남긴 특이사항' }),
-            ...notes.map(n => el('div', { class: 'noterow' }, [
-              el('span', { class: 'notechip', text: kindName(n.kind) }),
-              el('span', { class: 'ptext', text: n.text }),
-            ])),
-          ]),
+        return notes.length ? el('div', { class: 'sectwrap' }, [
+          el('div', { class: 'sect', text: '내가 남긴 특이사항' }),
+          card(notes.map(n => el('div', { class: 'noterow' }, [
+            el('span', { class: 'notechip', text: kindName(n.kind) }),
+            el('span', { class: 'ptext', text: n.text }),
+          ]))),
         ]) : null;
       })() : card([
         el('div', { class: 'profhead' }, [
@@ -484,10 +482,10 @@ export function ownerHome(c, go, ui, rerender, bell) {
         ]);
       }) : []),
 
-      (c.extras || []).length ? card([
-        el('div', { class: 'h', text: '먼저 챙긴 순간' }),
-        el('div', { class: 'sub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
-        el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
+      (c.extras || []).length ? el('div', { class: 'sectwrap' }, [
+        el('div', { class: 'sect', text: '먼저 챙긴 순간' }),
+        el('div', { class: 'sectsub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
+        ...c.extras.map(x => card([
           el('div', { class: 'phead' }, [
             el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
             el('span', { class: 'sub', text: clock(x.at) }),
@@ -506,7 +504,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
                 try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
               } }))),
           x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
-        ]))),
+        ])),
       ]) : null,
 
       el('button', { class: 'add', text: '일정·특이사항 보기 · 수정', onclick: () => go('schedule') }),
