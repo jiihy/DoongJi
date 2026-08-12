@@ -11,8 +11,19 @@ const publicProfileFallback = () => ({
   },
 });
 
+const BUILD = String(Date.now());
+
+// 새 배포가 나오면 앱이 스스로 알아채도록 버전 파일을 함께 낸다
+const emitVersion = () => ({
+  name: 'emit-version',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD }) });
+  },
+});
+
 export default defineConfig({
-  plugins: [publicProfileFallback()],
+  define: { __BUILD__: JSON.stringify(BUILD) },
+  plugins: [publicProfileFallback(), emitVersion()],
   server: { port: 3000, host: true },
   build: { outDir: 'dist', sourcemap: true },
 });

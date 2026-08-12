@@ -20,6 +20,7 @@ import { recordScreen } from './ui/screens/record.js';
 import { newContractScreen } from './ui/screens/newContract.js';
 import { loadCare, hydrate } from './data/care.js';
 import { sitterCareScreen } from './ui/screens/sitterCare.js';
+import { sitterContractScreen } from './ui/screens/sitterContract.js';
 
 const ctx = { sitter: null, session: null, screen: 'home', clients: [], contracts: [] };
 const uiState = {};
@@ -41,8 +42,11 @@ const go = async (screen, arg) => {
   }
   if (screen === 'books') ctx.books = await listBooks(ctx.sitter.id);
   if (screen === 'imported') ctx.imported = await listImported(ctx.sitter.id);
-  if (screen === 'care') { ctx.careId = arg || ctx.careId; ctx.care = null; render(); ctx.care = await loadCare(ctx.careId); watchCare(); }
-  else { unwatch(); await refresh(); }
+  if (screen === 'care' || screen === 'contract') {
+    ctx.careId = arg || ctx.careId; ctx.care = null; render();
+    ctx.care = await loadCare(ctx.careId);
+    if (screen === 'care') watchCare(); else unwatch();
+  } else { unwatch(); await refresh(); }
   render();
 };
 
@@ -91,6 +95,11 @@ function render() {
   if (ctx.screen === 'care') {
     if (!ctx.care) return paint({ title: '오늘의 돌봄', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
     return paint(sitterCareScreen(ctx.care, uiState, go,
+      async () => { ctx.care = await loadCare(ctx.careId); render(); }, rerender));
+  }
+  if (ctx.screen === 'contract') {
+    if (!ctx.care) return paint({ title: '돌봄 정보', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+    return paint(sitterContractScreen(ctx.care, uiState, go,
       async () => { ctx.care = await loadCare(ctx.careId); render(); }, rerender));
   }
   if (ctx.screen === 'diaryWrite') {
@@ -211,6 +220,25 @@ function renderOwner() {
   const unreadEv = owner.events.filter(e => !e.read_at).length;
   return paint(ownerHome(c, go, owner.ui, rr, bellButton(Math.max(unseen.length, unreadEv), () => go('live'))));
 }
+
+/* 새 배포 감지 — 홈 화면에 추가한 앱은 index.html을 오래 물고 있는다.
+   화면으로 돌아올 때 버전만 확인하고 다르면 한 번 새로고침한다. */
+const BUILD = typeof __BUILD__ === 'string' ? __BUILD__ : '';
+let checking = false;
+async function checkBuild() {
+  if (checking || document.visibilityState !== 'visible') return;
+  checking = true;
+  try {
+    const r = await fetch('/version.json', { cache: 'no-store' });
+    if (r.ok) {
+      const { build } = await r.json();
+      if (build && BUILD && build !== BUILD) location.reload();
+    }
+  } catch (e) {} finally { checking = false; }
+}
+document.addEventListener('visibilitychange', checkBuild);
+window.addEventListener('focus', checkBuild);
+setInterval(checkBuild, 5 * 60 * 1000);
 
 (async () => {
   if (recordToken) {

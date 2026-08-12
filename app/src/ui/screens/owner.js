@@ -653,7 +653,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
         ])),
       ]) : null,
 
-      (!multi || !cur) ? card([
+      (c.finished_at && (!multi || !cur)) ? card([
         el('div', { class: 'h', text: '이 돌봄 기록을 공개할까요?' }),
         el('div', { class: 'sub', text: '켜면 사진·시각·확인 여부가 그대로 담긴 읽기 전용 링크가 만들어집니다. 다음에 이 시터를 알아보는 다른 보호자가 「말이 아니라 기록」으로 판단할 수 있어요. 언제든 다시 끌 수 있고, 끄면 링크는 바로 열리지 않습니다.' }),
         el('label', { class: 'switchrow' }, [

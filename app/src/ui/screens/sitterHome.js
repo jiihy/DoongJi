@@ -46,8 +46,11 @@ export function sitterHomeScreen(ctx, go, rerender, bell) {
               el('div', { class: 'sub', text: `${c.owners?.nickname || '보호자'} · ${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
             ]),
             el('div', { class: 'lrbtns' }, [
-              c.sent_at ? el('button', { class: 'ctasm', text: '기록하기', onclick: () => go('care', c.id) }) : null,
-              el('button', { class: 'seecap', text: '보호자 링크', onclick: () => copy(inviteUrlOf(c.invite_token)) }),
+              c.sent_at
+                ? el('button', { class: 'ctasm', text: '기록하기', onclick: () => go('care', c.id) })
+                : el('button', { class: 'ctasm', text: '정보 수정', onclick: () => go('contract', c.id) }),
+              el('button', { class: 'seecap', text: c.sent_at ? '돌봄 정보' : '보호자 링크',
+                onclick: () => c.sent_at ? go('contract', c.id) : copy(inviteUrlOf(c.invite_token)) }),
             ]),
           ]);
         })),
