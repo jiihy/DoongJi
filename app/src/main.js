@@ -1,20 +1,45 @@
 import './style.css';
-import { sb, health, inviteToken } from './lib/supabase.js';
+import { sb, inviteToken } from './lib/supabase.js';
+import { paint, el, card } from './ui/el.js';
+import { ensureSitter } from './data/sitter.js';
+import { loginScreen } from './ui/screens/login.js';
+import { profileScreen } from './ui/screens/profile.js';
 
-// Phase 1 스모크 화면 — 이식 진행에 따라 프로토타입 화면들로 교체된다
-const app = document.getElementById('app');
-const line = (k, v, ok) => `<div class="row"><span>${k}</span><b class="${ok === false ? 'no' : ok ? 'yes' : ''}">${v}</b></div>`;
+const ctx = { sitter: null, session: null };
+const uiState = {};
+const rerender = () => render();
 
-async function boot() {
-  const h = await health();
-  const { data: { session } } = await sb.auth.getSession();
-  app.innerHTML = `
-    <main>
-      <h1>둥지 · 연결 확인</h1>
-      ${line('Supabase', h.ok ? '연결됨' : `실패 — ${h.msg}`, h.ok)}
-      ${line('초대 토큰', inviteToken ? inviteToken.slice(0, 8) + '…' : '없음(시터 모드)')}
-      ${line('세션', session ? session.user.email || '로그인됨' : '없음')}
-      <p class="hint">다음 단계: 프로토타입 화면을 이 앱으로 이식합니다.</p>
-    </main>`;
+async function render() {
+  if (inviteToken) {                       // 보호자 경로는 M3에서 구현
+    paint({
+      title: '초대장',
+      body: [card([
+        el('div', { class: 'h', text: '보호자 초대 링크로 들어오셨어요' }),
+        el('div', { class: 'sub', text: `토큰 ${inviteToken.slice(0, 8)}… 확인됨. 보호자 화면은 다음 단계(M3)에서 열립니다.` }),
+      ])],
+      hint: 'M3 — 보호자 무계정 진입',
+    });
+    return;
+  }
+  if (!ctx.session) { paint(loginScreen(uiState, rerender)); return; }
+  if (!ctx.sitter) {
+    try { ctx.sitter = await ensureSitter(); }
+    catch (e) {
+      paint({ title: '오류', body: [card([el('div', { class: 'sub', text: e.message })])] });
+      return;
+    }
+  }
+  paint(profileScreen(ctx, rerender));
 }
-boot();
+
+sb.auth.onAuthStateChange((_evt, session) => {
+  ctx.session = session;
+  if (!session) ctx.sitter = null;
+  render();
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  ctx.session = session;
+  render();
+})();

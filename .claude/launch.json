@@ -6,7 +6,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "app",
-      "port": 5180
+      "port": 3000
     }
   ]
 }
