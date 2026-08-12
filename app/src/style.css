@@ -157,8 +157,14 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
   background:rgba(23,23,25,.62);color:#fff;font-size:12px;line-height:1}
 .react{display:flex;gap:6px;flex-wrap:wrap}
 .react button{flex:1;min-width:96px;height:38px;border-radius:1000px;border:1px solid var(--line);
-  background:#fff;color:var(--ink2);font-size:13px;font-weight:600}
+  background:#fff;color:var(--ink2);font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .react button[aria-pressed="true"]{background:var(--tint);border-color:var(--primary);color:var(--primary-ink)}
+/* 보낸 뒤에는 고른 것만 남기고 나머지는 물러난다 */
+.react.locked button{opacity:.4}
+.react.locked button[aria-pressed="true"]{opacity:1}
+/* 패딩만 준 span 배지들은 글자가 위로 붙는다 — 스스로 가운데 정렬한다 */
+.badge,.notechip,.kchip,.tag,.veri,.unver,.shotstamp{display:inline-flex;align-items:center;justify-content:center}
 .thxdone{font-size:12px;font-weight:600;color:var(--primary-ink)}
 /* 펫시터 프로필 */
 .veri{align-self:flex-start;font-size:11px;font-weight:700;padding:5px 10px;border-radius:1000px;
@@ -201,17 +207,19 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .capture{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
 /* 돌봄 일지 — 활동 타임라인 */
 .sect{font-size:17px;font-weight:800;letter-spacing:-.01em;padding:6px 4px 0}
-.tlhead{display:flex;align-items:center;gap:9px}
-.kchip{font-size:12px;font-weight:700;padding:6px 11px;border-radius:1000px;background:var(--bg);color:var(--ink4)}
+.tlhead{display:flex;align-items:center;gap:8px}
+.tltime{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kchip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:1000px;background:var(--bg);color:var(--ink4)}
 .kchip.on{background:var(--tint);color:var(--primary-ink)}
-.tltime{font-size:13px;font-weight:600;color:var(--ink3)}
 .tltext{font-size:15px;line-height:1.55;color:var(--ink)}
 .tlmeta{font-size:12px;font-weight:500;color:var(--ink4)}
 .imp .capture{cursor:zoom-in}
 .seecap{align-self:center;background:none;border:none;padding:6px 0;font-size:12px;font-weight:500;
   color:var(--ink4);text-decoration:underline;text-underline-offset:3px}
-.noterow{display:flex;align-items:flex-start;gap:9px;padding:10px 0}
-.noterow .notechip{flex:none;margin-top:1px}
+.noterow{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:13px 0}
+.noterow+.noterow{border-top:1px solid var(--line)}
+.noterow:first-child{padding-top:0}
+.noterow:last-child{padding-bottom:0}
 .lrbtns{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .sectwrap{display:flex;flex-direction:column;gap:12px}
 .sectsub{padding:0 4px;font-size:13px;font-weight:500;line-height:1.55;color:var(--ink4);margin-top:-6px}

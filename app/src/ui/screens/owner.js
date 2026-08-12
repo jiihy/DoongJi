@@ -63,7 +63,7 @@ export function ownerInstall(state, go, rerender) {
   const step1 = () => sheet([
     el('div', { class: 'grip' }),
     el('div', { class: 'a2head' }, [
-      el('div', { class: 'appicon' }, el('img', { class: 'appimg', src: '/app-icon-180.png?v=3', alt: '' })),
+      el('div', { class: 'appicon' }, el('img', { class: 'appimg', src: '/app-icon-180.png?v=4', alt: '' })),
       el('div', { class: 'pcol' }, [
         el('div', { class: 'h', text: '홈 화면에 앱으로 추가' }),
         el('div', { class: 'sub', text: '설치하면 앱처럼 전체화면으로 열려요.' }),
@@ -421,10 +421,10 @@ export function ownerHome(c, go, ui, rerender, bell) {
         const notes = c.notes.filter(n => !n.pet_id || n.pet_id === cur);
         return notes.length ? el('div', { class: 'sectwrap' }, [
           el('div', { class: 'sect', text: '내가 남긴 특이사항' }),
-          card(notes.map(n => el('div', { class: 'noterow' }, [
+          card([el('div', { class: 'rows' }, notes.map(n => el('div', { class: 'noterow' }, [
             el('span', { class: 'notechip', text: kindName(n.kind) }),
             el('span', { class: 'ptext', text: n.text }),
-          ]))),
+          ])))]),
         ]) : null;
       })() : card([
         el('div', { class: 'profhead' }, [
@@ -470,8 +470,8 @@ export function ownerHome(c, go, ui, rerender, bell) {
         const out = p ? outMinutes(p) : null;
         return card([
           el('div', { class: 'tlhead' }, [
-            el('span', { class: 'kchip' + (p ? ' on' : ''), text: kindName(it.kind) + (p ? ' 완료' : '') }),
-            el('span', { class: 'tltime', text: p ? clock(p.submitted_at) : (it.fuzz_min === -1 ? '아무때나' : `${hm(it.at_time)} 예정`) }),
+            el('span', { class: 'tltime', text: p ? clock(p.submitted_at) : (it.fuzz_min === -1 ? '아무때나' : hm(it.at_time)) }),
+            el('span', { class: 'kchip' + (p ? ' on' : ''), text: kindName(it.kind) + (p ? ' 완료' : ' 예정') }),
             p && !p.seen && !p.verdict ? el('span', { class: 'badge', text: 'NEW' }) : null,
           ]),
           p && p.text ? el('div', { class: 'tltext', text: p.text }) : null,
@@ -496,13 +496,19 @@ export function ownerHome(c, go, ui, rerender, bell) {
               el('span', { class: 'tag', text: ph.is_album ? '앨범' : '앱 촬영' }),
             ]))) : null,
           x.text ? el('div', { class: 'ptext', text: x.text }) : null,
-          el('div', { class: 'react' }, Object.entries(REACTIONS).map(([label, emoji]) =>
-            el('button', { 'aria-pressed': (x.thanks_reaction || '') === label, text: `${emoji} ${label}`,
-              onclick: async () => {
-                x.thanks_reaction = label; x.thanks_at = new Date().toISOString();
-                rerender();
-                try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
-              } }))),
+          el('div', { class: 'react' + (x.thanks_reaction ? ' locked' : '') },
+            Object.entries(REACTIONS).map(([label, emoji]) =>
+              el('button', {
+                'aria-pressed': (x.thanks_reaction || '') === label,
+                disabled: !!x.thanks_reaction,
+                text: `${emoji} ${label}`,
+                onclick: async () => {
+                  if (x.thanks_reaction) return;
+                  x.thanks_reaction = label; x.thanks_at = new Date().toISOString();
+                  rerender();
+                  try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
+                },
+              }))),
           x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
         ])),
       ]) : null,
