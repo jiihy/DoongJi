@@ -1,7 +1,7 @@
 import { el, card, field, flash } from '../el.js';
 import * as api from '../../data/owner.js';
 import { copyText, openLightbox } from '../el.js';
-import { enablePush } from '../../lib/push.js';
+import { enablePush, isStandalone, pushSupported } from '../../lib/push.js';
 import { shareOrigin } from '../../lib/supabase.js';
 import { thankExtra, setVerdict, withdrawVerdict, openDispute, withdrawDispute, REASONS, noReply } from '../../data/care.js';
 
@@ -149,7 +149,7 @@ function petEditSheet(c, ui, reload, rerender) {
 }
 
 /* 특이사항 추가 시트 — 일정·아이 프로필에서 함께 쓴다 */
-function careNoteSheet(c, ui, reload, rerender, defaultPet) {
+export function careNoteSheet(c, ui, reload, rerender, defaultPet) {
   if (!ui.cnOpen) return null;
   const multi = c.pets.length > 1;
   const saved = [...new Set(c.notes.map(n => n.kind).filter(k => String(k).startsWith('c:')))];
@@ -696,7 +696,26 @@ export function ownerHome(c, go, ui, rerender, bell) {
         el('button', { class: 'add', text: '아이 프로필', onclick: () => go('petProfile') }),
         el('button', { class: 'add', text: '일정·특이사항', onclick: () => go('schedule') }),
       ]),
-      installSeen() ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') }) : null,
+      // 이미 설치했으면 설치 안내를 감추고, 알림이 아직이면 그 자리에서 켜게 한다
+      (() => {
+        const installed = isStandalone();
+        const notifOn = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+        if (!installed) {
+          return installSeen()
+            ? el('button', { class: 'linkbtn center', text: '홈 화면에 앱으로 추가하기', onclick: () => go('install') })
+            : null;
+        }
+        if (pushSupported() && !notifOn) {
+          return el('button', { class: 'linkbtn center', text: '알림 받기', onclick: async () => {
+            try {
+              await enablePush({ audience: 'owner', contractId: c.id });
+              flash('알림을 켰어요', '인증이 도착하면 바로 알려드려요.');
+              rerender();
+            } catch (e) { flash('알림을 켤 수 없어요', e.message); }
+          } });
+        }
+        return null;
+      })(),
     ],
   };
 }
