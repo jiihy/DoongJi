@@ -17,6 +17,27 @@ export const field = (label, attrs = {}) => el('div', { class: 'field' }, [
   el('input', { name: attrs.name || `f_${label || ''}`.replace(/\s/g, ''), ...attrs }),
 ]);
 
+// http(LAN)에선 navigator.clipboard가 막힌다 — execCommand로 폴백하고, 그것도 막히면 선택 상태로 남긴다
+export async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+
 let toastTimer = null;
 export function flash(title, desc) {
   document.querySelectorAll('.toast').forEach(t => t.remove());

@@ -1,13 +1,16 @@
-import { el, card, flash } from '../el.js';
+import { el, card, flash, copyText } from '../el.js';
 import { inviteUrlOf } from '../../data/contracts.js';
 
 const dot = d => (d || '').replaceAll('-', '.');
 
-export function sitterHomeScreen(ctx, go) {
+let rerenderRef = null;
+export function sitterHomeScreen(ctx, go, rerender) {
+  rerenderRef = rerender;
   const list = ctx.contracts || [];
   const copy = async (url) => {
-    try { await navigator.clipboard.writeText(url); flash('초대 링크를 복사했어요', '당근·카톡에 붙여넣어 보내세요.'); }
-    catch { flash('복사 실패', url); }
+    const ok = await copyText(url);
+    if (ok) flash('초대 링크를 복사했어요', '당근·카톡에 붙여넣어 보내세요.');
+    else { ctx.showLink = url; flash('길게 눌러 복사해주세요', '아래에 링크를 펼쳐뒀어요.'); rerenderRef && rerenderRef(); }
   };
 
   return {
@@ -18,6 +21,14 @@ export function sitterHomeScreen(ctx, go) {
         el('span', { class: 't', text: '초대 링크가 준비됐어요' }),
         el('span', { class: 'd', text: '보호자가 이 링크를 열면 정보를 확인하고 일정을 입력합니다.' }),
         el('button', { class: 'ctasm', text: '링크 복사', onclick: () => copy(inviteUrlOf(ctx.lastToken)) }),
+      ]) : null,
+
+      ctx.showLink ? card([
+        el('div', { class: 'h', text: '초대 링크' }),
+        el('div', { class: 'sub', text: '길게 눌러 전체 선택 후 복사하세요. (폰에서 http로 열면 자동 복사가 막힙니다)' }),
+        el('input', { class: 'linkinput', name: 'invitelink', readonly: 'readonly', value: ctx.showLink,
+          onclick: e => e.target.select() }),
+        el('button', { class: 'linkbtn', text: '닫기', onclick: () => { ctx.showLink = null; rerender(); } }),
       ]) : null,
 
       list.length ? card([

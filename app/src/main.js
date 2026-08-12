@@ -35,7 +35,7 @@ function render() {
 
   if (ctx.screen === 'profile') return paint(profileScreen(ctx, rerender, go));
   if (ctx.screen === 'newContract') return paint(newContractScreen(ctx, go, rerender));
-  return paint(sitterHomeScreen(ctx, go));
+  return paint(sitterHomeScreen(ctx, go, rerender));
 }
 
 // TOKEN_REFRESHED·탭 복귀까지 다시 그리면 입력 중 화면이 튕긴다 — 로그인/로그아웃만 반응한다
