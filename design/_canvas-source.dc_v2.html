@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<script type="module" src="wanted/w-icon.js?v=2"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #EDEEF0; }
+  body { font-family: "Pretendard Variable", Pretendard, "Pretendard JP", -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #171719; }
+  a { color: #005EEB; text-decoration: none; }
+  a:hover { color: #005EEB; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<section style="padding: 72px 56px 140px; display: flex; flex-direction: column; gap: 80px;">
+
+  <!-- ============ 인트로 ============ -->
+  <div style="display: flex; flex-direction: column; gap: 22px; max-width: 960px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; letter-spacing: 0.025em; padding: 5px 11px; border-radius: 1000px;">V2 · 프로토타입 25차 반영</span>
+      <span style="font-size: 13px; font-weight: 500; color: #55565C;">일정 기반 인증 + 확인 회계 · 13 화면</span>
+    </div>
+    <h1 style="margin: 0; font-size: 36px; font-weight: 700; line-height: 1.28; letter-spacing: -0.01em; color: #171719;">감시가 아니라<br />회계를 팝니다</h1>
+    <p style="margin: 0; max-width: 620px; font-size: 16px; font-weight: 500; line-height: 1.5; color: #55565C;">보호자가 일정을 정하면 시터가 그 시각에 앱 카메라로만 인증합니다. 보호자의 리액션이 곧 확인으로 기록되고, 그 회계가 공개 프로필과 아이별 돌봄 일기(후기 + 검증 기록 링크)로 남습니다. localStorage 프로토타입을 직접 쓰며 25차례 고친 결과를 화면으로 옮겼습니다.</p>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06); min-width: 240px;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.025em; color: #70737C;">V1과 달라진 축</span>
+        <span style="font-size: 13px; font-weight: 500; line-height: 1.6; color: #37383C;">보고서 작성 → 일정별 즉시 인증<br />별점 후기 중심 → 리액션 = 확인 회계<br />돌봄 일기 = 아이당 한 권 · 후기는 계약당 1회<br />일기 옆에 편집 불가 「돌봄 기록」 공개 링크</span>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06); min-width: 190px;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.025em; color: #70737C;">TOKENS</span>
+        <div style="display: flex; gap: 6px;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #0066FF;"></div>
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #EAF2FE;"></div>
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #171719;"></div>
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #F7F7F8; border: 1px solid rgba(112,115,124,0.22);"></div>
+        </div>
+        <span style="font-size: 13px; font-weight: 500; color: #70737C;">#0066FF · #EAF2FE · #171719 · #F7F7F8</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 보호자 플로우 ============ -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #171719;">보호자 플로우</h2>
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start;">
+
+      <!-- 01 돌봄 일정 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">01 돌봄 일정 (홈) — 일정 + 특이사항 통합, 종 알림</div>
+        <div data-screen-label="돌봄 일정" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px; gap: 8px; background: #F7F7F8;">
+            <span style="width: 32px;"></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">돌봄 일정</span>
+            <span style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;">
+              <w-icon name="alert" size="20"></w-icon>
+              <span style="position: absolute; top: 1px; right: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: #D32020; color: #FFFFFF; font-size: 10px; font-weight: 700; line-height: 15px; text-align: center;">2</span>
+            </span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">언제 무엇을 해주면 되나요?</span>
+              <span style="font-size: 13px; font-weight: 500; color: #70737C;">항목마다 시터가 그 시각에 사진 인증합니다.</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="flex: none; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719; display: flex; align-items: center; gap: 6px;">밥 <w-icon name="chevron-down" size="14" style="color:#70737C"></w-icon></span>
+                <span style="flex: 1; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719;">오전 10:00</span>
+                <span style="flex: none; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 10px; font-size: 13px; font-weight: 500; color: #70737C;">~쯤</span>
+                <w-icon name="close" size="16" style="color:#70737C"></w-icon>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="flex: none; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719; display: flex; align-items: center; gap: 6px;">산책 <w-icon name="chevron-down" size="14" style="color:#70737C"></w-icon></span>
+                <span style="flex: 1; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719;">오후 12:00 <span style="color:#70737C;">~ 1:00쯤</span></span>
+                <w-icon name="close" size="16" style="color:#70737C"></w-icon>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="flex: none; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719; display: flex; align-items: center; gap: 6px;">밥 <w-icon name="chevron-down" size="14" style="color:#70737C"></w-icon></span>
+                <span style="flex: 1; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 500; color: #171719;">오후 05:00</span>
+                <span style="flex: none; border: 1px solid rgba(112,115,124,0.22); border-radius: 8px; padding: 9px 10px; font-size: 13px; font-weight: 500; color: #70737C;">~쯤</span>
+                <w-icon name="close" size="16" style="color:#70737C"></w-icon>
+              </div>
+              <div style="border: 1px dashed rgba(112,115,124,0.4); border-radius: 10px; height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #55565C; font-size: 14px; font-weight: 600;"><w-icon name="plus-circle" size="16"></w-icon> 항목 추가</div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">특이사항</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">한 번 적어두면 시터가 그 일을 하는 순간, 해당 인증 화면에 「참고 사항」으로 함께 보입니다.</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px;">
+                <span style="font-size: 12px; font-weight: 700; color: #005EEB;">밥</span>
+                <span style="font-size: 14px; font-weight: 500; line-height: 1.5; color: #37383C;">낯선 사람이 주면 잘 안 먹을 수 있어요. 사료에 간식을 조금 섞어주세요.</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px;">
+                <span style="font-size: 12px; font-weight: 700; color: #005EEB;">배변</span>
+                <span style="font-size: 14px; font-weight: 500; line-height: 1.5; color: #37383C;">기저귀를 갈 때는 꼭 리드줄을 채운 상태에서 해주세요 (입질 방지).</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px;">
+                <span style="font-size: 12px; font-weight: 700; color: #70737C;">공통</span>
+                <span style="font-size: 14px; font-weight: 500; line-height: 1.5; color: #37383C;">방석 위에 있을 때는 만지지 말아 주세요. 먼저 다가왔을 때만 쓰다듬어 주세요.</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px; background: #F7F7F8;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">시터에게 전달</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 지금 오는 인증 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">02 지금 오는 인증 — 종에서 진입, 리액션 = 확인</div>
+        <div data-screen-label="지금 오는 인증" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px; gap: 8px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">지금 오는 인증</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #EAF2FE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 14px; font-weight: 700; color: #005EEB;">🔔 방금 인증이 도착했어요</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">시터가 방금 제출한 인증 2건이 아래에 있습니다. 확인만 눌러주시면 됩니다.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 15px; font-weight: 700; color: #171719;">10:00 밥</span>
+                <span style="font-size: 12px; font-weight: 500; color: #70737C;">10:02 제출</span>
+                <span style="margin-left: auto; background: #EAF2FE; color: #005EEB; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 1000px;">방금 도착</span>
+              </div>
+              <div style="position: relative; height: 180px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 13px; font-weight: 500; color: #70737C;">밥그릇 인증 사진</span>
+                <span style="position: absolute; left: 8px; bottom: 8px; background: rgba(23,23,25,0.72); color: #FFFFFF; font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 6px;">2026.08.12 10:02 · 앱 촬영</span>
+              </div>
+              <div style="border-left: 3px solid #EAF2FE; padding: 2px 0 2px 10px; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 11px; font-weight: 600; color: #70737C;">시터 메모</span>
+                <span style="font-size: 13px; font-weight: 500; color: #37383C;">간식 조금 섞었더니 완식했어요!</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <span style="flex: 1; height: 40px; border-radius: 10px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #37383C;">😍 귀여워요</span>
+                <span style="flex: 1; height: 40px; border-radius: 10px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #37383C;">😌 안심돼요</span>
+                <span style="flex: 1; height: 40px; border-radius: 10px; background: #EAF2FE; border: 1.5px solid #0066FF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #005EEB;">💙 고마워요</span>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="height: 36px; padding: 0 14px; border-radius: 10px; background: #F7F7F8; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: #37383C;">확인만</span>
+                <span style="font-size: 12px; font-weight: 500; color: #70737C; text-decoration: underline;">가짜 인증 같아요</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 15px; font-weight: 700; color: #171719;">12:00 산책 <span style="font-weight: 500; color: #70737C;">~ 1:00쯤</span></span>
+                <span style="font-size: 12px; font-weight: 500; color: #70737C;">12:41 제출</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <div style="position: relative; flex: 1; height: 120px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #70737C;">나갈 때</span></div>
+                <div style="position: relative; flex: 1; height: 120px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #70737C;">들어올 때</span></div>
+              </div>
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #00BF40;"><w-icon name="check-bold" size="13"></w-icon> 밖에 있던 시간 32분 — 두 사진의 시각 차이입니다</span>
+              <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">마음 가는 대로 눌러주세요. 어느 것을 눌러도 확인으로 기록됩니다. 안 하셔도 시터에게 불이익은 없습니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 오늘의 기록 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">03 오늘의 기록 — 종료 배너, 판정 누적</div>
+        <div data-screen-label="오늘의 기록" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px;"></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">오늘의 기록</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #EAF2FE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 700; color: #005EEB;">🔔 오늘 돌봄이 끝났어요</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">시터가 3일간의 돌봄을 마쳤습니다. 하루 요약을 확인하고 후기를 남겨주세요.</span>
+              <div style="display: flex; gap: 8px;">
+                <span style="flex: 1; height: 44px; border-radius: 10px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;">후기 쓰기</span>
+                <span style="flex: none; height: 44px; padding: 0 16px; border-radius: 10px; background: #FFFFFF; color: #37383C; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;">나중에</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; gap: 0; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 20px; font-weight: 700; color: #171719;">3 / 3</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">약속 이행</span></div>
+              <div style="width: 1px; background: rgba(112,115,124,0.22);"></div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 20px; font-weight: 700; color: #171719;">3건</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">내가 확인함</span></div>
+              <div style="width: 1px; background: rgba(112,115,124,0.22);"></div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 20px; font-weight: 700; color: #171719;">0건</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">이의</span></div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">10:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">밥 <span style="font-size: 12px; font-weight: 500; color: #70737C;">10:02 제출</span></span>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 확인 · 💙 고마워요</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">12:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">산책 <span style="font-size: 12px; font-weight: 500; color: #70737C;">12:41 제출 · 밖 32분</span></span>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 확인 · 😍 귀여워요</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">17:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">밥 <span style="font-size: 12px; font-weight: 500; color: #70737C;">17:05 제출 · 사진 없이 설명</span></span>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 확인만</span>
+                </div>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 13px; font-weight: 700; color: #70737C;">먼저 챙긴 순간 · 1건</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="width: 64px; height: 64px; border-radius: 10px; background: #DBDCDF; flex: none;"></div>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 13px; font-weight: 500; color: #37383C;">점심 먹고 볕에서 낮잠 자는 모습이 예뻐서요.</span>
+                  <span style="align-self: flex-start; font-size: 12px; font-weight: 600; color: #005EEB;">💙 고마워요 보냄</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 04 후기 쓰기 (보호자) -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">04 후기 쓰기 (보호자)</div>
+        <div data-screen-label="후기 쓰기(보호자)" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">후기 쓰기</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">이번 돌봄은 어떠셨나요?</span>
+              <div style="display: flex; gap: 6px; font-size: 30px;">★★★★★</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="border: 1.5px solid #0066FF; background: #EAF2FE; color: #005EEB; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 1000px;">약속을 잘 지켰어요</span>
+                <span style="border: 1px solid rgba(112,115,124,0.22); color: #37383C; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 1000px;">사진이 자세했어요</span>
+                <span style="border: 1.5px solid #0066FF; background: #EAF2FE; color: #005EEB; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 1000px;">아이가 편안해 보였어요</span>
+                <span style="border: 1px solid rgba(112,115,124,0.22); color: #37383C; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 1000px;">소통이 빨랐어요</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; min-height: 110px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #37383C; line-height: 1.5;">기록이 다 남아 있으니 마음이 놓였어요. 산책 시간까지 사진으로 확인돼서 믿음이 갑니다.</div>
+              <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">후기는 선택입니다. 나중에 써도 되고, 안 써도 시터의 회계 기록은 그대로 남습니다.</span>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">후기 남기기</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ 시터 플로우 ============ -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #171719;">시터 플로우</h2>
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start;">
+
+      <!-- 05 오늘의 돌봄 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">05 오늘의 돌봄 (홈) — 계약 기간, 공통 메모 상주</div>
+        <div data-screen-label="오늘의 돌봄" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px;"></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">오늘의 돌봄</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="align-self: flex-start; background: #EAF2FE; color: #005EEB; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;">진행 중</span>
+              <span style="font-size: 18px; font-weight: 700; color: #171719;">콩이 · 말티즈 4살</span>
+              <span style="font-size: 13px; font-weight: 500; color: #70737C;">방문 돌봄 · 제출 0 / 3</span>
+              <span style="font-size: 13px; font-weight: 600; color: #005EEB;">돌봄 기간 2026.08.10 ~ 08.12 · 3일차 / 3일</span>
+              <span style="font-size: 13px; font-weight: 500; color: #55565C;">오늘 일정 · 10:00 밥 · 12:00~1:00쯤 산책 · 17:00 밥</span>
+              <div style="border-left: 3px solid #EAF2FE; padding: 4px 0 4px 10px; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 11px; font-weight: 600; color: #70737C;">공통 · 보호자가 남긴 메모</span>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">방석 위에 있을 때는 만지지 말아 주세요. 먼저 다가왔을 때만 쓰다듬어 주세요.</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">10:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">밥</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">아직 기록 없음</span>
+                </div>
+                <span style="height: 36px; padding: 0 14px; border-radius: 10px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;"><w-icon name="camera" size="14"></w-icon> 기록하기</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">12:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">산책 <span style="font-size: 12px; font-weight: 500; color: #70737C;">~ 1:00쯤</span></span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">아직 기록 없음</span>
+                </div>
+                <span style="height: 36px; padding: 0 14px; border-radius: 10px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;"><w-icon name="camera" size="14"></w-icon> 기록하기</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">17:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">밥</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">아직 기록 없음</span>
+                </div>
+                <span style="height: 36px; padding: 0 14px; border-radius: 10px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;"><w-icon name="camera" size="14"></w-icon> 기록하기</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 15px; font-weight: 700; color: #171719;">먼저 챙긴 순간</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">일정에 없어도 보여주고 싶은 순간을 남겨주세요 — 즐겁게 노는 모습, 잘 자는 모습. 보호자가 「고마워요」를 누르면 프로필에 쌓입니다.</span>
+              <div style="border: 1px dashed rgba(112,115,124,0.4); border-radius: 10px; height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #55565C; font-size: 14px; font-weight: 600;"><w-icon name="plus-circle" size="16"></w-icon> 순간 남기기</div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 14px; font-weight: 700; color: #171719;">기록은 제출 즉시 전달됩니다</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">각 기록은 제출하는 순간 이미 보호자에게 가 있습니다. 모든 일정을 기록하면 「돌봄 마치기」 버튼이 나타납니다. 사진이 어려운 항목은 설명으로도 채울 수 있어요.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 밥 기록 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">06 밥 기록 — 참고 사항 자동 노출, 워터마크</div>
+        <div data-screen-label="밥 기록" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">밥 기록</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">10:00 · 밥</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">밥그릇을 찍어주세요 — 앱 카메라로만 찍히고 날짜·시각이 사진에 새겨집니다.</span>
+              <div style="border-left: 3px solid #0066FF; background: #F7F7F8; border-radius: 0 10px 10px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-size: 11px; font-weight: 700; color: #005EEB;">참고 사항 · 보호자가 남김</span>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">낯선 사람이 주면 잘 안 먹을 수 있어요. 사료에 간식을 조금 섞어주세요.</span>
+              </div>
+              <div style="position: relative; height: 220px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 13px; font-weight: 500; color: #70737C;">촬영된 사진</span>
+                <span style="position: absolute; left: 8px; bottom: 8px; background: rgba(23,23,25,0.72); color: #FFFFFF; font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 6px;">2026.08.12 10:02 · 앱 촬영</span>
+              </div>
+              <div style="height: 44px; border-radius: 10px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; color: #37383C;"><w-icon name="camera" size="16"></w-icon> 다시 촬영</div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 14px; font-weight: 700; color: #171719;">메모 (선택)</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; min-height: 64px; padding: 12px 14px; font-size: 14px; font-weight: 500; color: #37383C;">간식 조금 섞었더니 완식했어요!</div>
+              <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">사진이 어려우면 설명만으로도 제출할 수 있어요. 설명도 똑같이 1건으로 셉니다.</span>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">사진 제출</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 산책 기록 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">07 산책 기록 — 왕복 2컷 = 밖에 있던 시간</div>
+        <div data-screen-label="산책 기록" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">산책 기록</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">12:00 · 산책 <span style="font-size: 13px; font-weight: 500; color: #70737C;">~ 1:00쯤</span></span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">나갈 때와 들어올 때 두 장 · 아이가 보이게 — 앱 카메라로만 찍히고 날짜·시각이 사진에 새겨집니다.</span>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 13px; font-weight: 700; color: #171719;">나갈 때</span>
+                <div style="position: relative; height: 150px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-size: 13px; color: #70737C;">12:09 촬영</span>
+                  <span style="position: absolute; left: 8px; bottom: 8px; background: rgba(23,23,25,0.72); color: #FFFFFF; font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 6px;">2026.08.12 12:09 · 앱 촬영</span>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 13px; font-weight: 700; color: #171719;">들어올 때</span>
+                <div style="position: relative; height: 150px; border-radius: 10px; background: #DBDCDF; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-size: 13px; color: #70737C;">12:41 촬영</span>
+                  <span style="position: absolute; left: 8px; bottom: 8px; background: rgba(23,23,25,0.72); color: #FFFFFF; font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 6px;">2026.08.12 12:41 · 앱 촬영</span>
+                </div>
+              </div>
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: #00BF40;"><w-icon name="check-bold" size="14"></w-icon> 밖에 있던 시간 32분 — 두 사진의 시각 차이입니다</span>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">사진 제출</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 소명하기 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">08 소명하기 — 72시간, 소명 전 되돌리기 가능</div>
+        <div data-screen-label="소명하기" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">소명하기</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FEECEC; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 14px; font-weight: 700; color: #D32020;">보호자가 가짜 인증으로 신고했습니다</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">72시간 안에 답하지 않으면 「소명 없음」으로 남습니다. 24시간 뒤에 한 번 더 알려드려요.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 13px; font-weight: 700; color: #70737C;">신고된 인증</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="width: 64px; height: 64px; border-radius: 10px; background: #DBDCDF; flex: none;"></div>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">17:00 밥 · 17:05 제출</span>
+                  <span style="align-self: flex-start; background: #FEECEC; color: #D32020; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 1000px;">사유 · 사진이 오늘 것 같지 않아요</span>
+                </div>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 14px; font-weight: 700; color: #171719;">상황을 알려주세요</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; min-height: 100px; padding: 12px 14px; font-size: 14px; font-weight: 500; line-height: 1.5; color: #37383C;">그릇 위치가 어제와 달라 보였을 수 있어요. 급여 직후 바로 찍은 사진이고, 워터마크 시각이 17:05입니다.</div>
+              <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">소명하면 보호자에게 「이해했어요 / 그래도 다릅니다」 선택이 갑니다. 해소돼도 이의가 있었다는 사실은 기록에 남습니다.</span>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">소명 보내기</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 09 시터 프로필 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">09 시터 프로필 — 회계 숫자 + 일기장 목록</div>
+        <div data-screen-label="시터 프로필" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px;"></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">내 프로필</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 52px; height: 52px; border-radius: 1000px; background: #DBDCDF; flex: none;"></div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 17px; font-weight: 700; color: #171719;">박서준 펫시터</span>
+                  <span style="font-size: 13px; font-weight: 500; color: #70737C;">방문 돌봄 · 서울 마포구 · 별점 4.9 (38)</span>
+                </div>
+              </div>
+              <div style="display: flex;">
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 19px; font-weight: 700; color: #005EEB;">97%</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">약속 이행</span></div>
+                <div style="width: 1px; background: rgba(112,115,124,0.22);"></div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 19px; font-weight: 700; color: #005EEB;">92%</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">보호자 확인</span></div>
+                <div style="width: 1px; background: rgba(112,115,124,0.22);"></div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;"><span style="font-size: 19px; font-weight: 700; color: #171719;">5건 / 4건</span><span style="font-size: 12px; font-weight: 500; color: #70737C;">이의 / 해소</span></div>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #70737C;"><w-icon name="info" size="13"></w-icon> 내가 씀 · 공개 프로필에 보임</span>
+                <span style="font-size: 16px; font-weight: 700; color: #171719;">돌봄 일기</span>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">아이마다 한 권씩. 계약이 끝나면 후기 한 편을 남깁니다. 일기장이 쌓이는 것이 곧 돌본 경력입니다.</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 700; color: #171719;">콩이의 돌봄 일기</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">후기 1편 · 최근 2026.08.12</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">겁이 많지만 간식 앞에선 용감한 아이였어요. 마지막 날엔 먼저 무릎에…</span>
+                <span style="align-self: flex-start; font-size: 13px; font-weight: 600; color: #005EEB;">펼쳐보기</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 700; color: #171719;">만두의 돌봄 일기</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">후기 2편 · 최근 2026.08.09</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">오늘 만두는 방석에서 한참을 안 나오다가, 간식 냄새에 슬금슬금…</span>
+                <span style="align-self: flex-start; font-size: 13px; font-weight: 600; color: #005EEB;">펼쳐보기</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 700; color: #171719;">감자의 돌봄 일기</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">후기 1편 · 최근 2026.08.06</span>
+                </div>
+                <span style="align-self: flex-start; font-size: 13px; font-weight: 600; color: #005EEB;">펼쳐보기</span>
+              </div>
+              <span style="font-size: 12px; font-weight: 500; color: #70737C;">일기장은 돌봄을 마치면 그 아이 이름으로 자동으로 생깁니다.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #70737C;"><w-icon name="info" size="13"></w-icon> 시터 본인이 올림 · 이 서비스가 확인하지 않음</span>
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">다른 곳에서 받은 후기</span>
+              <div style="display: flex; gap: 8px;">
+                <div style="width: 84px; height: 84px; border-radius: 10px; background: #DBDCDF;"></div>
+                <div style="width: 84px; height: 84px; border-radius: 10px; background: #DBDCDF;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10 일기장 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">10 돌봄 일기장 — ① 후기(주관) + ② 기록 링크(객관)</div>
+        <div data-screen-label="돌봄 일기장" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">만두의 돌봄 일기</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 17px; font-weight: 700; color: #171719;">만두 · 후기 2편</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">돌봄 계약이 끝날 때마다 후기가 한 편씩 쌓입니다. 한 권이 이 아이와 함께한 시간 전체입니다.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #70737C;"><w-icon name="info" size="13"></w-icon> ① 시터 후기 · 내가 씀</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 600; color: #70737C;">2026.08.09</span>
+                <span style="font-size: 14px; font-weight: 500; line-height: 1.55; color: #37383C;">오늘 만두는 방석에서 한참을 안 나오다가, 간식 냄새에 슬금슬금 나와서 제 무릎 옆에 앉았어요. 손을 내밀지 않고 기다린 게 답이었나 봅니다. 예민한 아이가 먼저 다가와 준 날은 오래 기억에 남아요.</span>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 600; color: #70737C;">2026.08.08</span>
+                <span style="font-size: 14px; font-weight: 500; line-height: 1.55; color: #37383C;">기저귀를 갈 때마다 긴장하던 아이가 오늘은 리드줄을 보고도 얌전했어요. 사흘 만의 변화입니다.</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #00BF40;"><w-icon name="check-bold" size="13"></w-icon> ② 돌봄 기록 · 검증됨</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">일정 그대로 작성한 인증 기록을 보호자 동의를 받아 링크로 공개합니다. 후기는 내 마음이고, 이 기록은 증거입니다.</span>
+              <div style="height: 46px; border-radius: 10px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #005EEB;">🔗 2026.08.09 만두 돌봄 기록 보기</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11 후기 쓰기 (시터) -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">11 후기 쓰기 (시터) — 계약 종료 시 1회</div>
+        <div data-screen-label="후기 쓰기(시터)" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">콩이 후기 쓰기</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #EAF2FE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 14px; font-weight: 700; color: #005EEB;">돌봄 기간이 끝났어요 — 콩이는 어떤 아이였나요?</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">후기는 계약이 끝나면 한 번 남깁니다. 일기장에서 돌봄 기록 링크와 나란히 보입니다.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 15px; font-weight: 700; color: #171719;">함께한 시간은 어땠나요?</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">이 아이가 어떤 아이였는지, 함께하며 알게 된 것들을 편하게 적어주세요. 보호자를 특정할 수 있는 정보(집 주소·실명)는 넣지 마세요.</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; min-height: 130px; padding: 12px 14px; font-size: 14px; font-weight: 500; line-height: 1.55; color: #37383C;">겁이 많지만 간식 앞에선 용감한 아이였어요. 마지막 날엔 먼저 무릎에 올라왔습니다.</div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 14px; font-weight: 700; color: #171719;">사진 (선택)</span>
+              <div style="display: flex; gap: 8px;">
+                <div style="position: relative; width: 90px; height: 90px; border-radius: 10px; background: #DBDCDF;">
+                  <span style="position: absolute; left: 6px; bottom: 6px; background: rgba(23,23,25,0.72); color: #FFFFFF; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 5px;">앨범</span>
+                </div>
+                <div style="width: 90px; height: 90px; border-radius: 10px; border: 1px dashed rgba(112,115,124,0.4); display: flex; align-items: center; justify-content: center; color: #70737C;"><w-icon name="plus-circle" size="20"></w-icon></div>
+              </div>
+            </div>
+          </div>
+          <div style="flex: none; padding: 12px 16px 28px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="height: 52px; border-radius: 12px; background: #0066FF; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600;">후기 남기기</div>
+            <div style="height: 48px; border-radius: 12px; background: #F7F7F8; color: #37383C; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600;">나중에 쓰기</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ 공개 화면 ============ -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #171719;">공개 화면 — 다음 보호자가 보는 것</h2>
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start;">
+
+      <!-- 12 공개 프로필 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">12 공개 프로필 — 확인된 것과 본인이 쓴 것을 섞지 않음</div>
+        <div data-screen-label="공개 프로필" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px;"></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">펫시터 프로필</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 52px; height: 52px; border-radius: 1000px; background: #DBDCDF; flex: none;"></div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 17px; font-weight: 700; color: #171719;">박서준 펫시터</span>
+                  <span style="font-size: 13px; font-weight: 500; color: #70737C;">방문 돌봄 · 서울 마포구 · 별점 4.9 (38)</span>
+                </div>
+              </div>
+              <span style="align-self: flex-start; display: flex; align-items: center; gap: 5px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 이 서비스에서 확인됨</span>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 600; color: #37383C;">약속 이행</span>
+                  <span style="font-size: 16px; font-weight: 700; color: #005EEB;">97% <span style="font-size: 12px; font-weight: 500; color: #70737C;">(501 / 515건)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 600; color: #37383C;">보호자 확인</span>
+                  <span style="font-size: 16px; font-weight: 700; color: #005EEB;">92% <span style="font-size: 12px; font-weight: 500; color: #70737C;">(리액션 포함)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 600; color: #37383C;">이의 · 해소</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">이의 5건 중 4건 소명으로 해소</span>
+                </div>
+                <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">남은 1건도 기록에 그대로 남아 있습니다. 이의 0건을 자랑하지 않습니다 — 소명이 작동했다는 것이 신뢰 신호입니다.</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #70737C;"><w-icon name="info" size="13"></w-icon> 시터 본인이 씀</span>
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">돌봄 일기 · 3권</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #70737C;">돌본 아이마다 한 권씩입니다. 어떤 마음으로 돌보는 사람인지 여기서 보입니다.</span>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 700; color: #171719;">콩이의 돌봄 일기</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">후기 1편</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">“겁이 많지만 간식 앞에선 용감한 아이였어요. 마지막 날엔 먼저 무릎에…”</span>
+                <div style="height: 38px; border-radius: 9px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #005EEB;">🔗 콩이 돌봄 기록 · 검증됨</div>
+              </div>
+              <div style="border: 1px solid rgba(112,115,124,0.22); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 14px; font-weight: 700; color: #171719;">만두의 돌봄 일기</span>
+                  <span style="font-size: 12px; font-weight: 500; color: #70737C;">후기 2편</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">“오늘 만두는 방석에서 한참을 안 나오다가, 간식 냄새에 슬금슬금…”</span>
+                <div style="height: 38px; border-radius: 9px; background: #F7F7F8; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #005EEB;">🔗 만두 돌봄 기록 · 검증됨</div>
+              </div>
+              <span style="font-size: 12px; font-weight: 500; color: #70737C;">외 1권</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #70737C;"><w-icon name="info" size="13"></w-icon> 시터 본인이 올림 · 이 서비스가 확인하지 않음</span>
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">다른 곳에서 받은 후기</span>
+              <span style="font-size: 12px; font-weight: 500; line-height: 1.5; color: #70737C;">캡처 원본과 함께 올립니다. 확인된 것과 섞어 보여주지 않습니다 — 섞으면 확인 안 된 것까지 확인된 척하게 됩니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13 돌봄 기록 · 공개 -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: #55565C;">13 돌봄 기록 · 공개 — 편집 불가, 동의의 가치 명시</div>
+        <div data-screen-label="돌봄 기록 공개" style="width: 390px; min-height: 844px; background: #F7F7F8; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 6px 28px rgba(23,23,23,0.1);">
+          <div style="height: 44px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: #171719; flex: none;"><span>9:41</span><span style="letter-spacing: 0.1em;">▮▮▮ 100%</span></div>
+          <div style="flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px;">
+            <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #171719;"><w-icon name="chevron-left" size="22"></w-icon></span>
+            <span style="flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: #171719;">만두 돌봄 기록 · 공개</span>
+            <span style="width: 32px;"></span>
+          </div>
+          <div style="flex: 1; padding: 12px 16px 24px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #EAF2FE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 14px; font-weight: 700; color: #005EEB;">보호자 동의를 받아 공개된 기록입니다</span>
+              <span style="font-size: 13px; font-weight: 500; line-height: 1.5; color: #37383C;">일정 그대로 남긴 인증과 보호자의 확인이 편집 없이 보입니다. 보호자가 공개에 동의해 준 덕분에, 다음 보호자가 이 시터의 신뢰도를 말이 아닌 실제 기록으로 확인할 수 있습니다.</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <span style="font-size: 16px; font-weight: 700; color: #171719;">만두 · 2026.08.09</span>
+              <span style="font-size: 13px; font-weight: 500; color: #70737C;">예정 3건 · 제출 3건</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(23,23,23,0.06);">
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">09:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">밥 <span style="font-size: 12px; font-weight: 500; color: #70737C;">09:06 제출</span></span>
+                  <div style="border-left: 3px solid #EAF2FE; padding: 2px 0 2px 10px; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; font-weight: 600; color: #70737C;">시터 설명</span>
+                    <span style="font-size: 13px; font-weight: 500; color: #37383C;">간식 조금 섞어서 완식</span>
+                  </div>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 보호자 확인 · 💙 고마워요</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">11:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">배변 <span style="font-size: 12px; font-weight: 500; color: #70737C;">11:12 제출</span></span>
+                  <div style="border-left: 3px solid #EAF2FE; padding: 2px 0 2px 10px; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; font-weight: 600; color: #70737C;">시터 설명</span>
+                    <span style="font-size: 13px; font-weight: 500; color: #37383C;">리드줄 착용 후 교체, 상태 정상</span>
+                  </div>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 보호자 확인 · 😌 안심돼요</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <span style="flex: none; width: 44px; font-size: 13px; font-weight: 700; color: #171719;">15:00</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 14px; font-weight: 600; color: #171719;">놀이 <span style="font-size: 12px; font-weight: 500; color: #70737C;">15:03 제출</span></span>
+                  <div style="border-left: 3px solid #EAF2FE; padding: 2px 0 2px 10px; display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; font-weight: 600; color: #70737C;">시터 설명</span>
+                    <span style="font-size: 13px; font-weight: 500; color: #37383C;">노즈워크 15분</span>
+                  </div>
+                  <span style="align-self: flex-start; display: flex; align-items: center; gap: 4px; background: #EAF2FE; color: #005EEB; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 1000px;"><w-icon name="check-bold" size="12"></w-icon> 보호자 확인 · 😍 귀여워요</span>
+                </div>
+              </div>
+            </div>
+            <span style="text-align: center; font-size: 12px; font-weight: 500; color: #70737C;">검증된 기록 그대로입니다 — 시터도 보호자도 여기서는 편집할 수 없습니다.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</x-dc>
+</body>
+</html>

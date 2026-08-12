@@ -1,0 +1,656 @@
+<title>펫케어 신뢰 이력 — User Journey & CUJ</title>
+
+<style>
+  :root {
+    --paper:    #F4F6F7;
+    --surface:  #FFFFFF;
+    --surface2: #EAEFF1;
+    --ink:      #1B2A32;
+    --ink2:     #46606D;
+    --ink3:     #7C949F;
+    --rule:     #D2DBE0;
+    --rule2:    #E3EAED;
+    --seal:     #A8433A;
+    --sitter:   #2E6B6E;
+    --owner:    #4A5A8C;
+    --ok:       #2F7D5A;
+    --miss:     #A5761C;
+
+    --sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "D2Coding", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:    #11171B;
+      --surface:  #182126;
+      --surface2: #1E282E;
+      --ink:      #E3EAED;
+      --ink2:     #A2B5BE;
+      --ink3:     #6E858F;
+      --rule:     #2B383F;
+      --rule2:    #222E34;
+      --seal:     #DB786C;
+      --sitter:   #5FB2B0;
+      --owner:    #929FD4;
+      --ok:       #59B68B;
+      --miss:     #D3A550;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:    #11171B;
+    --surface:  #182126;
+    --surface2: #1E282E;
+    --ink:      #E3EAED;
+    --ink2:     #A2B5BE;
+    --ink3:     #6E858F;
+    --rule:     #2B383F;
+    --rule2:    #222E34;
+    --seal:     #DB786C;
+    --sitter:   #5FB2B0;
+    --owner:    #929FD4;
+    --ok:       #59B68B;
+    --miss:     #D3A550;
+  }
+  :root[data-theme="light"] {
+    --paper:    #F4F6F7;
+    --surface:  #FFFFFF;
+    --surface2: #EAEFF1;
+    --ink:      #1B2A32;
+    --ink2:     #46606D;
+    --ink3:     #7C949F;
+    --rule:     #D2DBE0;
+    --rule2:    #E3EAED;
+    --seal:     #A8433A;
+    --sitter:   #2E6B6E;
+    --owner:    #4A5A8C;
+    --ok:       #2F7D5A;
+    --miss:     #A5761C;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+  }
+
+  /* ---------- shared type ---------- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink3);
+  }
+  h1, h2, h3, h4 { text-wrap: balance; margin: 0; font-weight: 700; }
+  h1 { font-size: clamp(28px, 4.4vw, 40px); letter-spacing: -.02em; line-height: 1.22; }
+  h2 { font-size: 21px; letter-spacing: -.01em; }
+  h3 { font-size: 16px; }
+  h4 { font-size: 14.5px; }
+  p  { margin: 0; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- header ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 18px; }
+  .masthead .rule-top {
+    height: 3px; background: var(--ink); width: 64px;
+  }
+  .thesis {
+    font-size: clamp(16px, 2.1vw, 19px);
+    line-height: 1.6;
+    color: var(--ink2);
+    max-width: 62ch;
+  }
+  .thesis b { color: var(--ink); font-weight: 700; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 20px;
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+  .meta span { font-family: var(--mono); font-size: 11.5px; color: var(--ink3); letter-spacing: .04em; }
+  .meta span b { color: var(--ink2); font-weight: 500; }
+
+  /* ---------- section ---------- */
+  .sec { display: flex; flex-direction: column; gap: 20px; }
+  .sec-head { display: flex; flex-direction: column; gap: 6px; }
+  .sec-note { font-size: 13.5px; color: var(--ink2); max-width: 70ch; }
+
+  /* ---------- personas ---------- */
+  .personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .persona {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--pc);
+    padding: 22px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .persona[data-who="sitter"] { --pc: var(--sitter); }
+  .persona[data-who="owner"]  { --pc: var(--owner); }
+  .persona .role {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--pc); font-weight: 600;
+  }
+  .persona ul { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .persona li { font-size: 13.5px; color: var(--ink2); display: flex; gap: 10px; }
+  .persona li .k {
+    flex: 0 0 46px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em;
+    color: var(--ink3); padding-top: 3px;
+  }
+  .persona li .v b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- journey lane ---------- */
+  .lane { display: flex; flex-direction: column; gap: 0; }
+  .lane[data-who="sitter"] { --lc: var(--sitter); }
+  .lane[data-who="owner"]  { --lc: var(--owner); }
+  .lane-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding-bottom: 12px; border-bottom: 2px solid var(--lc);
+  }
+  .lane-head .who { color: var(--lc); }
+  .lane-head .sub { font-size: 13px; color: var(--ink2); }
+
+  .scroller { overflow-x: auto; overflow-y: hidden; }
+  .track { min-width: 1080px; }
+
+  .curve { display: block; width: 100%; height: auto; }
+
+  .stages { display: grid; grid-template-columns: repeat(6, 1fr); }
+  .stage {
+    padding: 16px 14px 20px;
+    border-left: 1px solid var(--rule2);
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--surface);
+  }
+  .stage:first-child { border-left: 0; }
+  .stage-no {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    color: var(--lc); font-weight: 600;
+  }
+  .stage h4 { line-height: 1.35; }
+  .stage dl { margin: 0; display: flex; flex-direction: column; gap: 9px; }
+  .stage dt {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink3); margin-bottom: 2px;
+  }
+  .stage dd { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink2); }
+  .stage dd.feel { color: var(--ink); font-weight: 600; }
+  .stage[data-low="1"] dd.feel { color: var(--seal); }
+  .stage[data-low="1"] { background: var(--surface2); }
+
+  /* ---------- findings ---------- */
+  .findings { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--rule); }
+  .finding {
+    display: grid; grid-template-columns: 92px 1fr; gap: 20px;
+    padding: 20px 0; border-bottom: 1px solid var(--rule);
+  }
+  .finding .fn { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--ink3); padding-top: 3px; }
+  .finding .fb { display: flex; flex-direction: column; gap: 7px; }
+  .finding p { font-size: 13.5px; color: var(--ink2); max-width: 74ch; }
+  .finding p b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- CUJ ---------- */
+  .cuj-frame {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 26px;
+    position: relative;
+  }
+  .stamp {
+    position: absolute; top: 18px; right: 18px;
+    width: 78px; height: 78px; border-radius: 50%;
+    border: 2px solid var(--seal); color: var(--seal);
+    display: grid; place-items: center; text-align: center;
+    transform: rotate(-11deg); opacity: .85;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; line-height: 1.5;
+    font-weight: 600;
+  }
+  .stamp span { display: block; }
+  .stamp .big { font-family: var(--sans); font-size: 17px; letter-spacing: .06em; font-weight: 700; }
+
+  .cuj-def {
+    font-size: 14px; line-height: 1.7; color: var(--ink2);
+    max-width: 58ch; margin-bottom: 24px;
+  }
+  .cuj-def b { color: var(--ink); font-weight: 700; }
+
+  ol.cuj { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .step {
+    display: grid; grid-template-columns: 34px 1fr; gap: 16px;
+    padding: 16px 0; border-top: 1px solid var(--rule2);
+  }
+  .step:first-child { border-top: 1px solid var(--rule); }
+  .step .n {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--ink3); padding-top: 1px; font-variant-numeric: tabular-nums;
+  }
+  .step .sb { display: flex; flex-direction: column; gap: 7px; }
+  .step .top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .scr {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+    border: 1px solid var(--rule); color: var(--ink3);
+    padding: 1px 6px; border-radius: 2px;
+  }
+  .crit {
+    font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums;
+    color: var(--ok); letter-spacing: .01em; line-height: 1.55;
+  }
+  .fail { font-size: 12.5px; color: var(--ink3); line-height: 1.5; }
+
+  .step[data-flag="bottleneck"] { background: var(--surface2); margin: 0 -14px; padding: 16px 14px; }
+  .step[data-flag="bottleneck"] .n { color: var(--seal); }
+  .step[data-flag="bottleneck"] .crit { color: var(--seal); }
+  .flag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em;
+    text-transform: uppercase; background: var(--seal); color: var(--paper);
+    padding: 2px 7px; border-radius: 2px; font-weight: 700;
+  }
+  .flag[data-kind="test"] { background: var(--miss); }
+
+  /* ---------- assumptions ---------- */
+  .assump { display: flex; flex-direction: column; gap: 0; }
+  .assump .row {
+    display: grid; grid-template-columns: 1fr 96px; gap: 16px; align-items: start;
+    padding: 13px 0; border-bottom: 1px solid var(--rule2);
+    font-size: 13px; color: var(--ink2);
+  }
+  .assump .row:first-child { border-top: 1px solid var(--rule); }
+  .tag {
+    justify-self: end;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+    border: 1px solid var(--miss); color: var(--miss);
+    padding: 1px 6px; border-radius: 2px; white-space: nowrap;
+  }
+
+  /* ---------- motion ---------- */
+  .curve .line {
+    stroke-dasharray: 1400; stroke-dashoffset: 1400;
+    animation: draw 1.5s cubic-bezier(.5,.05,.2,1) forwards;
+  }
+  .lane[data-who="sitter"] .curve .line { animation-delay: .25s; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .curve .line { animation: none; stroke-dashoffset: 0; }
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 40px 16px 72px; gap: 48px; }
+    .finding { grid-template-columns: 1fr; gap: 8px; }
+    .cuj-frame { padding: 20px 16px; }
+    .stamp { display: none; }
+    .assump .row { grid-template-columns: 1fr; }
+    .tag { justify-self: start; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <div class="rule-top"></div>
+    <div class="eyebrow">User Journey &amp; Critical User Journey</div>
+    <h1>신뢰의 단위를 '건'에서 '사람'으로</h1>
+    <p class="thesis">
+      보호자와 시터는 서로를 검증할 방법이 없어서 <b>매 건마다 관계를 0에서 다시 쌓는다.</b>
+      약속·수행·확인의 이력이 사람에게 남지 않기 때문이다.
+      인계 정보를 매번 새로 만드는 것은 원인이 아니라 증상이다.
+    </p>
+    <div class="meta">
+      <span>기준 페르소나 <b>펫시터</b></span>
+      <span>화면 총 <b>18</b> / P0 <b>7</b></span>
+      <span>여정 단계 <b>6 × 2</b></span>
+      <span>CUJ 단계 <b>7</b></span>
+    </div>
+  </header>
+
+  <!-- ============ PERSONAS ============ -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">01 — Personas</div>
+      <h2>두 사람</h2>
+    </div>
+    <div class="personas">
+
+      <article class="persona" data-who="sitter">
+        <div class="role">주 사용자 · Sitter</div>
+        <h3>박서준 — 34세, 2년차 부업 펫시터</h3>
+        <ul>
+          <li><span class="k">일</span><span class="v">주 3~5건 방문 돌봄. 하루 최대 3건. 월 <b>50~60만원</b></span></li>
+          <li><span class="k">채널</span><span class="v">플랫폼 1곳 + 개인 카톡 단골 병행</span></li>
+          <li><span class="k">목표</span><span class="v">단골을 늘려 <b>플랫폼 의존과 수수료를 줄이기</b></span></li>
+          <li><span class="k">좌절</span><span class="v">2년간 쌓은 후기가 플랫폼 안에만 있다. 새 고객에게 증명할 수단이 <b>카톡 캡처뿐</b></span></li>
+        </ul>
+      </article>
+
+      <article class="persona" data-who="owner">
+        <div class="role">부 사용자 · Owner</div>
+        <h3>김지은 — 31세 직장인, 4살 말티즈 '콩이'</h3>
+        <ul>
+          <li><span class="k">콩이</span><span class="v">슬개골 탈구 3기 / 닭 알레르기 / 아침 관절 영양제</span></li>
+          <li><span class="k">빈도</span><span class="v">연 5~6회 위탁. 시터 고정 시도했으나 일정이 안 맞아 실패</span></li>
+          <li><span class="k">목표</span><span class="v"><b>콩이가 다치지 않는 것</b></span></li>
+          <li><span class="k">좌절</span><span class="v">매번 같은 설명을 처음부터. <b>지켜졌는지는 끝내 모름</b></span></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ JOURNEY: OWNER ============ -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">02 — Journey</div>
+      <h2>보호자의 여정</h2>
+      <p class="sec-note">가로로 스크롤됩니다. 선은 감정값(-2 ~ +2), 강조된 점은 최저점입니다.</p>
+    </div>
+
+    <div class="lane" data-who="owner">
+      <div class="lane-head">
+        <h3 class="who">김지은 · 보호자</h3>
+        <span class="sub">출장 확정부터 다음 위탁까지</span>
+      </div>
+      <div class="scroller">
+        <div class="track">
+          <svg class="curve" viewBox="0 0 1080 132" role="img" aria-label="보호자 감정 곡선: 걱정에서 시작해 종료 시 안도로 올랐다가 다음 건에서 다시 최저로 떨어짐">
+            <line x1="0" y1="65" x2="1080" y2="65" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 5"></line>
+            <polyline class="line" points="90,87 270,98 450,87 630,98 810,43 990,98"
+              fill="none" stroke="var(--owner)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <circle cx="90"  cy="87" r="4" fill="var(--owner)"></circle>
+            <circle cx="270" cy="98" r="4" fill="var(--owner)"></circle>
+            <circle cx="450" cy="87" r="4" fill="var(--owner)"></circle>
+            <circle cx="630" cy="98" r="4" fill="var(--owner)"></circle>
+            <circle cx="810" cy="43" r="4" fill="var(--owner)"></circle>
+            <circle cx="990" cy="98" r="7" fill="var(--paper)" stroke="var(--seal)" stroke-width="3"></circle>
+            <text x="990" y="122" text-anchor="middle" fill="var(--seal)" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" letter-spacing="0.06em">최저 −1.5</text>
+          </svg>
+
+          <div class="stages">
+            <div class="stage">
+              <div class="stage-no">01</div><h4>필요 발생</h4>
+              <dl>
+                <dt>행동</dt><dd>출장 확정, 일정 확인</dd>
+                <dt>감정</dt><dd class="feel">걱정</dd>
+                <dt>페인포인트</dt><dd>—</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">02</div><h4>탐색 · 선택</h4>
+              <dl>
+                <dt>행동</dt><dd>플랫폼·지인 수소문, 후기 읽기</dd>
+                <dt>감정</dt><dd class="feel">누굴 믿지</dd>
+                <dt>페인포인트</dt><dd>후기가 다 좋아 보여 변별이 안 됨. 나쁜 시터는 프로필 지우고 재가입</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">03</div><h4>사전 인계</h4>
+              <dl>
+                <dt>행동</dt><dd>미팅 1시간 또는 카톡으로 특이사항 나열</dd>
+                <dt>감정</dt><dd class="feel">지침 · 반복 피로</dd>
+                <dt>페인포인트</dt><dd>1시간을 써도 지켜질지는 별개. 계약·결제까지 얹힘</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">04</div><h4>돌봄 중</h4>
+              <dl>
+                <dt>행동</dt><dd>사진·라이브 기다림, 수시로 확인</dd>
+                <dt>감정</dt><dd class="feel">불안 · 감시</dd>
+                <dt>페인포인트</dt><dd>사진에 "정상"만 담김. 빠진 것은 안 보임</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">05</div><h4>종료 · 복귀</h4>
+              <dl>
+                <dt>행동</dt><dd>집 상태·콩이 상태 점검, 결제</dd>
+                <dt>감정</dt><dd class="feel">안도</dd>
+                <dt>페인포인트</dt><dd>무엇이 안 지켜졌는지 알 방법이 없음</dd>
+              </dl>
+            </div>
+            <div class="stage" data-low="1">
+              <div class="stage-no">06</div><h4>다음 건</h4>
+              <dl>
+                <dt>행동</dt><dd>지난 시터 일정이 안 맞음 → 새 시터 탐색</dd>
+                <dt>감정</dt><dd class="feel">또 처음부터</dd>
+                <dt>페인포인트</dt><dd>축적된 것이 0. 카톡 스크롤에 흩어짐</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ JOURNEY: SITTER ============ -->
+  <section class="sec">
+    <div class="lane" data-who="sitter">
+      <div class="lane-head">
+        <h3 class="who">박서준 · 시터</h3>
+        <span class="sub">의뢰 수신부터 다음 고객에게 증명하기까지</span>
+      </div>
+      <div class="scroller">
+        <div class="track">
+          <svg class="curve" viewBox="0 0 1080 132" role="img" aria-label="시터 감정 곡선: 의뢰 수신 시 가장 높고, 다음 고객에게 증명하는 단계에서 전체 최저인 마이너스 2로 떨어짐">
+            <line x1="0" y1="65" x2="1080" y2="65" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 5"></line>
+            <polyline class="line" points="90,43 270,87 450,76 630,87 810,54 990,109"
+              fill="none" stroke="var(--sitter)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+            <circle cx="90"  cy="43" r="4" fill="var(--sitter)"></circle>
+            <circle cx="270" cy="87" r="4" fill="var(--sitter)"></circle>
+            <circle cx="450" cy="76" r="4" fill="var(--sitter)"></circle>
+            <circle cx="630" cy="87" r="4" fill="var(--sitter)"></circle>
+            <circle cx="810" cy="54" r="4" fill="var(--sitter)"></circle>
+            <circle cx="990" cy="109" r="7" fill="var(--paper)" stroke="var(--seal)" stroke-width="3"></circle>
+            <text x="990" y="128" text-anchor="middle" fill="var(--seal)" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" letter-spacing="0.06em">전체 최저 −2</text>
+          </svg>
+
+          <div class="stages">
+            <div class="stage">
+              <div class="stage-no">01</div><h4>의뢰 수신</h4>
+              <dl>
+                <dt>행동</dt><dd>요청 확인, 동선·시간 계산</dd>
+                <dt>감정</dt><dd class="feel">일감 · 안도</dd>
+                <dt>페인포인트</dt><dd>왕복 이동 2시간이면 시급이 안 나옴</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">02</div><h4>정보 파악</h4>
+              <dl>
+                <dt>행동</dt><dd>카톡 덩어리 텍스트 훑기</dd>
+                <dt>감정</dt><dd class="feel">막막</dd>
+                <dt>페인포인트</dt><dd>필요한 순간(급여·산책 시점)에 못 찾음. 전달 순서 ≠ 수행 순서</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">03</div><h4>방문 · 수행</h4>
+              <dl>
+                <dt>행동</dt><dd>입장 → 급여 → 산책 → 배변 → 퇴장</dd>
+                <dt>감정</dt><dd class="feel">집중 · 조심</dd>
+                <dt>페인포인트</dt><dd>못 지킨 것이 생김 (약 거부, 산책 거부)</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">04</div><h4>보고 작성</h4>
+              <dl>
+                <dt>행동</dt><dd>사진 고르고 멘트 작성</dd>
+                <dt>감정</dt><dd class="feel">찜찜</dd>
+                <dt>페인포인트</dt><dd>못한 걸 적으면 리뷰·재의뢰에서 손해 → 좋게만 씀</dd>
+              </dl>
+            </div>
+            <div class="stage">
+              <div class="stage-no">05</div><h4>정산 · 종료</h4>
+              <dl>
+                <dt>행동</dt><dd>수수료 제하고 입금</dd>
+                <dt>감정</dt><dd class="feel">소소한 만족</dd>
+                <dt>페인포인트</dt><dd>—</dd>
+              </dl>
+            </div>
+            <div class="stage" data-low="1">
+              <div class="stage-no">06</div><h4>다음 고객에게 증명</h4>
+              <dl>
+                <dt>행동</dt><dd>새 고객 문의에 답변</dd>
+                <dt>감정</dt><dd class="feel">무력</dd>
+                <dt>페인포인트</dt><dd>2년 이력을 캡처 몇 장으로 증명. 플랫폼 밖으로 못 들고 나감</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINDINGS ============ -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">03 — Findings</div>
+      <h2>여정에서 나온 것</h2>
+    </div>
+    <div class="findings">
+
+      <div class="finding">
+        <div class="fn">발견 1</div>
+        <div class="fb">
+          <h4>두 사람의 감정 최저점이 같은 단계에 있다</h4>
+          <p>보호자 <span class="mono">−1.5</span>(6단계 "또 처음부터"), 시터 <span class="mono">−2</span>(6단계 "증명 못 함").
+          둘 다 <b>"다음 건"에서 바닥을 친다.</b> 돌봄 자체가 아니라 <b>건과 건 사이</b>가 문제라는 뜻이고,
+          이는 문제 정의(신뢰의 단위가 '건')를 여정 쪽에서 지지한다.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="fn">발견 2</div>
+        <div class="fb">
+          <h4>시터의 통증이 더 깊은데, 완충 장치가 없다</h4>
+          <p>보호자는 최소한 <b>감시</b>(라이브·사진)라도 갖고 있다. 불완전하지만 무언가는 한다.
+          시터에게는 대응 수단이 아예 없다 — 이력을 들고 나갈 방법 자체가 없기 때문이다.
+          주 사용자를 시터로 잡은 결정을 지지한다.</p>
+        </div>
+      </div>
+
+      <div class="finding">
+        <div class="fn">발견 3</div>
+        <div class="fb">
+          <h4>CUJ의 병목이 주 사용자가 아닌 쪽에 있다</h4>
+          <p>이력이 성립하려면 보호자의 확인(<span class="mono">O4</span>)이 반드시 찍혀야 한다.
+          그런데 보호자는 이 제품의 주 사용자가 아니다. <b>열쇠를 부 사용자가 쥐고 있다.</b>
+          서비스 정책 단계에서 반드시 다뤄야 할 구조적 위험.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ CUJ ============ -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">04 — Critical User Journey</div>
+      <h2>끊기면 안 되는 한 바퀴</h2>
+    </div>
+
+    <div class="cuj-frame">
+      <div class="stamp">
+        <span>
+          <span class="big">확인</span>
+          <span>CONFIRMED</span>
+        </span>
+      </div>
+
+      <p class="cuj-def">
+        보호자가 인계 카드를 만들고 → 시터가 수행을 기록하고 → 보호자가 확인을 찍어 →
+        그 이력이 <b>시터에게 귀속</b>되어 → <b>다음 고객에게 보여지기</b>까지.
+        이 한 바퀴가 끊기면 제품은 그냥 체크리스트 앱이 된다.
+      </p>
+
+      <ol class="cuj">
+
+        <li class="step">
+          <div class="n">1</div>
+          <div class="sb">
+            <div class="top"><h4>인계 카드 작성</h4><span class="scr">O2</span></div>
+            <p class="crit">첫 작성 10분 이내 · 필수 5항목 채움률 100% · 2회차 작성 2분 이내</p>
+            <p class="fail">끊기면 — 약속이 없으면 나머지 전부 무의미. 카톡으로 회귀</p>
+          </div>
+        </li>
+
+        <li class="step">
+          <div class="n">2</div>
+          <div class="sb">
+            <div class="top"><h4>카드 열람</h4><span class="scr">S3</span></div>
+            <p class="crit">방문 전 열람률 100% · 방문 중 재열람 1회 이상</p>
+            <p class="fail">끊기면 — 약속이 성립하지 않음. 수행 기록이 형식만 남음</p>
+          </div>
+        </li>
+
+        <li class="step" data-flag="test">
+          <div class="n">3</div>
+          <div class="sb">
+            <div class="top"><h4>수행 체크</h4><span class="scr">S4</span><span class="flag" data-kind="test">진짜 시험대</span></div>
+            <p class="crit">항목 체크 완료율 ≥90% · 「못했음·이상」 사용 건이 전체의 ≥10%</p>
+            <p class="fail">끊기면 — 「했음」만 100%면 겉으론 잘 도는 앱이지만 신뢰 장치로는 완전 실패. 이 지표를 대시보드 1순위로 둔다</p>
+          </div>
+        </li>
+
+        <li class="step">
+          <div class="n">4</div>
+          <div class="sb">
+            <div class="top"><h4>완료 · 확인 요청</h4><span class="scr">S6</span></div>
+            <p class="crit">돌봄 종료 후 10분 내 발송률 ≥90%</p>
+            <p class="fail">끊기면 — 지연될수록 보호자 기억이 흐려져 확인 품질이 떨어짐</p>
+          </div>
+        </li>
+
+        <li class="step" data-flag="bottleneck">
+          <div class="n">5</div>
+          <div class="sb">
+            <div class="top"><h4>보호자 확인</h4><span class="scr">O4</span><span class="flag">최대 병목</span></div>
+            <p class="crit">24시간 내 확인율 ≥70%</p>
+            <p class="fail">끊기면 — 확인이 없으면 이력이 성립하지 않는다. 그런데 보호자에게는 찍을 직접적 이득이 없다. 정책에서 못 풀면 여기서 끊긴다</p>
+          </div>
+        </li>
+
+        <li class="step">
+          <div class="n">6</div>
+          <div class="sb">
+            <div class="top"><h4>이력 귀속</h4><span class="scr">S7</span></div>
+            <p class="crit">확인 건 누적 반영 100% · 시터의 7일 내 이력 열람 ≥1회</p>
+            <p class="fail">끊기면 — 시터가 안 보면 IA 결정 1(이력을 탭 1급으로 둔 것)이 기각됨</p>
+          </div>
+        </li>
+
+        <li class="step">
+          <div class="n">7</div>
+          <div class="sb">
+            <div class="top"><h4>이력 공유</h4><span class="scr">P1</span></div>
+            <p class="crit">시터 링크 공유 월 ≥1회 · 링크 열람 ≥1건</p>
+            <p class="fail">끊기면 — 아무도 공유하지 않으면 "이력을 들고 다닌다"는 가정 자체가 기각</p>
+          </div>
+        </li>
+
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ ASSUMPTIONS ============ -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">05 — Unverified</div>
+      <h2>미검증 표시</h2>
+      <p class="sec-note">아래는 근거가 아니라 가정이다. 이 위에 무엇을 쌓았는지 알고 쌓는다.</p>
+    </div>
+    <div class="assump">
+      <div class="row"><span>시터 감정값 −2 (증명 못 함) — 해외 자료(프로필 삭제 후 리뷰 세탁)와 추론에 기반. <b>한국 시터 인터뷰 없음</b></span><span class="tag">추측</span></div>
+      <div class="row"><span>보호자 6단계 "또 처음부터" — 시터 고정 실패가 실제로 얼마나 흔한지 확인 못 함</span><span class="tag">추측</span></div>
+      <div class="row"><span>CUJ 성공 기준의 수치 (70% · 90% · 10%) — 벤치마크 없음. 초기 목표치일 뿐 검증된 기준선이 아님</span><span class="tag">추측</span></div>
+      <div class="row"><span>「못했음」 사용률 ≥10% — 실제 돌봄에서 미수행이 얼마나 발생하는지 데이터 없음</span><span class="tag">추측</span></div>
+      <div class="row"><span>시터 → 보호자 방향의 불신 — 해외 자료(시터 안전 문제)만 있고 한국 사례는 <b>찾지 못함</b></span><span class="tag">추측</span></div>
+    </div>
+  </section>
+
+</div>

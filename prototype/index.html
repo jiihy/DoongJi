@@ -1,0 +1,2890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>펫시팅 프로토타입 — 일정 기반 인증</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="icon" href="./app-icon.png">
+<link rel="apple-touch-icon" href="./app-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="../design/wanted/w-icon.js?v=3" defer></script>
+<style>
+  :root{
+    --primary:#0066FF; --primary-ink:#005EEB; --primary-tint:#EAF2FE;
+    --ink:#171719; --ink2:#37383C; --ink3:#55565C; --ink4:#70737C;
+    --line:rgba(112,115,124,0.22); --bg:#F7F7F8; --page:#EDEEF0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--page)}
+  body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink)}
+  button{font-family:inherit;border:0;background:none;padding:0;cursor:pointer;color:inherit}
+  input,select{font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;height:38px;padding:0 8px}
+  select{appearance:none;-webkit-appearance:none;padding-right:26px;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M4 9l8 8 8-8' fill='none' stroke='%2370737C' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;background-size:12px}
+
+  .stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:18px;padding:28px 16px 64px}
+  .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+  .rolebtn{height:36px;padding:0 16px;border-radius:1000px;background:#fff;border:1px solid var(--line);color:var(--ink3);font-size:13px;font-weight:600}
+  .rolebtn[aria-pressed="true"]{background:var(--primary-tint);border-color:var(--primary);color:var(--primary-ink)}
+  .reset{height:36px;padding:0 14px;border-radius:1000px;background:transparent;border:1px solid var(--line);color:var(--ink4);font-size:12px;font-weight:600}
+  .hint{font-size:12px;color:var(--ink4);text-align:center;max-width:390px;line-height:1.6}
+
+  .phone{position:relative;width:390px;height:844px;background:var(--bg);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .status{height:44px;flex:none;padding:0 22px;display:flex;align-items:center;justify-content:space-between;background:#fff;font-size:13px;font-weight:600}
+  .nav{height:52px;flex:none;padding:0 12px;display:flex;align-items:center;gap:8px;background:#fff;border-bottom:1px solid var(--line)}
+  .nav .t{flex:1;text-align:center;font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .nav button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:1000px;color:var(--ink)}
+  .nav .sp{width:36px;flex:none}
+  .body{flex:1;overflow-y:auto;padding:16px 20px 24px;display:flex;flex-direction:column;gap:12px}
+  .foot{flex:none;padding:12px 20px 20px;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px}
+
+  .card{background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .h{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .h + .sub{margin-top:6px}
+  .sub{font-size:13px;font-weight:500;line-height:1.5;color:var(--ink4)}
+  .meta{font-size:13px;font-weight:500;color:var(--ink4)}
+
+  .cta{flex:1;height:52px;border-radius:12px;background:var(--primary);color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .cta[disabled]{background:#C9CDD2;cursor:not-allowed}
+  .alt{flex:1;height:52px;border-radius:12px;background:#fff;border:1px solid var(--line);color:var(--ink2);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:13px;font-weight:500;padding:8px 13px;border-radius:1000px;background:#fff;border:1px solid var(--line);color:var(--ink2)}
+  .chip[aria-pressed="true"]{background:var(--primary-tint);border-color:var(--primary);color:var(--primary-ink);font-weight:600}
+
+  /* 타임라인 */
+  .tl{display:flex;flex-direction:column}
+  .item{display:grid;grid-template-columns:54px 1fr;gap:12px;padding:14px 0}
+  .item + .item{border-top:1px solid var(--line)}
+  .item .when{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink2);padding-top:2px}
+  .item .rt{display:block;font-size:11px;font-weight:600;color:var(--primary-ink);margin-top:3px}
+  .item .rt.miss{color:var(--ink4)}
+  .item .b{display:flex;flex-direction:column;gap:8px}
+  .item .k{font-size:16px;font-weight:700}
+  .item .w{font-size:12px;font-weight:500;color:var(--ink4)}
+  .thumb{width:100%;max-width:150px;aspect-ratio:1/1;object-fit:cover;border-radius:12px;display:block;background:var(--bg)}
+  .proof{height:42px;padding:0 16px;font-size:14px;border-radius:1000px;background:var(--primary-tint);color:var(--primary-ink);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
+  .redo{font-size:12px;font-weight:600;color:var(--ink4);align-self:flex-start}
+  .noproof{font-size:13px;font-weight:600;color:var(--ink4)}
+
+  .sitem{display:flex;flex-direction:column;gap:5px;padding:0}
+  .sitem + .sitem{margin-top:-5px}
+  .shoot{font-size:12px;font-weight:500;color:var(--ink4);padding-left:2px}
+  .srow{display:flex;gap:6px;align-items:center}
+  .srow select{flex:none;width:88px}
+  .srow select.petsel{width:74px}
+  .hlabel{font-size:13px;font-weight:600;color:var(--ink3);flex:none}
+  .exact{font-size:11px;font-weight:700;color:var(--primary-ink);background:var(--primary-tint);
+    border-radius:1000px;padding:2px 8px;margin-left:6px;white-space:nowrap}
+  .chev{flex:none;color:var(--ink4);display:flex;align-items:center}
+  .hwho{font-weight:500;color:var(--ink4)}
+  .hwho b{font-weight:700;color:inherit}
+  .hoform{display:flex;flex-direction:column;gap:16px}
+  .hogrp{display:flex;flex-direction:column;gap:10px}
+  .hogrp>label{font-size:14px;font-weight:700;color:var(--ink)}
+  .hogrp .chips{margin-top:1px}
+  .hgrid{display:flex;gap:10px}
+  .hgrid .field{flex:1;display:flex;flex-direction:column;gap:9px}
+  .hgrid input{width:100%}
+  .hrows{display:flex;flex-direction:column;gap:4px;flex:1}
+  .hrowsbtn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:12px 0 0;
+    text-align:left;border-top:1px solid var(--line)}
+  .ctasm{flex:none;width:100%;height:40px;min-height:40px;font-size:14px;font-weight:600;border-radius:10px;
+    background:var(--primary-tint);color:var(--primary-ink);display:flex;align-items:center;justify-content:center}
+  .ctasm.inline{width:auto;padding:0 14px;height:34px;min-height:34px;font-size:13px;border-radius:1000px}
+  .hval{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .srow select[aria-label="시간 범위"]{flex:1;width:auto;min-width:0;padding-right:20px;background-position:right 7px center}
+  .srow input{width:106px;flex:none;padding:0 6px}
+  .srow input[type="time"]::-webkit-calendar-picker-indicator{width:13px;height:13px;margin:0;padding:0;opacity:.55}
+  .srow{flex-wrap:nowrap}
+  .srow .del{min-width:20px;padding:0;margin-left:-6px;font-size:12px;font-weight:600;height:38px;border:none;background:none;display:flex;align-items:center;justify-content:center;color:var(--ink4)}
+  .sheetback.nodim{background:rgba(23,23,25,.18)}
+  .mapbox{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);
+    border-radius:12px;padding:14px;min-height:64px}
+  .mappin{font-size:20px}
+  .maptx{font-size:13px;font-weight:600;color:var(--ink2);line-height:1.5}
+  .kvrow{display:flex;align-items:center;gap:10px;padding:11px 0;background:none;border:none;width:100%;text-align:left}
+  .kvrow + .kvrow{border-top:1px solid var(--line)}
+  .kvrow .kvval{flex:1;font-size:14px;font-weight:600;color:var(--ink);text-align:right}
+  .grip{width:44px;height:5px;border-radius:1000px;background:#DBDCDF;align-self:center;margin:-4px 0 6px}
+  .a2head{display:flex;align-items:center;gap:14px}
+  .appicon{flex:none;width:58px;height:58px;border-radius:15px;background:linear-gradient(160deg,#9fd0ff,#4a9cff);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,102,255,.25)}
+  .appemoji{font-size:30px}
+  .appimg{width:100%;height:100%;object-fit:cover;border-radius:15px;display:block}
+  .a2box{background:var(--primary-tint);border-radius:14px;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+  .a2row{display:flex;align-items:center;gap:12px}
+  .a2ic{flex:none;width:30px;height:30px;border-radius:1000px;background:#fff;color:var(--primary-ink);
+    display:flex;align-items:center;justify-content:center}
+  .a2tx{font-size:14px;font-weight:500;color:var(--ink2);line-height:1.45}
+  .a2tx b{font-weight:700;color:var(--ink)}
+  .a2tx .a2num{color:var(--primary-ink)}
+  .sheet .cta{width:100%;flex:none}
+  .sheet .skiplink{align-self:center;padding:6px 0;text-decoration:none;font-size:14px;color:var(--ink4)}
+  .stepdots{display:flex;gap:8px;justify-content:center;padding-top:2px}
+  .stepdots .dot{width:24px;height:24px;border-radius:1000px;background:var(--bg);color:var(--ink4);
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .stepdots .dot.on{background:var(--primary-tint);color:var(--primary-ink)}
+  .bellicon{background:var(--primary-tint);color:var(--primary-ink);display:flex;align-items:center;justify-content:center}
+  .steps{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:12px;padding:14px}
+  .bul{display:flex;align-items:center;gap:10px}
+  .bic{flex:none;width:28px;height:28px;border-radius:1000px;background:var(--primary-tint);color:var(--primary-ink);
+    display:flex;align-items:center;justify-content:center}
+  .btx{font-size:13px;font-weight:500;color:var(--ink2);line-height:1.45}
+  .hintdown{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 0}
+  .hintdown .ht{font-size:14px;font-weight:600;color:var(--primary-ink)}
+  .hintdown .har{font-size:26px;line-height:1;color:var(--primary-ink)}
+  .add{height:46px;min-height:46px;flex:none;border-radius:10px;border:1px dashed var(--line);color:var(--ink3);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+
+  .stars{display:flex;gap:4px;justify-content:center}
+  .stars button{font-size:30px;line-height:1;color:#D8DBE0}
+  .stars button.on{color:var(--primary)}
+
+  .verify{display:flex;gap:10px;align-items:flex-start}
+  .verify .ic{width:22px;height:22px;border-radius:1000px;background:var(--primary-tint);color:var(--primary-ink);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+  .verify .row{display:flex;flex-direction:column;gap:4px}
+  .verify .lab{font-size:14px;font-weight:600;color:var(--ink2)}
+  .kv{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0}
+  .secthead + .kv{margin-top:6px}
+  .kv + .kv{border-top:1px solid var(--line)}
+  .val{font-size:14px;font-weight:600}
+  .empty{padding:36px 8px;text-align:center;color:var(--ink4);font-size:14px;font-weight:500;line-height:1.6;white-space:pre-line}
+  .badge{align-self:flex-start;background:var(--primary-tint);color:var(--primary-ink);font-size:12px;font-weight:600;padding:5px 11px;border-radius:1000px}
+  input[type=file]{display:none}
+
+  .seen{display:block;font-size:11px;font-weight:600;color:#1E8E4E;margin-top:2px}
+  .seen.ask{color:#C2701A}
+  .seenwait{display:block;font-size:11px;font-weight:500;color:var(--ink4);margin-top:2px}
+  .act{display:flex;gap:6px;flex-wrap:wrap}
+  .act button{height:36px;padding:0 13px;border-radius:1000px;font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink2)}
+  .act button.pri{background:var(--primary);border-color:var(--primary);color:#fff;height:42px;padding:0 18px;font-size:14px}
+  .act button.weak{height:30px;padding:0 10px;font-size:12px;font-weight:500;color:var(--ink4);background:transparent;border:0;text-decoration:underline;text-underline-offset:2px}
+  .item{position:relative}
+  .vitem{display:flex;flex-direction:column;gap:8px}
+  .vitem .k{font-size:15px;font-weight:700;color:var(--ink)}
+  .vtime{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .vtime .vt{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink2)}
+  .floatlink{position:absolute;bottom:14px;right:0;padding:0;font-size:12px;font-weight:500;color:var(--ink4);background:transparent;border:0;text-decoration:underline;text-underline-offset:2px}
+  .newitem .floatlink{bottom:14px;right:12px}
+  .act.stack{align-items:center}
+  .dis{border:1px solid #E8C9A8;background:#FFF8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:8px}
+  .dis .t{font-size:12px;font-weight:700;color:#8A5518}
+  .dis .r{font-size:13px;line-height:1.5;color:var(--ink2)}
+  .rep{border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px}
+  .rep .t{font-size:12px;font-weight:700;color:var(--ink3)}
+  .ding{background:#EAF2FE;border:1px solid #0066FF;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+  .ding .t{font-size:15px;font-weight:700;color:#005EEB}
+  .ding .d{font-size:13px;font-weight:500;line-height:1.5;color:#37383C}
+  .ding button{height:44px;border-radius:10px;background:#0066FF;color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+  .extra{border:1px dashed #0066FF;background:#fff;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:6px}
+  .extra .t{font-size:12px;font-weight:700;color:#005EEB}
+  .toast{position:absolute;left:20px;right:20px;bottom:96px;z-index:10;background:#171719;color:#fff;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;box-shadow:0 4px 16px rgba(0,0,0,.18);animation:toastin .25s ease}
+  .toast .t{font-size:14px;font-weight:700}
+  .toast .d{font-size:12px;font-weight:500;color:rgba(255,255,255,.75)}
+  @keyframes toastin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .slide{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .slide .sitem2{position:relative;flex:none;scroll-snap-align:start}
+  .slide img{width:200px;height:200px;object-fit:cover;border-radius:12px;display:block}
+  .slide .rm{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:1000px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .slide .tag{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:1000px}
+  .react{display:flex;gap:6px;flex-wrap:wrap}
+  .react button{height:30px;padding:0 12px;border-radius:1000px;background:#fff;border:1px solid var(--line);color:var(--ink2);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+  .react button.main{height:30px;padding:0 12px;font-size:13px;background:#fff;border-color:var(--line);color:var(--ink2)}
+  .react button[aria-pressed="true"]{background:var(--primary-tint);border-color:var(--primary);color:var(--primary-ink)}
+  .thx{align-self:flex-start;height:34px;padding:0 13px;border-radius:1000px;background:#fff;border:1px solid #0066FF;color:#005EEB;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+  .thxdone{align-self:flex-start;font-size:12px;font-weight:700;color:#005EEB}
+  .alert{background:#FFF8F0;border:1px solid #E8C9A8;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+  .alert .t{font-size:15px;font-weight:700;color:#8A5518}
+  .alert .d{font-size:13px;font-weight:500;line-height:1.5;color:#8A5518}
+  .alert button{height:44px;border-radius:10px;background:#8A5518;color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+  .note{border:1px dashed var(--line);background:#fff;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px}
+  .note .t{font-size:12px;font-weight:700;color:var(--ink3)}
+  .note .r{font-size:13px;line-height:1.5;color:var(--ink2)}
+  .nophoto{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink4);background:var(--bg);border:1px solid var(--line);padding:3px 8px;border-radius:1000px}
+  .proto{align-self:flex-start;font-size:11px;font-weight:600;color:var(--ink4);border:1px dashed var(--line);border-radius:1000px;padding:4px 9px}
+  .undo{align-self:flex-start;font-size:12px;font-weight:600;color:var(--ink4);text-decoration:underline}
+  .brow{display:flex;align-items:center;gap:10px}
+  .bl{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .recright{align-self:center;flex:none}
+  .notechip{align-self:flex-start;font-size:11px;font-weight:700;padding:3px 10px;border-radius:1000px;
+    background:var(--primary-tint);color:var(--primary-ink)}
+  .notechip.nc-all{background:#EFEFF1;color:var(--ink3)}
+  .imp>.proof{width:100%;justify-content:center;border-radius:12px;align-self:stretch}
+  .pettabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin:-4px 0 2px}
+  .ptab{flex:1;padding:10px 0;font-size:14px;font-weight:600;color:var(--ink4);background:none;border:none;border-bottom:2px solid transparent}
+  .ptab[aria-pressed="true"]{color:var(--primary-ink);border-bottom-color:var(--primary)}
+  .evlist{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+  .pthumb{padding:0;border:none;background:none;cursor:pointer}
+  .pthumb img{width:132px;height:132px}
+  .lightbox{position:absolute;inset:0;z-index:60;background:rgba(10,10,12,.9);display:flex;align-items:center;justify-content:center}
+  .lbslide{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;width:100%}
+  .lbslide img{flex:none;width:100%;max-height:72vh;object-fit:contain;scroll-snap-align:center}
+  .lbcap{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:rgba(255,255,255,.9);font-size:13px;font-weight:600}
+  .lbnav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:1000px;
+    background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;border:none}
+  .lbnav.prev{left:10px} .lbnav.next{right:10px}
+  .lbclose{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:1000px;
+    background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;border:none}
+  .inqcta{flex:none;width:100%;height:44px;min-height:44px;font-size:14px;font-weight:600;border-radius:1000px;
+    background:var(--primary-tint);color:var(--primary-ink);display:flex;align-items:center;justify-content:center}
+  .linkcopy{width:100%;text-align:left;cursor:pointer}
+  .recrow{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .rechead{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border:none}
+  .rechead .rdate{font-size:14px;font-weight:600;color:var(--ink)}
+  .rechead .rchev{font-size:12px;color:var(--ink4)}
+  .recrow .rectl{border:none;border-top:1px solid var(--line);border-radius:0}
+  .rectl{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+  .rectl .item{padding:8px 0}
+  .newitem{background:#F5F9FF;border-radius:10px;padding:14px 12px !important;margin:0 -12px}
+  .newbdg{font-size:10px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--danger,#e5484d);
+    border-radius:1000px;padding:2px 7px;line-height:1.3}
+  .avlink{cursor:pointer;border:none;padding:0}
+  .plink{font-size:13px;font-weight:600;color:var(--primary-ink);padding:0;background:none;border:none;flex:none}
+  .profhead{display:flex;align-items:center;gap:12px}
+  .profhead .avatar{flex:none;width:52px;height:52px;border-radius:1000px;background:#DBDCDF}
+  .profhead .pcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .profhead .pstar{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+  .profhead .st{font-size:17px;font-weight:700;color:var(--ink)}
+  .profhead .cnt{font-size:12px;font-weight:500;color:var(--ink4)}
+  .hrow{display:flex;align-items:center;gap:8px}
+  .headrow{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+  .headrow>div:first-child{flex:1;min-width:0}
+  .addmini{flex:none;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border-radius:1000px;background:var(--primary-tint);color:var(--primary-ink)}
+  .btnrow{display:flex;align-items:center;gap:12px}
+  .sheetrow{gap:12px}
+  .sheetrow .proof{flex:none;width:calc(50% - 6px);justify-content:center;background:var(--primary);color:#fff}
+  .sheetcancel{flex:none;width:calc(50% - 6px);height:42px;border-radius:1000px;background:var(--bg);color:var(--ink2);font-size:13px;font-weight:600}
+  .fab{position:absolute;right:16px;bottom:20px;z-index:20;width:52px;height:52px;border-radius:1000px;
+    background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,102,255,.35)}
+  .sheetback{position:absolute;inset:0;z-index:30;background:rgba(23,23,25,.32);display:flex;flex-direction:column;justify-content:flex-end;animation:toastin .18s ease}
+  .sheet{background:#fff;border-radius:18px 18px 0 0;padding:18px 16px 26px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -6px 24px rgba(0,0,0,.12);animation:sheetup .22s ease}
+  @keyframes sheetup{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .pvw{font-size:12px;font-weight:500;color:var(--ink3);line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .recreview{display:flex;flex-direction:column;gap:5px;margin-top:2px}
+  .recreview .rl{font-size:12px;font-weight:700;color:var(--ink4)}
+  .recreview .rp{font-size:14px;font-weight:500;line-height:1.65;color:var(--ink2)}
+  .prow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:2px}
+  .plabel{font-size:12px;color:var(--ink4)}
+  .pval{font-size:13px;font-weight:700;color:var(--primary-ink)}
+  .gauge{height:6px;border-radius:1000px;background:#EFEFF1;overflow:hidden;margin:2px 0}
+  .gauge .gfill{height:100%;background:var(--primary);border-radius:1000px}
+  .notehead{display:flex;align-items:center;justify-content:space-between}
+  .ntrash{color:var(--ink4);padding:2px}
+  .ntrash:hover{color:var(--danger,#e5484d)}
+  .fin{font-size:12px;font-weight:700}
+  .fin.ok{color:#1E8E4E} .fin.no{color:#B3421A}
+  .navr{width:auto !important;padding:0 8px;font-size:13px;font-weight:600;color:var(--primary-ink)}
+  .navr.bell{position:relative;padding:0 6px}
+  .navr .bdg{position:absolute;top:2px;right:0;min-width:15px;height:15px;padding:0 4px;border-radius:8px;
+    background:var(--danger,#e5484d);color:#fff;font-size:10px;font-weight:700;line-height:15px;text-align:center}
+  .secthead{display:flex;flex-direction:column;gap:5px}
+  .veri{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--primary-ink);background:var(--primary-tint);padding:4px 9px;border-radius:1000px}
+  .unver{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink4);background:var(--bg);border:1px solid var(--line);padding:4px 9px;border-radius:1000px}
+  .imp{display:flex;flex-direction:column;gap:9px;padding:13px;border:1px solid var(--line);border-radius:12px}
+  .imp .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .imp .src{font-size:12px;font-weight:700;color:var(--ink2)}
+  .imp .date{font-size:12px;font-weight:500;color:var(--ink4);margin-left:auto;font-variant-numeric:tabular-nums}
+  .imp .q{font-size:14px;line-height:1.6;color:var(--ink2)}
+  .imp img{width:100%;border-radius:8px;display:block;border:1px solid var(--line)}
+  .imp .rm{align-self:flex-start;font-size:12px;font-weight:600;color:var(--ink4)}
+  .field{display:flex;flex-direction:column;gap:9px}
+  .field > label{font-size:13px;font-weight:600;color:var(--ink2)}
+  textarea{font-family:inherit;font-size:14px;line-height:1.6;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;min-height:92px;resize:vertical}
+  .upl{height:44px;border-radius:8px;border:1px dashed var(--line);color:var(--ink3);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+  .upl.has{border-style:solid;border-color:var(--primary);color:var(--primary-ink)}
+  .hero{display:flex;flex-direction:column;gap:2px}
+  .hero .l{font-size:12px;font-weight:600;color:var(--ink4);letter-spacing:.01em}
+  .hero .row{display:flex;align-items:baseline;gap:8px}
+  .hero .n{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--primary-ink)}
+  .hero .p{font-size:15px;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums}
+  .hero .d{font-size:12px;font-weight:500;line-height:1.5;color:var(--ink4);margin-top:3px}
+  .hero.warn .n{color:#B3421A}
+  .pbar{height:6px;border-radius:1000px;background:var(--bg);overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;background:var(--primary);border-radius:1000px}
+  .minor{display:flex;flex-direction:column;gap:9px}
+  .minor .r{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .minor .k{font-size:13px;font-weight:600;color:var(--ink3)}
+  .minor .v{font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums;text-align:right}
+  .big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+  .stat{display:flex;gap:10px}
+  .stat > div{flex:1;background:var(--bg);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
+  .stat .l{font-size:12px;font-weight:600;color:var(--ink4)}
+  .stat .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bar" id="bar"></div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮ 100%</span></div>
+    <div class="nav" id="nav"></div>
+    <div class="body" id="body"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+  <p class="hint" id="hint"></p>
+</div>
+
+<script>
+window.onerror = (m, src, l, c) => { document.title = 'ERR:' + m + ' @' + l; };
+const KEY = 'petcare.proto.v3';
+
+// 항목마다 무엇을 찍을지가 정해져 있다 — 시터가 고를 대상이 없다.
+const KINDS = {
+  meal:  { name: '밥',   shoot: '밥그릇을 찍어주세요' },
+  walk:  { name: '산책', shoot: '출발할 때와 돌아왔을 때 한 장씩 · 아이가 보이게', pair: true,
+           cap1: '산책 출발!', cap2: '산책 완료!' },
+  poop:  { name: '배변', shoot: '배변 패드를 찍어주세요' },
+  med:   { name: '약',   shoot: '약 먹은 뒤 한 장 · 아이가 보이게' },
+  play:  { name: '놀이', shoot: '노는 모습 한 장 · 아이가 보이게' },
+  sleep: { name: '취침', shoot: '잠자리에 든 모습 한 장' },
+};
+// 두 컷의 촬영 시각 차이가 곧 「밖에 있던 시간」이다 — 시터가 고칠 수 없는 사실
+const outMinutes = p => (p && p.ts && p.ts2 && p.ts2 > p.ts) ? Math.round((p.ts2 - p.ts) / 60000) : null;
+const REASONS = ['우리 집이 아닌 것 같아요', '예전에 찍은 사진 같아요', '그 시간에 오지 않은 것 같아요', '밥이 그대로 남아 있었어요', '배변 패드가 깨끗했어요', '그 밖의 이유'];
+const CHIPS = ['제때 알려줘요', '먼저 챙겨줘요', '아이가 잘 따라요', '집을 깨끗이 써요', '응답이 빨라요', '있는 그대로 찍어줘요'];
+
+const SEED = {
+  role: 'owner', screen: 'schedule',
+  baseline: { care: 142, total: 512, photos: 475, notes: 23, seen: 412, resub: 9, extras: 31, thanks: 27, reactions: 388, checked: 462, matched: 458, disputes: 5, resolved: 4, noreply: 1, rating: 4.9, reviews: 38 },
+  // 돌봄 계약 기간 — 데모가 어느 날 열려도 항상 "오늘이 마지막 날"이도록 동적 생성
+  period: (() => {
+    const f = t => `${t.getFullYear()}.${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+    const now = new Date();
+    return { start: f(new Date(now.getTime() - 2 * 86400000)), end: f(now) };
+  })(),
+  diaryDoneMap: {},     // 아이별: 이번 계약의 후기를 이미 썼는가 (아이당 1회)
+  schedule: [   // petId는 load()에서 보정된다
+
+    { id: 's1', kind: 'meal', time: '10:00', fuzzMin: 60 },
+    { id: 's2', kind: 'walk', time: '12:00', fuzzMin: 60 },
+    { id: 's3', kind: 'meal', time: '17:00', fuzzMin: 60 },
+  ],
+  sent: false,          // 보호자가 일정을 시터에게 전달했는지
+  proofs: {},           // scheduleId -> { at, photo }
+  finished: false,      // 시터가 완료 처리
+  check: null,          // { matched }
+  review: null,         // { stars, chips }
+  draft: { stars: 0, chips: [] },
+  extras: [],                   // 보호자가 정한 일정 외에 시터가 추가로 남긴 활동
+  // 돌봄 일기 — 아이당 한 권. 일기장 목록이 곧 돌본 경력이 된다
+  diaryBooks: [
+    { id: 'b1', pet: '만두', records: [
+      { id: 'r1', date: '2026.08.09', items: [
+        { kind: 'meal', time: '09:00', at: '09:06', text: '간식 조금 섞어서 완식', ok: true, reaction: '고마워요' },
+        { kind: 'poop', time: '11:00', at: '11:12', text: '리드줄 착용 후 교체, 상태 정상', ok: true, reaction: '안심돼요' },
+        { kind: 'play', time: '15:00', at: '15:03', text: '노즈워크 15분', ok: true, reaction: '귀여워요' },
+      ] },
+    ], entries: [
+      { id: 'e1', at: '2026.08.09', text: '사흘을 함께했습니다. 첫날엔 방석에서 나오지도 않던 아이가, 마지막 날엔 간식 냄새에 슬금슬금 나와 제 무릎 옆에 앉았어요. 기저귀를 갈 때마다 긴장하던 것도 리드줄을 보면 얌전해질 만큼 익숙해졌고요. 손을 내밀지 않고 기다린 게 답이었나 봅니다. 예민하지만, 기다려주면 먼저 다가와 주는 아이예요.', photos: [] },
+    ] },
+    { id: 'b2', pet: '감자', records: [
+      { id: 'r2', date: '2026.08.06', items: [
+        { kind: 'meal', time: '08:30', at: '08:31', text: '분리 급여, 만두 그릇 접근 차단', ok: true, reaction: '고마워요' },
+        { kind: 'walk', time: '13:00', at: '13:05', text: '25분 산책', ok: true, reaction: null },
+      ] },
+    ], entries: [
+      { id: 'e3', at: '2026.08.06', text: '감자는 밥그릇 앞에서 세상 진지해집니다. 오늘은 만두 몫까지 노리다가 딱 걸려서 시무룩. 그래도 분리 급여 후 제 옆에서 코 골며 낮잠 자는 걸 보니 마음이 놓였습니다.', photos: [] },
+    ] },
+  ],
+  onboarded: false,     // V1: 초대 링크로 들어온 보호자의 온보딩 완료 여부
+  pets: [{ id: 'p1', name: '콩이', age: '4살', extra: '말티즈', photo: null }],
+  ownerInfo: { nick: '', phone: '' },
+  inquiries: [],        // 공개 프로필에서 들어온 돌봄 의뢰
+  sitterInfo: { name: '박서준', type: '방문 돌봄', region: '서울 마포구', bio: '',
+                addr: '서울 마포구 월드컵북로 12', addrDetail: '1층 카페 앞' },   // 기본 약속 장소
+  prefilled: false,     // 시터가 기본 정보를 채워 보냈는가
+  clients: [],          // 시터 기기에 저장되는 고객 장부 (무계정)
+  clientDraft: null,
+  sitterEvents: [],     // 보호자 행동 알림 (시터에게)
+  sitterEventsRead: 0,
+  handoff: { start: { time: '14:00', by: 'owner' }, end: { time: '18:00', by: 'owner' },
+             places: { sitter: { addr: '', detail: '' }, owner: { addr: '', detail: '' } } },  // 맡기는 날/돌아오는 날 · 각자 담당
+  customKinds: [],      // 보호자가 직접 만든 특이사항 카테고리
+  careNotes: [                  // 특이사항 — 항목별로 저장해두면 시터의 해당 인증 화면에 <참고 사항>으로 뜬다
+    { id: 'n1', kind: 'meal', text: '낯선 사람이 주면 잘 안 먹을 수 있어요. 사료에 간식을 조금 섞어주세요.' },
+    { id: 'n2', kind: 'poop', text: '기저귀를 갈 때는 꼭 리드줄을 채운 상태에서 해주세요 (입질 방지).' },
+    { id: 'n3', kind: 'all',  text: '방석 위에 있을 때는 만지지 말아 주세요. 먼저 다가왔을 때만 쓰다듬어 주세요.' },
+  ],
+  dueDemo: false,               // (프로토타입) 밥시간 알림 시뮬레이션
+  imported: [],                 // 다른 곳에서 가져온 후기 — 검증 안 됨
+  impDraft: { source: '당근 알바', text: '', date: '', capture: null },
+};
+
+let S = load();
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+    const s = Object.assign(structuredClone(SEED), raw);
+    // baseline은 얕은 병합으로 덮이면 새 필드가 사라진다 — 항목별로 채운다
+    s.baseline = Object.assign(structuredClone(SEED.baseline), raw.baseline || {});
+    s.impDraft = Object.assign(structuredClone(SEED.impDraft), raw.impDraft || {});
+    if (!Array.isArray(s.imported)) s.imported = [];
+    if (!Array.isArray(s.extras)) s.extras = [];
+    if (!Array.isArray(s.careNotes)) s.careNotes = structuredClone(SEED.careNotes);
+    if (!Array.isArray(s.customKinds)) s.customKinds = [];
+    if (!Array.isArray(s.pets) || !s.pets.length) s.pets = structuredClone(SEED.pets);
+    for (const pt of s.pets) if (pt.extra === undefined)
+      pt.extra = [pt.breed, pt.weight].filter(Boolean).join(' ');
+    if (!s.ownerInfo) s.ownerInfo = { nick: '', phone: '' };
+    if (!Array.isArray(s.inquiries)) s.inquiries = [];
+    if (!Array.isArray(s.sitterEvents)) s.sitterEvents = [];
+    if (!s.sitterInfo) s.sitterInfo = structuredClone(SEED.sitterInfo);
+    if (s.sitterInfo.addr === undefined) {   // 구버전: 계약별 시터 장소 → 프로필로 승격
+      const oldp = s.handoff && s.handoff.places && s.handoff.places.sitter;
+      s.sitterInfo.addr = (oldp && oldp.addr) || SEED.sitterInfo.addr;
+      s.sitterInfo.addrDetail = (oldp && oldp.detail) || SEED.sitterInfo.addrDetail;
+    }
+    if (!Array.isArray(s.clients)) s.clients = [];
+    if (s.sitterEventsRead === undefined) s.sitterEventsRead = 0;
+    if (!s.handoff) s.handoff = structuredClone(SEED.handoff);
+    if (!s.handoff.places) s.handoff.places = { sitter: { addr: '', detail: '' }, owner: { addr: '', detail: '' } };
+    if (s.handoff.dropTime) s.handoff = {   // 구버전: 주체 기준 → 이벤트 기준
+      start: { time: s.handoff.dropTime, by: s.handoff.by || 'owner' },
+      end: { time: s.handoff.pickupTime, by: s.handoff.by || 'owner' },
+    };
+    if (!s.diaryDoneMap) s.diaryDoneMap = s.diaryDone && s.pets[0] ? { [s.pets[0].name]: true } : {};
+    if (Array.isArray(raw.diary) && !Array.isArray(raw.diaryBooks))   // 구버전: 낱장 일기 → 한 권으로
+      s.diaryBooks = [{ id: 'b0', pet: '지난 일기', entries: raw.diary }];
+    if (!Array.isArray(s.diaryBooks)) s.diaryBooks = structuredClone(SEED.diaryBooks);
+    for (const bk of s.diaryBooks) {
+      if (bk.id === 'b1' && bk.entries.some(e => e.id === 'e2'))   // 구버전 시드: 날짜별 2편 → 계약 후기 1편
+        bk.entries = structuredClone(SEED.diaryBooks.find(b => b.id === 'b1').entries);
+    }
+    for (const bk of s.diaryBooks) {           // 구버전 권: 기록 목록이 없으면 시드에서 보충
+      if (!Array.isArray(bk.records)) {
+        const seed = SEED.diaryBooks.find(b => b.id === bk.id);
+        bk.records = seed ? structuredClone(seed.records) : [];
+      }
+    }
+    if (s.finished && !s.diaryBooks.some(b => (b.records || []).some(r => r.live)))
+      attachLiveRecord(s);                     // 이미 마친 세션도 기록 링크를 소급해서 붙인다
+    // 예전 구조(notes 분리 저장)를 proofs로 옮긴다 — 사진 없는 제출도 확인 대상이 되어야 하므로
+    if (raw.notes && typeof raw.notes === 'object') {
+      for (const [k, n] of Object.entries(raw.notes)) {
+        if (!s.proofs[k]) s.proofs[k] = { at: n.at, photo: null, text: n.text, seen: null, verdict: null, dispute: null };
+      }
+      delete s.notes;
+    }
+    if (!Array.isArray(s.schedule)) s.schedule = structuredClone(SEED.schedule);
+    for (const it of s.schedule) if (!it.petId) it.petId = s.pets[0].id;   // 다두: 아이 미지정 → 첫 아이
+    for (const it of s.schedule) if (it.fuzzMin > 0 && !it.timeEnd) it.timeEnd = addMin(it.time, it.fuzzMin);
+    for (const it of s.schedule) {                     // 구버전: timeEnd 직접 입력 → 오프셋으로 환산
+      if (it.timeEnd && !it.fuzzMin) {
+        const m = t => +t.slice(0, 2) * 60 + +t.slice(3);
+        const diff = m(it.timeEnd) - m(it.time);
+        it.fuzzMin = [30, 60, 120].includes(diff) ? diff : 60;
+        it.timeEnd = addMin(it.time, it.fuzzMin);
+      }
+    }
+    return s;
+  } catch { return structuredClone(SEED); }
+}
+// 이번 돌봄(콩이)의 검증 기록을 콩이 일기장에 링크로 부착 — 권과 기록은 같은 아이만 짝지어진다
+function attachLiveRecord(st) {
+  st = st || S;
+  const pets = (st.pets && st.pets.length) ? st.pets : [{ id: 'p1', name: '콩이' }];
+  const targets = pets.filter(pt => st.schedule.some(it => (it.petId || pets[0].id) === pt.id));
+  for (const pt of (targets.length ? targets : [pets[0]])) {
+    let bk = st.diaryBooks.find(b => b.petId === pt.id);
+    if (!bk) { bk = { id: 'b_' + pt.id, pet: pt.name, petId: pt.id, entries: [], records: [] }; st.diaryBooks.unshift(bk); }
+    if (!Array.isArray(bk.records)) bk.records = [];
+    if (!bk.records.some(r => r.live && (r.petId || pets[0].id) === pt.id))
+      bk.records.unshift({ id: 'r_live_' + pt.id, live: true, petId: pt.id, date: stampText().split(' ')[0] });
+  }
+}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch { alert('저장 공간이 찼습니다. 초기화 후 다시 시도해주세요.'); }
+}
+function set(patch) { Object.assign(S, patch); save(); render(); }
+let flashTimer = null;
+function flash(title, desc) {
+  S.flash = { title, desc };
+  if (flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { S.flash = null; flashTimer = null; render(); }, 1800);
+}
+function go(screen) { set({ screen }); document.getElementById('body').scrollTop = 0; }
+
+const momentPhotos = x => x.photos || (x.photo ? [{ url: x.photo, album: !!x.album }] : []);
+const momentSlider = x => {
+  const ps = momentPhotos(x);
+  if (!ps.length) return null;
+  return el('div', { class: 'slide' }, ps.map((ph, i) =>
+    el('div', { class: 'sitem2' }, [
+      el('img', { src: ph.url, alt: '순간 ' + (i + 1) }),
+      el('span', { class: 'tag', text: ph.album ? '앨범' : '앱 촬영' }),
+    ])));
+};
+const P = () => S.pets[0];
+const petById = id => S.pets.find(p => p.id === id) || S.pets[0];
+const multiPet = () => S.pets.length > 1;
+// 이벤트 기준 2행 — 맡기는 날/돌아오는 날, 각자 담당이 다를 수 있다
+const HO_START = { owner: '보호자가 데려다줘요', sitter: '펫시터가 데리러 와요' };
+const HO_END = { owner: '보호자가 데리러 와요', sitter: '펫시터가 데려다줘요' };
+function handoffRows() {
+  const H = S.handoff, Pd = S.period;
+  if (!H || !H.start || !Pd) return null;
+  const short = t => t.slice(5);
+  const row = (label, sub, val) => el('div', { class: 'prow' }, [
+    el('span', { class: 'plabel' }, [
+      el('span', { text: label + ' · ' }),
+      el('span', { class: 'hwho' }, [
+        el('b', { text: sub.slice(0, 3) }),
+        el('span', { text: sub.slice(3) }),
+      ]),
+    ]),
+    el('span', { class: 'hval', text: val }),
+  ]);
+  return el('div', { class: 'hrows' }, [
+    row('맡기는 날', HO_START[H.start.by], `${short(Pd.start)} ${H.start.time}`),
+    row('돌아오는 날', HO_END[H.end.by], `${short(Pd.end)} ${H.end.time}`),
+  ]);
+}
+const ownerMoves = () => S.handoff.start.by === 'owner' || S.handoff.end.by === 'owner';
+const sitterMoves = () => S.handoff.start.by === 'sitter' || S.handoff.end.by === 'sitter';
+const mapUrl = q => 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+const openMap = addr => { try { window.open(mapUrl(addr), '_blank'); } catch (e) {}
+  flash('지도를 열었어요', '네이버 지도에서 위치를 확인하세요.'); render(); };
+
+// 내가 찾아가야 하는 곳 (보호자 → 시터 쪽 / 시터 → 보호자 댁)
+function placeFor(role) {
+  const pl = S.handoff.places || {};
+  if (role === 'sitter') return sitterMoves() && (pl.owner.addr || '').trim() ? { ...pl.owner, who: '보호자 댁' } : null;
+  const sa = (SIT().addr || '').trim();
+  return ownerMoves() && sa ? { addr: sa, detail: SIT().addrDetail || '', who: '시터 쪽' } : null;
+}
+function placeCard() {
+  const pl = placeFor(S.role);
+  if (!pl) return null;
+  return card([
+    el('div', { class: 'h', text: `약속 장소 · ${pl.who}` }),
+    el('div', { class: 'mapbox' }, [
+      el('span', { class: 'mappin', text: '📍' }),
+      el('span', { class: 'maptx', text: pl.addr + (pl.detail ? ` · ${pl.detail}` : '') }),
+    ]),
+    el('button', { class: 'ctasm', text: '지도에서 보기', onclick: () => openMap(pl.addr) }),
+  ]);
+}
+
+// 오늘이 맡기는 날/돌아오는 날이면 알림
+function handoffAlert() {
+  const Pd = S.period, H = S.handoff;
+  if (!Pd || !H || !H.start) return null;
+  const today = stampText().split(' ')[0];
+  const isStart = today === Pd.start, isEnd = today === Pd.end;
+  if (!isStart && !isEnd) return null;
+  const ev = isStart ? H.start : H.end;
+  const label = isStart ? '오늘은 맡기는 날이에요' : '오늘은 돌아오는 날이에요';
+  const who = isStart ? HO_START[ev.by] : HO_END[ev.by];
+  const iMove = ev.by === S.role;                       // 이번 이동의 주체가 나인가
+  const pl = iMove ? placeFor(S.role) : null;
+  return el('div', { class: 'ding' }, [
+    el('span', { class: 't', text: `🔔 ${label} · ${ev.time}` }),
+    el('span', { class: 'd', text: who + (pl ? ` · ${pl.addr}${pl.detail ? ' ' + pl.detail : ''}` : '') }),
+    pl ? el('button', { onclick: () => openMap(pl.addr) }, [el('span', { text: '📍 지도에서 보기' })]) : null,
+  ]);
+}
+
+// 시각+담당 입력 폼 (온보딩 카드 · 수정 시트 공용)
+function handoffForm() {
+  const grp = (label, ev, MAP) => el('div', { class: 'hogrp' }, [
+    el('label', { text: label }),
+    el('div', { class: 'hgrid' }, [
+      el('input', { type: 'time', value: S.handoff[ev].time,
+        onchange: e => { S.handoff[ev].time = e.target.value || S.handoff[ev].time; save(); } }),
+    ]),
+    el('div', { class: 'chips' }, [['owner', MAP.owner], ['sitter', MAP.sitter]].map(([v, t]) =>
+      el('button', { class: 'chip', 'aria-pressed': S.handoff[ev].by === v, text: t,
+        onclick: () => { S.handoff[ev].by = v; save(); render(); } }))),
+  ]);
+  const addrGrp = (side, title, hint) => {
+    const pl = S.handoff.places[side];
+    const f = (label, key, ph) => el('div', { class: 'field' }, [
+      el('label', { text: label }),
+      el('input', { type: 'text', placeholder: ph, value: pl[key] || '',
+        oninput: e => { pl[key] = e.target.value; save(); } }),
+    ]);
+    return el('div', { class: 'hogrp' }, [
+      el('label', { text: title }),
+      el('div', { class: 'sub', text: hint }),
+      f('주소', 'addr', '예) 서울 마포구 월드컵북로 12'),
+      f('상세', 'detail', '예) 1층 카페 앞 / 101동 현관'),
+    ]);
+  };
+  return el('div', { class: 'hoform' }, [
+    grp('맡기는 날 (돌봄 시작)', 'start', HO_START),
+    grp('돌아오는 날 (돌봄 종료)', 'end', HO_END),
+    ownerMoves() ? el('div', { class: 'hogrp' }, [
+      el('label', { text: '약속 장소 · 시터 쪽' }),
+      el('div', { class: 'sub', text: `시터 프로필에 저장된 주소가 쓰여요 — ${SIT().addr || '주소 미등록'}${SIT().addrDetail ? ' · ' + SIT().addrDetail : ''}` }),
+    ]) : null,
+    sitterMoves() ? addrGrp('owner', '약속 장소 · 보호자 댁', '펫시터가 갈 곳이에요. 상세 주소는 시터에게만 보입니다.') : null,
+  ]);
+}
+
+const SIT = () => S.sitterInfo;
+const curPetId = () => {
+  if (!multiPet()) return null;
+  return S.pets.some(pt => pt.id === S.petTab) ? S.petTab : S.pets[0].id;
+};
+const petTabs = () => multiPet() ? el('div', { class: 'pettabs' }, S.pets.map(pt =>
+  el('button', { class: 'ptab', 'aria-pressed': curPetId() === pt.id, text: pt.name,
+    onclick: () => set({ petTab: pt.id }) }))) : null;
+const forCurPet = items => { const c = curPetId(); return c ? items.filter(it => (it.petId || S.pets[0].id) === c) : items; };
+const kindPetLabel = it => KINDS[it.kind].name + (multiPet() ? ` · ${petById(it.petId).name}` : '');
+const petTitle = () => P().name + (P().extra || P().age ? ' · ' + [P().extra, P().age].filter(Boolean).join(' ') : '');
+const KIND_LABEL = k => k === 'all' ? '공통' : k.startsWith('c:') ? k.slice(2) : (KINDS[k] ? KINDS[k].name : k);
+const notesFor = kind => S.careNotes.filter(n => n.kind === kind || n.kind === 'all');
+// 종 알림 도입 후 보호자 홈은 일정 화면 — 「지금 오는 인증」은 종으로 들어간다
+const ownerDefault = () => !S.onboarded ? 'welcome' : (S.finished ? 'confirm' : (S.sent ? 'home' : 'schedule'));
+// 제출은 사진이든 설명이든 1건 — 벌점 대신 사진 비율을 공개해 경쟁이 사진을 만들게 한다
+const POINT_PHOTO = 1, POINT_TEXT = 1;
+const hasPhoto = p => !!(p && (p.photo || p.photo2));
+const pointOf = p => p ? (hasPhoto(p) ? POINT_PHOTO : POINT_TEXT) : 0;
+const submissions = () => S.schedule.filter(x => S.proofs[x.id]);
+const earnedPts = () => submissions().reduce((a, x) => a + pointOf(S.proofs[x.id]), 0);
+const fmtPt = n => (Math.round(n * 10) / 10).toString();
+const timeLabel = s => s.fuzzMin === -1 ? '아무때나' : s.time;
+const ordered = () => [...S.schedule].sort((a, b) =>
+  (a.fuzzMin === -1 ? '99:99' : a.time).localeCompare(b.fuzzMin === -1 ? '99:99' : b.time));
+const doneCount = () => submissions().length;
+const counts = () => {
+  const subs = submissions(), photos = subs.filter(x => hasPhoto(S.proofs[x.id])).length;
+  const texts = subs.length - photos;
+  const P = S.proofs;
+  return {
+    care:      S.baseline.care      + (S.finished ? 1 : 0),
+    total:     S.baseline.total     + (S.finished ? S.schedule.length : 0),
+    photos:    S.baseline.photos    + (S.finished ? photos : 0),
+    notes:     S.baseline.notes     + (S.finished ? texts : 0),
+    earned:    (S.baseline.photos * POINT_PHOTO + S.baseline.notes * POINT_TEXT) + (S.finished ? earnedPts() : 0),
+    submitted: S.baseline.photos + S.baseline.notes + (S.finished ? subs.length : 0),
+    seen:      S.baseline.seen      + (S.finished ? subs.filter(x => P[x.id].seen).length : 0),
+    resub:     S.baseline.resub     + (S.finished ? subs.filter(x => P[x.id].resubmitted).length : 0),
+    extras:    (S.baseline.extras || 31) + (S.finished ? S.extras.length : 0),
+    thanks:    (S.baseline.thanks || 27) + (S.finished ? S.extras.filter(x => x.thanks).length : 0),
+    reactions: (S.baseline.reactions || 388) + (S.finished ? subs.filter(x => P[x.id].verdict && P[x.id].verdict.reaction).length : 0),
+    checked:   S.baseline.checked   + (S.finished ? subs.filter(x => P[x.id].verdict).length : 0),
+    matched:   S.baseline.matched   + (S.finished ? subs.filter(x => P[x.id].verdict && P[x.id].verdict.matched).length : 0),
+    disputes:  S.baseline.disputes  + (S.finished ? subs.filter(x => P[x.id].dispute && P[x.id].dispute.reason).length : 0),
+    resolved:  S.baseline.resolved  + (S.finished ? subs.filter(x => P[x.id].dispute && P[x.id].dispute.resolution === 'resolved').length : 0),
+    noreply:   S.baseline.noreply   + (S.finished ? subs.filter(x => P[x.id].dispute && P[x.id].dispute.resolution === 'noreply').length : 0),
+  };
+};
+const rating = () => {
+  const b = S.baseline;
+  if (!S.review) return { avg: b.rating.toFixed(1), n: b.reviews };
+  const n = b.reviews + 1;
+  return { avg: ((b.rating * b.reviews + S.review.stars) / n).toFixed(1), n };
+};
+const nowHM = () => { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+
+// '2026.08.10' ~ '2026.08.12' → "2026.08.10 ~ 08.12 · 2일차 / 3일"
+function periodText() {
+  const P = S.period; if (!P || !P.start || !P.end) return null;
+  const d = t => new Date(t.replace(/\./g, '-'));
+  const DAY = 86400000;
+  const today = d(stampText().split(' ')[0]);
+  const total = Math.round((d(P.end) - d(P.start)) / DAY) + 1;
+  const nth = Math.round((today - d(P.start)) / DAY) + 1;
+  const endShort = P.end.slice(0, 4) === P.start.slice(0, 4) ? P.end.slice(5) : P.end;
+  const where = (nth >= 1 && nth <= total) ? ` · ${nth}일차 / ${total}일` : ` · 총 ${total}일`;
+  return `돌봄 기간 ${P.start} ~ ${endShort}${where}`;
+}
+
+// 오늘이 계약 마지막 날 이후인가 — 후기는 계약이 끝나야 쓴다
+// 보호자가 아직 안 본 제출 건수 — 종 알림 배지
+// 시터 알림 이벤트 적재 (보호자 행동)
+function sitEvent(text) {
+  S.sitterEvents.unshift({ id: 'ev' + Date.now() + Math.floor(performance.now()), at: nowHM(), text });
+  if (S.sitterEvents.length > 20) S.sitterEvents.length = 20;
+}
+function sitterUnread() { return Math.max(0, S.sitterEvents.length - S.sitterEventsRead); }
+
+function freshCount() {
+  return Object.values(S.proofs).filter(p => p && !p.seen && !p.verdict).length;
+}
+
+// '10:00' + 90분 → '11:30'
+function addMin(hhmm, min) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const t = Math.min(23 * 60 + 59, h * 60 + m + min);
+  return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+}
+
+// 계약 진행률 0~100 (게이지용) — 기간 밖이면 null
+function periodRatio() {
+  const P = S.period; if (!P || !P.start || !P.end) return null;
+  const d = t => new Date(t.replace(/\./g, '-'));
+  const DAY = 86400000;
+  const total = Math.round((d(P.end) - d(P.start)) / DAY) + 1;
+  const nth = Math.round((d(stampText().split(' ')[0]) - d(P.start)) / DAY) + 1;
+  if (total < 1 || nth < 1) return null;
+  return Math.min(100, Math.round(nth / total * 100));
+}
+
+function contractOver() {
+  const P = S.period; if (!P || !P.end) return true;
+  const d = t => new Date(t.replace(/\./g, '-'));
+  return d(stampText().split(' ')[0]) >= d(P.end);
+}
+
+function stampText() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// 인증 사진: 앱에서 찍은 그 순간의 날짜·시각을 이미지에 구워 넣는다.
+// 나중에 다른 사진을 올려도 워터마크가 없거나 시각이 안 맞는다.
+function shrink(file, cb, stamp) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 320, sc = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0, c.width, c.height);
+      if (stamp) {
+        const h = Math.max(22, Math.round(c.height * 0.13));
+        const fs = Math.max(9, Math.round(h * 0.42));
+        x.fillStyle = 'rgba(0,0,0,0.55)';
+        x.fillRect(0, c.height - h, c.width, h);
+        x.fillStyle = '#fff';
+        x.font = `600 ${fs}px -apple-system, system-ui, sans-serif`;
+        x.textBaseline = 'middle';
+        x.fillText(stampText(), Math.round(h * 0.35), c.height - h / 2);
+        const tag = '앱 촬영';
+        x.textAlign = 'right';
+        x.fillText(tag, c.width - Math.round(h * 0.35), c.height - h / 2);
+        x.textAlign = 'left';
+      }
+      cb(c.toDataURL('image/jpeg', 0.68));
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+
+const el = (tag, attrs = {}, kids = []) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k === 'value') n.value = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== false) n.setAttribute(k, v);
+  }
+  (Array.isArray(kids) ? kids : [kids]).filter(Boolean).forEach(c => n.appendChild(c));
+  return n;
+};
+const card = kids => el('div', { class: 'card' }, kids);
+const icon = (n, s) => el('w-icon', { name: n, size: s });
+
+/* ---------------- 보호자: 일정 설정 ---------------- */
+
+// 일지용 사진 스트립 — 탭하면 라이트박스. 확대 후에도 그날 전체 사진을 좌우로 넘긴다
+function photoStrip(shots, gallery) {
+  if (!shots || !shots.length) return null;
+  return el('div', { class: 'slide' }, shots.map((sh, i) =>
+    el('button', { class: 'sitem2 pthumb', 'aria-label': `${sh.label} 사진 크게 보기`,
+      onclick: () => set({ lightbox: { gallery, idx: gallery.findIndex(g => g.url === sh.url) } }) },
+      [el('img', { src: sh.url, alt: sh.label + ' 사진 ' + (i + 1) })])));
+}
+function lightboxEl() {
+  const lb = S.lightbox; if (!lb || !lb.gallery || !lb.gallery.length) return null;
+  const g = lb.gallery, n = g.length;
+  const idx = Math.max(0, Math.min(n - 1, lb.idx || 0));
+  const move = d => { const next = (idx + d + n) % n; S.lightbox.idx = next; save(); render(); };
+  const strip = el('div', { class: 'lbslide' }, g.map((sh, i) =>
+    el('img', { src: sh.url, alt: sh.label + ' 사진' })));
+  // 스크롤 위치 동기화 + 스와이프하면 인덱스 갱신
+  setTimeout(() => { strip.scrollLeft = strip.clientWidth * idx; }, 0);
+  strip.addEventListener('scroll', () => {
+    const cur = Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+    if (cur !== S.lightbox.idx) { S.lightbox.idx = cur;
+      const cap = document.querySelector('.lbcap');
+      if (cap) cap.textContent = `${g[cur].label} · ${cur + 1} / ${n}`; }
+  });
+  return el('div', { class: 'lightbox', onclick: e => { if (e.target.classList.contains('lightbox')) set({ lightbox: null }); } }, [
+    strip,
+    el('div', { class: 'lbcap', text: `${g[idx].label} · ${idx + 1} / ${n}` }),
+    n > 1 ? el('button', { class: 'lbnav prev', 'aria-label': '이전 사진', onclick: () => move(-1) },
+      icon('chevron-left', 20)) : null,
+    n > 1 ? el('button', { class: 'lbnav next', 'aria-label': '다음 사진', onclick: () => move(1) },
+      icon('chevron-right', 20)) : null,
+    el('button', { class: 'lbclose', 'aria-label': '닫기', onclick: () => set({ lightbox: null }) },
+      icon('close', 18)),
+  ]);
+}
+
+function cnSheetEl() {
+  if (!S.cnOpen) return null;
+  S.cnDraft = S.cnDraft || { kind: 'all', text: '' };
+  const d = S.cnDraft;
+  if (d.petId === undefined) d.petId = null;
+  const ta = el('textarea', { placeholder: '예) 기저귀를 갈 때는 꼭 리드줄을 채워주세요 (입질 방지)',
+    value: d.text, oninput: e => { d.text = e.target.value; save(); } });
+  ta.style.minHeight = '72px';
+  const addBtn = el('button', { class: 'proof' }, [icon('plus-circle', 16), el('span', { text: '저장' })]);
+  addBtn.addEventListener('click', () => {
+    const t = (d.text || '').trim(); if (!t) return;
+    S.careNotes.push({ id: 'n' + Date.now(), kind: d.kind, petId: d.petId || null, text: t });
+    if (S.sent) sitEvent(`보호자가 특이사항을 추가했어요 (${KIND_LABEL(d.kind)})`);
+    S.cnDraft = { kind: 'all', text: '' };
+    S.cnOpen = false;
+    flash('특이사항이 저장되었어요', '시터의 해당 인증 화면에 참고 사항으로 보입니다.');
+    save(); render();
+  });
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) set({ cnOpen: false }); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'h', text: '특이사항 추가' }),
+      multiPet() ? el('div', { class: 'chips' },
+        [[null, '모든 아이']].concat(S.pets.map(pt => [pt.id, pt.name])).map(([pid, label]) =>
+          el('button', { class: 'chip', 'aria-pressed': (d.petId || null) === pid, text: label,
+            onclick: () => { d.petId = pid; save(); render(); } }))) : null,
+      el('div', { class: 'sub', text: '어느 항목을 할 때 봐야 하나요?' }),
+      (() => {
+        const chips = el('div', { class: 'chips' });
+        const mk = (k, label) => el('button', { class: 'chip', 'aria-pressed': d.kind === k, text: label,
+          onclick: () => { d.kind = k; save(); render(); } });
+        [['all', '공통']].concat(Object.entries(KINDS).map(([k, v]) => [k, v.name]))
+          .concat(S.customKinds.map(c => ['c:' + c, c]))
+          .forEach(([k, label]) => chips.appendChild(mk(k, label)));
+        const plus = el('button', { class: 'chip', text: '＋' });
+        plus.addEventListener('click', () => {
+          const inp = el('input', { type: 'text', placeholder: '예) 목욕' });
+          inp.style.cssText = 'width:88px;height:33px;border-radius:1000px;padding:0 12px;font-size:13px';
+          const ok = el('button', { class: 'chip', text: '추가' });
+          const commit = () => {
+            const name = inp.value.trim();
+            if (name) {
+              if (!S.customKinds.includes(name)) S.customKinds.push(name);
+              d.kind = 'c:' + name;
+            }
+            save(); render();
+          };
+          ok.addEventListener('click', commit);
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
+          chips.replaceChild(inp, plus); chips.appendChild(ok); inp.focus();
+        });
+        chips.appendChild(plus);
+        return chips;
+      })(),
+      ta,
+      el('div', { class: 'btnrow sheetrow' }, [
+        addBtn,
+        el('button', { class: 'sheetcancel', text: '취소', onclick: () => set({ cnOpen: false }) }),
+      ]),
+    ]),
+  ]);
+}
+
+function hoSheetEl() {
+  if (!S.hoOpen) return null;
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) set({ hoOpen: false }); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'h', text: '픽·드롭 약속 수정' }),
+      handoffForm(),
+      el('div', { class: 'btnrow sheetrow' }, [
+        el('button', { class: 'proof', onclick: () => { if (S.sent) sitEvent('보호자가 픽·드롭 약속을 변경했어요');
+          flash('픽·드롭 약속이 저장됐어요', '시터 화면에도 바로 반영됩니다.'); set({ hoOpen: false }); } },
+          [el('span', { text: '완료' })]),
+        el('button', { class: 'sheetcancel', text: '닫기', onclick: () => set({ hoOpen: false }) }),
+      ]),
+    ]),
+  ]);
+}
+
+function ownerHeaderCard() {
+  return card([
+    el('div', { class: 'profhead' }, [
+      el('button', { class: 'avatar avlink', 'aria-label': '아이 프로필', title: '아이 프로필',
+        onclick: () => go('petProfile') }),
+      el('div', { class: 'pcol' }, [
+        el('div', { class: 'h', text: S.pets.map(p => p.name).join(' · ') }),
+        multiPet() ? el('div', { class: 'meta', text: `아이 ${S.pets.length}` }) : null,
+      ]),
+      el('button', { class: 'ctasm inline', text: SIT().name + ' 시터', onclick: () => go('verify') }),
+    ]),
+    periodText() ? (() => {
+      const t = periodText(); const i = t.lastIndexOf(' · ');
+      return el('div', { class: 'prow' }, [
+        el('span', { class: 'plabel', text: i >= 0 ? t.slice(0, i) : t }),
+        i >= 0 ? el('span', { class: 'pval', text: t.slice(i + 3) }) : null,
+      ]);
+    })() : null,
+    periodRatio() !== null ? el('div', { class: 'gauge' },
+      [el('div', { class: 'gfill', style: 'width:' + periodRatio() + '%' })]) : null,
+    el('button', { class: 'hrowsbtn', title: '픽·드롭 수정', 'aria-label': '픽·드롭 수정',
+      onclick: () => set({ hoOpen: true }) },
+      [handoffRows(), el('span', { class: 'chev' }, icon('chevron-right', 14))]),
+  ]);
+}
+
+// 전달 후 보호자 홈 — 돌봄 일지: 스케줄이 어떻게 채워지는지 본다
+function ownerHome() {
+  if (!S.sent) return schedule();
+  const RX = { 귀여워요: '😍', 안심돼요: '😌', 고마워요: '💙' };
+  const items = forCurPet(ordered());
+  return {
+    title: '돌봄 일지',
+    overlay: lightboxEl() || hoSheetEl(),
+    right: { icon: 'alert', label: '지금 오는 인증', badge: freshCount(), on: () => go('live') },
+    body: [
+      petTabs(),
+      handoffAlert(),
+      ownerHeaderCard(),
+      placeCard(),
+      card([el('div', { class: 'tl' }, items.map(x => {
+        const p = S.proofs[x.id];
+        return el('div', { class: 'item vitem' }, [
+          el('div', { class: 'hrow' }, [
+            el('span', { class: 'k' }, [
+              el('span', { text: kindPetLabel(x) }),
+              (x.fuzzMin || 0) === 0 ? el('span', { class: 'exact', text: '⏰ 정각' }) : null,
+            ]),
+          ]),
+          el('div', { class: 'vtime' }, [
+            el('span', { class: 'vt', text: timeLabel(x) + (x.timeEnd ? ` ~${x.timeEnd}쯤` : '') }),
+            p ? el('span', { class: 'rt', text: p.at + ' 제출' }) : el('span', { class: 'rt miss', text: '아직 기록 없음' }),
+          ]),
+          p ? (() => { const shots = [p.photo, p.photo2].filter(Boolean)
+                .map(u => ({ url: u, label: kindPetLabel(x) }));
+              return photoStrip(shots, shots); })() : null,
+          p && p.text ? el('div', { class: 'pvw', text: p.text }) : null,
+          ...(p ? ownerVerdictBlock(x.id, p) : []),
+        ]);
+      }))]),
+      el('button', { class: 'add addlg', onclick: () => go('schedule') },
+        [icon('plus-circle', 16), el('span', { text: '일정·특이사항 보기 · 수정' })]),
+    ],
+    hint: '보호자 홈입니다. 새 인증은 종 알림에서 바로 확인합니다.',
+  };
+}
+
+function schedule() {
+  // 편집 행과 인증 안내를 한 덩어리로 — 같은 항목이 두 카드에 중복으로 나오던 것을 합침
+  const row = s => el('div', { class: 'sitem' }, [
+    el('div', { class: 'srow' }, [
+      el('select', { onchange: e => { s.kind = e.target.value;
+        if (s.kind === 'med') { s.fuzzMin = 0; s.timeEnd = null; }   // 약은 정각이 기본 — 지켜야 하는 시간
+        save(); render(); } },
+        Object.entries(KINDS).map(([k, v]) =>
+          el('option', { value: k, selected: s.kind === k, text: v.name }))),
+      s.fuzzMin === -1 ? null : el('input', { type: 'time', value: s.time,
+        onchange: e => { s.time = e.target.value || s.time;
+          if (s.fuzzMin > 0) s.timeEnd = addMin(s.time, s.fuzzMin);   // 범위는 따라 움직인다
+          save(); render(); } }),
+      el('select', { 'aria-label': '시간 범위',
+        onchange: e => { s.fuzzMin = +e.target.value;
+          s.timeEnd = s.fuzzMin > 0 ? addMin(s.time, s.fuzzMin) : null; save(); render(); } },
+        [[0, '정각'], [30, '~30분쯤'], [60, '~1시간쯤'], [120, '~2시간쯤'], [-1, '아무때나']].map(([v, t]) =>
+          el('option', { value: v, selected: (s.fuzzMin || 0) === v, text: t }))),
+      el('button', { class: 'del', 'aria-label': '삭제',
+        onclick: () => { S.schedule = S.schedule.filter(x => x.id !== s.id); save(); render(); } },
+        icon('close', 13)),
+    ]),
+  ]);
+
+  const cnSheet = cnSheetEl();
+  const hoSheet = hoSheetEl();
+  return {
+    title: S.sent ? '일정·특이사항' : '돌봄 일정',
+    back: S.sent ? () => go('home') : null,
+    overlay: cnSheet || hoSheet,
+    body: [
+      petTabs(),
+      S.sent ? null : ownerHeaderCard(),
+      card([
+        el('div', { class: 'headrow' }, [
+          el('div', {}, [
+            el('div', { class: 'h', text: '언제 무엇을 해주면 되나요?' }),
+            el('div', { class: 'sub', text: '항목마다 시터가 그 시각에 사진 인증합니다.' }),
+          ]),
+          el('button', { class: 'addmini', 'aria-label': '항목 추가', title: '항목 추가',
+            onclick: () => { S.schedule.push({ id: 's' + Date.now(), kind: 'meal', time: '12:00',
+              fuzzMin: 60, timeEnd: addMin('12:00', 60), petId: curPetId() || P().id }); save(); render(); } },
+            icon('plus-circle', 20)),
+        ]),
+        ...forCurPet(S.schedule).map(row),
+      ]),
+      (() => {
+        return card([
+          el('div', {}, [
+            el('div', { class: 'h', text: '특이사항' }),
+            el('div', { class: 'sub', text: '한 번 적어두면 시터가 그 일을 하는 순간, 해당 인증 화면에 「참고 사항」으로 함께 보입니다. 아이 프로필에 저장되어 다음 돌봄에도 그대로 불러와집니다.' }),
+          ]),
+          ...S.careNotes.filter(nn => !curPetId() || !nn.petId || nn.petId === curPetId())
+            .map(nn => el('div', { class: 'note' }, [
+            el('div', { class: 'notehead' }, [
+              el('span', { class: 'notechip' + (nn.kind === 'all' ? ' nc-all' : ''),
+                text: KIND_LABEL(nn.kind) + (multiPet() && nn.petId ? ` · ${petById(nn.petId).name}` : '') }),
+              el('button', { class: 'ntrash', 'aria-label': '삭제', title: '삭제',
+                onclick: () => { S.careNotes = S.careNotes.filter(x => x.id !== nn.id); save(); render(); } },
+                icon('trash', 15)),
+            ]),
+            el('span', { class: 'r', text: nn.text }),
+          ])),
+          el('button', { class: 'add', onclick: () => set({ cnOpen: true }) },
+            [icon('plus-circle', 16), el('span', { text: '특이사항 추가' })]),
+        ]);
+      })(),
+    ],
+    right: S.sent ? { icon: 'alert', label: '지금 오는 인증', badge: freshCount(), on: () => go('live') } : null,
+    foot: [el('button', {
+      class: 'cta', disabled: S.schedule.length === 0,
+      text: S.schedule.length ? (S.sent ? '다시 전달' : '시터에게 전달') : '항목을 하나 이상 넣어주세요',
+      onclick: () => { sitEvent(S.sent ? '보호자가 일정·특이사항을 업데이트했어요' : '보호자가 돌봄 일정을 보냈어요');
+        set({ sent: true, role: 'sitter', screen: 'today' }); },
+    })],
+    hint: '보호자 화면입니다. 찍을 대상을 보호자가 정합니다 — 그 집에 없는 걸 요구하지 않습니다.',
+  };
+}
+
+/* ---------------- 시터: 오늘 ---------------- */
+
+function today() {
+  if (!S.sent) return {
+    title: '오늘의 돌봄',
+    right: { label: '내 프로필', on: () => go('profile') },
+    body: [
+      el('div', { class: 'empty', text: S.prefilled
+        ? '보호자가 아직 일정을 보내지 않았어요.\n초대 링크를 열면 확인 후 일정을 입력합니다.'
+        : '아직 받은 일정이 없습니다.\n기본 정보를 채워 초대 링크를 보내보세요.' }),
+      card([
+        el('div', { class: 'h', text: S.prefilled ? '링크는 보냈나요?' : '돌봄을 시작하려면' }),
+        el('div', { class: 'sub', text: '의뢰가 오면 아이 정보·기간·픽드롭을 미리 채우고 링크를 보냅니다. 보호자는 확인만 하면 돼요.' }),
+        el('button', { class: 'add', onclick: () => go('newContract') },
+          [icon('plus-circle', 16), el('span', { text: S.prefilled ? '기본 정보 다시 채우기' : '기본 정보 채우고 링크 만들기' })]),
+      ]),
+      el('button', { class: 'proto', text: '(프로토타입) 보호자 화면으로 가기',
+        onclick: () => set({ role: 'owner', screen: ownerDefault() }) }),
+    ],
+    hint: '시터 화면입니다.',
+  };
+
+  const row = s => {
+    const p = S.proofs[s.id];
+    const state = !p ? { c: 'seenwait', t: '아직 기록 없음' }
+      : hasPhoto(p) ? { c: 'seen', t: `${p.at} 사진 제출` + (p.resubmitted ? ` · ${p.resubmitted}회 재제출` : '') }
+      : { c: 'seen', t: `${p.at} 설명 제출` + (p.resubmitted ? ` · ${p.resubmitted}회 재제출` : '') };
+    return el('div', { class: 'item' }, [
+      el('div', { class: 'when' }, [
+        el('span', { text: timeLabel(s) }),
+        s.timeEnd ? el('span', { class: 'rt miss', text: `~${s.timeEnd}쯤` }) : null,
+        p && p.dispute && p.dispute.reason && p.dispute.resolution !== 'resolved'
+          ? el('span', { class: 'rt miss', text: p.dispute.resolution === 'noreply' ? '소명 없음' : '신고' })
+          : p && p.verdict ? el('span', { class: 'rt', text: p.verdict.reaction ? ({귀여워요:'😍',안심돼요:'😌',고마워요:'💙'})[p.verdict.reaction] + ' ' + p.verdict.reaction : '확인됨' }) : null,
+      ]),
+      el('div', { class: 'b' }, [
+        el('div', { class: 'brow' }, [
+          el('div', { class: 'bl' }, [
+            el('span', { class: 'k' }, [
+              el('span', { text: kindPetLabel(s) }),
+              (s.fuzzMin || 0) === 0 ? el('span', { class: 'exact', text: '⏰ 정각' }) : null,
+            ]),
+            el('span', { class: state.c, text: state.t }),
+            p && p.text ? el('span', { class: 'pvw', text: p.text }) : null,
+          ]),
+          el('button', { class: 'proof recright', onclick: () => set({ recordId: s.id, screen: 'record' }) },
+            [icon(p ? 'camera' : 'plus-circle', 16),
+             el('span', { text: p ? '다시 기록' : '기록하기' })]),
+        ]),
+        ...(p && p.dispute && p.dispute.reason && !p.dispute.reply && p.dispute.resolution !== 'noreply'
+          ? [el('div', { class: 'dis' }, [
+              el('span', { class: 't', text: '보호자가 가짜 인증으로 신고했습니다' }),
+              el('span', { class: 'r', text: p.dispute.reason }),
+              el('button', { class: 'proof', onclick: () => set({ replyId: s.id, screen: 'reply' }) },
+                [icon('bubble', 16), el('span', { text: '소명하기' })]),
+            ])]
+          : p && p.dispute && p.dispute.reason
+            ? [el('div', { class: 'dis' }, [
+                el('span', { class: 't', text: p.dispute.resolution === 'resolved' ? '신고 해소됨'
+                  : p.dispute.resolution === 'noreply' ? '기한 경과 · 소명 없음'
+                  : p.dispute.resolution === 'unresolved' ? '해소되지 않음' : '보호자 확인 대기' }),
+                el('span', { class: 'r', text: p.dispute.reason }),
+                p.dispute.reply ? el('span', { class: 'r', text: '내 소명: ' + p.dispute.reply.text }) : null,
+              ])]
+            : []),
+      ]),
+    ]);
+  };
+
+  const n = doneCount(), total = S.schedule.length;
+  const walking = S.schedule.find(x => x.kind === 'walk' && !S.proofs[x.id]
+    && S.recDraft && S.recDraft[x.id] && S.recDraft[x.id].photo && !S.recDraft[x.id].photo2);
+  const pend = S.schedule.filter(x => { const q = S.proofs[x.id];
+    return q && q.dispute && q.dispute.reason && !q.dispute.reply && q.dispute.resolution !== 'noreply'; });
+  const alertSheet = S.sitAlertOpen ? el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) set({ sitAlertOpen: false }); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'h', text: '보호자 알림' }),
+      S.sitterEvents.length
+        ? el('div', { class: 'evlist' }, S.sitterEvents.map(ev => el('div', { class: 'note' }, [
+            el('span', { class: 'r' }, [
+              el('b', { text: ev.at + '  ' }),
+              el('span', { text: ev.text }),
+            ]),
+          ])))
+        : el('span', { class: 'nophoto', text: '아직 알림이 없습니다.' }),
+      el('button', { class: 'sheetcancel', text: '닫기', style: 'width:100%',
+        onclick: () => set({ sitAlertOpen: false }) }),
+    ]),
+  ]) : null;
+
+  return {
+    title: '오늘의 돌봄',
+    overlay: alertSheet,
+    right: { label: '내 프로필', on: () => go('profile') },
+    rightExtra: { icon: 'alert', label: '보호자 알림', badge: sitterUnread(), on: () => set({ sitAlertOpen: true, sitterEventsRead: S.sitterEvents.length }) },
+    body: [
+      petTabs(),
+      handoffAlert(),
+      placeCard(),
+      // (프로토타입) 시간이 되면 뜨는 알림 — 실제로는 푸시로 온다
+      S.dueDemo && !S.finished ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '🔔 밥시간이에요!' }),
+        el('span', { class: 'd', text: '10:00 밥 인증이 예정돼 있습니다. 지금 찍으면 바로 보호자에게 갑니다.' }),
+        el('button', { onclick: () => { const first = ordered().find(x => !S.proofs[x.id]);
+          if (first) set({ recordId: first.id, screen: 'record', dueDemo: false });
+          else set({ dueDemo: false }); } },
+          [icon('camera', 16), el('span', { text: '지금 인증하기' })]),
+      ]) : null,
+      walking ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '🐾 산책 중이에요' }),
+        el('span', { class: 'd', text: '돌아오면 「산책 완료!」 한 장만 찍으면 끝이에요. 앱을 닫아도 여기서 바로 이어집니다.' }),
+        el('button', { onclick: () => set({ recordId: walking.id, screen: 'record' }) },
+          [icon('camera', 16), el('span', { text: '산책 완료 찍기' })]),
+      ]) : null,
+      S.finished ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '오늘 돌봄을 마쳤습니다' }),
+        el('span', { class: 'd', text: '지금부터 올리는 기록에는 「종료 후 기록」이 붙습니다.' }),
+      ]) : null,
+      pend.length ? el('div', { class: 'alert' }, [
+        el('span', { class: 't', text: `소명이 필요한 신고 ${pend.length}건` }),
+        el('span', { class: 'd', text: '보호자가 가짜 인증으로 신고했습니다. 72시간 안에 답하지 않으면 「소명 없음」으로 남습니다.' }),
+        el('button', { onclick: () => set({ replyId: pend[0].id, screen: 'reply' }) },
+          [icon('bubble', 16), el('span', { text: '소명하러 가기' })]),
+      ]) : null,
+      card([
+        el('div', { class: 'hrow' }, [
+          el('div', { class: 'h', text: S.pets.map(pt => pt.name).join(' · ') }),
+          el('span', { class: 'badge', text: '진행 중' }),
+        ]),
+        ...S.pets.filter(pt => pt.age || pt.extra).map(pt =>
+          el('div', { class: 'meta', text: `${multiPet() ? pt.name + ' · ' : ''}${[pt.age, pt.extra].filter(Boolean).join(' · ')}` })),
+        handoffRows(),
+        periodText() ? (() => {
+          const t = periodText(); const i = t.lastIndexOf(' · ');
+          return el('div', { class: 'prow' }, [
+            el('span', { class: 'plabel', text: i >= 0 ? t.slice(0, i) : t }),
+            i >= 0 ? el('span', { class: 'pval', text: t.slice(i + 3) }) : null,
+          ]);
+        })() : null,
+        periodRatio() !== null ? el('div', { class: 'gauge', 'aria-label': '돌봄 진행률' },
+          [el('div', { class: 'gfill', style: 'width:' + periodRatio() + '%' })]) : null,
+        ...S.careNotes.filter(nn => nn.kind === 'all' || nn.kind.startsWith('c:')).map(nn => el('div', { class: 'note' }, [
+          el('span', { class: 't', text: '보호자가 남긴 메모' }),
+          el('span', { class: 'r', text: nn.text }),
+        ])),
+      ]),
+      card([el('div', { class: 'tl' }, forCurPet(ordered()).map(row))]),
+      card([
+        el('div', {}, [
+          el('div', { class: 'h', text: '먼저 챙긴 순간' }),
+          el('div', { class: 'sub', text: '일정에 없어도 보여주고 싶은 순간을 남겨주세요 — 즐겁게 노는 모습, 잘 자는 모습. 보호자가 「고마워요」를 누르면 프로필에 쌓입니다.' }),
+        ]),
+        ...S.extras.map(x => el('div', { class: 'extra' }, [
+          el('span', { class: 't', text: `먼저 챙긴 순간 · ${x.at}` }),
+          momentSlider(x),
+          x.text ? el('span', { class: 'sub', text: x.text }) : null,
+          x.thanks ? el('span', { class: 'thxdone', text: `💙 보호자가 고마워했어요 · ${x.thanks.at}` }) : null,
+          x.thanks ? null : el('button', { class: 'undo', text: '지우기',
+            onclick: () => { S.extras = S.extras.filter(e => e.id !== x.id); save(); render(); } }),
+        ])),
+        el('button', { class: 'add', onclick: () => go('extra') },
+          [icon('plus-circle', 16), el('span', { text: '순간 남기기' })]),
+      ]),
+      card([
+        el('div', { class: 'h', text: '기록은 제출 즉시 전달됩니다' }),
+        el('div', { class: 'sub', text: '각 기록은 제출하는 순간 이미 보호자에게 가 있습니다. 모든 일정을 기록하면 「돌봄 마치기」 버튼이 나타납니다. 사진이 어려운 항목은 설명으로도 채울 수 있어요.' }),
+        el('button', { class: 'proto', text: '(프로토타입) 밥시간 알림 울리기',
+          onclick: () => set({ dueDemo: true }) }),
+      ]),
+    ],
+    // 각 기록은 제출 즉시 전달되므로, 마치기 버튼은 전체 일정이 끝났을 때만 나타난다
+    foot: (!S.finished && n === total && total > 0)
+      ? [el('button', { class: 'cta', text: '돌봄 마치기',
+          onclick: () => {
+            attachLiveRecord();
+            flash('오늘 돌봄을 마쳤어요', '보호자에게 하루 요약이 전달됩니다.');
+            // 후기는 계약당 1회 — 계약 마지막 날의 마치기에서만 후기 작성으로 잇는다
+            const pending = contractOver() ? S.pets.filter(pt => !S.diaryDoneMap[pt.id]) : [];
+            if (pending.length) {
+              const kbk = S.diaryBooks.find(b => b.petId === pending[0].id);
+              set({ finished: true, bookId: kbk.id, finishPrompt: true, screen: 'diaryWrite' });
+            } else {
+              set({ finished: true, role: 'owner', screen: 'confirm' });
+            }
+          } })]
+      : [],
+    fab: el('button', { class: 'fab', 'aria-label': '순간 남기기', title: '순간 남기기',
+      onclick: () => go('extra') }, icon('plus-circle', 24)),
+    hint: '시터 화면입니다. 항목 하나씩 들어가서 기록합니다.',
+  };
+}
+
+/* ---------------- 시터: 한 항목 기록 ---------------- */
+
+function record() {
+  const s = S.schedule.find(x => x.id === S.recordId);
+  if (!s) return el2('기록할 항목을 찾을 수 없습니다.', 'sitter', 'today');
+  const K = KINDS[s.kind];
+  const prev = S.proofs[s.id] || {};
+  S.recDraft = S.recDraft || {};
+  const d = S.recDraft[s.id] || (S.recDraft[s.id] = {
+    photo: prev.photo || null, ts: prev.ts || null, stamp: prev.stamp || null,
+    photo2: prev.photo2 || null, ts2: prev.ts2 || null, stamp2: prev.stamp2 || null,
+    text: prev.text || '',
+  });
+
+  const cta = el('button', { class: 'cta' });
+  const ready = () => !!d.photo || !!d.photo2 || !!d.text.trim();
+  const syncCta = () => {
+    const ok = ready();
+    cta.disabled = !ok;
+    cta.textContent = !ok ? '사진을 찍거나 메모를 남겨주세요'
+      : (d.photo || d.photo2) ? '사진 제출' : '설명만 제출';
+  };
+
+  // 슬롯 하나 (첫 컷 / 둘째 컷)
+  const shot = (which) => {
+    const key = which === 2 ? 'photo2' : 'photo';
+    const tsk = which === 2 ? 'ts2' : 'ts';
+    const stk = which === 2 ? 'stamp2' : 'stamp';
+    const id = 'f_rec' + which;
+    const input = el('input', { type: 'file', accept: 'image/*', capture: 'environment', id,
+      onchange: e => { const f = e.target.files[0]; if (!f) return;
+        shrink(f, url => { d[key] = url; d[tsk] = Date.now(); d[stk] = stampText(); save(); render(); }, true); } });
+    const label = K.pair ? (which === 2 ? K.cap2 : K.cap1) : null;
+    return el('div', { class: 'field' }, [
+      label ? el('label', { text: label }) : null,
+      d[key] ? el('img', { class: 'thumb', src: d[key], alt: label || K.name,
+        style: 'max-width:100%;aspect-ratio:auto' }) : null,
+      el('button', { class: 'proof', onclick: () => input.click() },
+        [icon('camera', 16), el('span', { text: d[key] ? '다시 촬영' : (label ? label + ' 촬영' : '지금 촬영') })]),
+      d[key] ? el('button', { class: 'undo', text: '지우기',
+        onclick: () => { d[key] = null; d[tsk] = null; d[stk] = null; save(); render(); } }) : null,
+      input,
+    ]);
+  };
+
+  const mins = (d.ts && d.ts2) ? Math.max(0, Math.round((d.ts2 - d.ts) / 60000)) : null;
+
+  return {
+    title: (multiPet() ? petById(s.petId).name + ' ' : '') + K.name + ' 기록',
+    back: () => go('today'),
+    body: [
+      card([
+        el('div', { class: 'h', text: `${timeLabel(s)} · ${kindPetLabel(s)}` }),
+        (s.fuzzMin || 0) === 0 ? el('span', { class: 'exact', text: '⏰ 정각을 지켜야 하는 항목이에요' }) : null,
+        el('div', { class: 'sub', text: K.shoot + ' — 앱 카메라로만 찍히고 날짜·시각이 사진에 새겨집니다.' }),
+        (prev.photo || prev.photo2 || prev.text) ? el('span', { class: 'nophoto',
+          text: prev.verdict ? '다시 제출하면 보호자 확인이 취소되고 다시 확인받아야 합니다'
+                             : '다시 제출하면 이전 기록을 덮어씁니다' }) : null,
+        shot(1),
+        K.pair ? shot(2) : null,
+        K.pair && mins !== null
+          ? el('span', { class: 'veri' }, [icon('check-bold', 12),
+              el('span', { text: `산책 시간 ${mins}분 — 두 사진의 시각 차이입니다` })])
+          : K.pair ? el('span', { class: 'nophoto', text: '출발·완료 두 장이 모이면 산책 시간이 저절로 남아요' }) : null,
+      ]),
+      (() => {
+        const ns = S.careNotes.filter(nn => nn.kind === s.kind
+          && (!nn.petId || nn.petId === (s.petId || S.pets[0].id)));   // 공통 메모는 홈 박스에 상주
+        if (!ns.length) return null;
+        return card([
+          el('div', { class: 'h', text: '참고 사항' }),
+          ...ns.map(nn => el('div', { class: 'note' }, [
+            el('span', { class: 't', text: (multiPet() && nn.petId ? petById(nn.petId).name + ' · ' : '') + KIND_LABEL(nn.kind) + ' · 보호자가 남긴 메모' }),
+            el('span', { class: 'r', text: nn.text }),
+          ])),
+        ]);
+      })(),
+      card([
+        el('div', { class: 'h', text: '한 줄 메모 (선택)' }),
+        el('div', { class: 'sub', text: (d.photo || d.photo2)
+          ? '사진에 덧붙일 말이 있으면 적어주세요.'
+          : '사진을 못 찍었다면 무슨 일이 있었는지 적어주세요. 다만 설명은 인증으로 세지 않습니다.' }),
+        el('textarea', { placeholder: '예) 사료 30g 그대로 부었습니다',
+          value: d.text, oninput: e => { d.text = e.target.value; save(); syncCta(); } }),
+        !(d.photo || d.photo2) ? el('span', { class: 'nophoto', text: '사진이 없어도 제출할 수 있어요 — 다만 사진이 보호자가 가장 안심하는 방법입니다' }) : null,
+      ]),
+    ],
+    foot: [(syncCta(), cta.addEventListener('click', () => {
+      const pv = S.proofs[s.id] || {};
+      const again = !!(pv.photo || pv.photo2 || pv.text);
+      // 다시 제출하면 확인은 무효가 된다 — 확인받은 뒤 내용만 바꿔치기할 수 없게.
+      // 다만 신고 이력(dispute)은 지우지 않는다.
+      S.proofs[s.id] = { at: nowHM(), late: S.finished || undefined,
+        stamp: d.stamp, ts: d.ts, photo: d.photo || null,
+        photo2: d.photo2 || null, ts2: d.ts2 || null, stamp2: d.stamp2 || null,
+        text: d.text.trim() || null,
+        seen: null, verdict: null, dispute: pv.dispute || null,
+        resubmitted: again ? (pv.resubmitted || 0) + 1 : 0, prevAt: again ? pv.at : null };
+      delete S.recDraft[s.id];
+      flash('제출되었어요!', '보호자에게 바로 전달됐습니다. 돌봄 마치기는 하루를 끝낼 때 한 번만 누르면 됩니다.');
+      set({ screen: 'today' });
+    }), cta)],
+    hint: K.pair ? '두 장의 시각 차이가 산책 시간으로 남습니다.' : '제출하면 그 즉시 보호자에게 갑니다.',
+  };
+}
+
+/* ---------------- 보호자: 확인 ---------------- */
+
+function confirmScreen() {
+  if (!S.finished) return el2('아직 받은 기록이 없습니다.\n시터 화면에서 돌봄을 마쳐주세요.', 'sitter', 'today');
+  const items = forCurPet(ordered());
+  const n = items.filter(x => S.proofs[x.id]).length, total = items.length;
+  const vs = items.map(x => S.proofs[x.id]).filter(x => x && x.verdict);
+  const same = vs.filter(x => x.verdict.matched).length;
+  const curName = multiPet() ? petById(curPetId()).name : P().name;
+
+  return {
+    title: '오늘의 기록',
+    body: [
+      petTabs(),
+      card([
+        el('div', { class: 'h', text: curName + ' · 오늘' }),
+        el('div', { class: 'meta', text: `예정 ${total}건 중 ${n}건 인증 · 판정 ${vs.length}건 (일치 ${same})` }),
+      ]),
+      card([el('div', { class: 'tl' }, items.map(s => {
+        const p = S.proofs[s.id];
+        return el('div', { class: 'item' }, [
+          el('div', { class: 'when' }, [
+            el('span', { text: timeLabel(s) }),
+            s.timeEnd ? el('span', { class: 'rt miss', text: `~${s.timeEnd}쯤` }) : null,
+            p ? el('span', { class: 'rt', text: p.at }) : el('span', { class: 'rt miss', text: '—' }),
+            p && p.late ? el('span', { class: 'rt miss', text: '종료 후' }) : null,
+          ]),
+          el('div', { class: 'b' }, [
+            el('span', { class: 'k', text: kindPetLabel(s) }),
+            p && p.photo ? el('img', { class: 'thumb', src: p.photo, alt: KINDS[s.kind].name }) : null,
+            p && p.photo2 ? el('img', { class: 'thumb', src: p.photo2, alt: KINDS[s.kind].name }) : null,
+            !p ? el('span', { class: 'noproof', text: '기록 없음' }) : null,
+            p && outMinutes(p) !== null
+              ? el('span', { class: 'veri' }, [icon('check-bold', 12),
+                  el('span', { text: `산책 시간 ${outMinutes(p)}분` })]) : null,
+            p && p.text ? el('div', { class: 'note' }, [
+                el('span', { class: 't', text: (hasPhoto(p) ? '시터 메모' : '시터 설명') + ' · ' + p.at }),
+                el('span', { class: 'r', text: p.text }),
+              ]) : null,
+            p ? (p.dispute && p.dispute.reason
+                  ? el('span', { class: 'seen ask', text: '가짜 신고: ' + p.dispute.reason
+                      + (p.dispute.resolution === 'resolved' ? ' → 해소됨'
+                       : p.dispute.resolution === 'unresolved' ? ' → 미해소'
+                       : p.dispute.resolution === 'noreply' ? ' → 소명 없음 (72시간 경과)'
+                       : ' → 소명 대기') })
+                  : p.verdict ? el('span', { class: 'seen', text: p.verdict.reaction ? ({귀여워요:'😍',안심돼요:'😌',고마워요:'💙'})[p.verdict.reaction] + ' ' + p.verdict.reaction : '확인함' })
+                  : el('span', { class: 'seenwait', text: '아직 판정 안 함' })) : null,
+          ]),
+        ]);
+      }))]),
+      S.finished && !S.review ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '🔔 오늘 돌봄이 끝났어요' }),
+        el('span', { class: 'd', text: '사진마다 리액션을 남기고, 마지막으로 후기를 써주세요.' }),
+      ]) : null,
+      card([
+        el('div', { class: 'h', text: '모아보기' }),
+        el('div', { class: 'sub', text: vs.length < n
+          ? `오늘 일정 전체의 진행 상황입니다. 아직 확인하지 않은 사진이 ${n - vs.length}건 있습니다 — 사진이 도착하면 「지금 오는 인증」에서 그 자리에서 확인할 수 있습니다.`
+          : '오늘 일정 전체의 진행 상황입니다. 확인이 모두 끝났습니다. 후기는 나중에 쓰셔도 됩니다.' }),
+      ]),
+    ],
+    right: { label: '지금 오는 인증', on: () => go('live') },
+    foot: S.review
+      ? [el('button', { class: 'cta', text: '프로필 보러 가기', onclick: () => set({ role: 'public', screen: 'verify' }) })]
+      : [el('button', { class: 'alt', text: '나중에', onclick: () => set({ role: 'public', screen: 'verify' }) }),
+         el('button', { class: 'cta', text: '후기 쓰기', onclick: () => go('review') })],
+    hint: '돌봄이 끝나면 후기로 이어집니다. 후기는 건너뛰어도 됩니다.',
+  };
+}
+
+function review() {
+  if (!S.finished) return el2('돌봄이 끝난 뒤에 쓸 수 있습니다.', 'owner', 'confirm');
+  const d = S.draft;
+  const toggle = c => { d.chips = d.chips.includes(c) ? d.chips.filter(x => x !== c) : [...d.chips, c]; save(); render(); };
+  return {
+    title: '후기 작성',
+    back: () => go('confirm'),
+    body: [
+      card([
+        el('div', { class: 'h', text: SIT().name + ' 펫시터' }),
+        el('div', { class: 'meta', text: '오늘 · 방문 돌봄 · 후기는 선택입니다' }),
+        el('div', { class: 'stars' }, [1,2,3,4,5].map(n =>
+          el('button', { class: n <= d.stars ? 'on' : '', text: '★', 'aria-label': n + '점',
+            onclick: () => { d.stars = n; save(); render(); } }))),
+      ]),
+      card([
+        el('div', { class: 'h', text: '어떤 점이 좋았나요?' }),
+        el('div', { class: 'chips' }, CHIPS.map(c =>
+          el('button', { class: 'chip', 'aria-pressed': d.chips.includes(c), text: c, onclick: () => toggle(c) }))),
+      ]),
+    ],
+    foot: [el('button', {
+      class: 'cta', disabled: d.stars === 0,
+      text: d.stars === 0 ? '별점을 매겨주세요' : '후기 등록하기',
+      onclick: () => { S.review = { stars: d.stars, chips: [...d.chips] };
+        S.draft = { stars: 0, chips: [] };
+        flash('후기가 등록되었어요', '시터 프로필에 반영됩니다.');
+        set({ role: 'public', screen: 'verify' }); },
+    })],
+    hint: '후기는 안 써도 됩니다. 돌봄 기록은 이미 남아 있습니다.',
+  };
+}
+
+// 보호자 쪽 한 항목의 판정·이의 상태
+function ownerVerdictBlock(id, p) {
+  const P = S.proofs[id], d = P.dispute;
+  const out = [];
+
+  // 확인은 신고 이력을 지우지 않는다 (재제출로 판정만 무효화된 경우 이력이 남아 있다)
+  const seenNow = () => { if (!P.seen) P.seen = { at: nowHM(), kind: 'view' }; };
+  const confirm = () => { P.verdict = { at: nowHM(), matched: true }; P.pendingReport = false; seenNow(); save(); render(); };
+  // 신고는 사유를 고를 때까지 확정하지 않는다 — 잘못 눌러도 아무 일이 일어나지 않게
+  const report = () => { P.pendingReport = true; save(); render(); };
+  const cancelReport = () => { P.pendingReport = false; save(); render(); };
+  const setReason = r => {
+    P.verdict = { at: nowHM(), matched: false };
+    P.dispute = { at: nowHM(), reason: r, reply: null, resolution: null };
+    P.pendingReport = false; save(); render();
+  };
+  const undo = () => { P.verdict = null; P.dispute = null; P.pendingReport = false; save(); render(); };
+  const resolve = ok => { d.resolution = ok ? 'resolved' : 'unresolved';
+    if (ok) P.verdict.matched = true; save(); render(); };
+
+  // ① 이미 끝난 신고 이력은 언제나 먼저, 읽기 전용으로 보여준다 — 지워지지 않는다
+  if (d && d.reason && d.resolution) {
+    out.push(el('div', { class: 'dis' }, [
+      el('span', { class: 't', text: '지난 신고 기록' }),
+      el('span', { class: 'r', text: d.reason }),
+      d.reply ? el('span', { class: 'r', text: '시터 소명: ' + d.reply.text }) : null,
+      el('span', { class: 'fin ' + (d.resolution === 'resolved' ? 'ok' : 'no'),
+        text: d.resolution === 'resolved' ? '해소됨'
+            : d.resolution === 'noreply' ? '소명 없음 (72시간 경과)' : '해소되지 않음' }),
+    ]));
+  }
+
+  // ② 진행 중인 신고
+  if (d && d.reason && !d.resolution) {
+    out.push(el('span', { class: 'seen ask', text: d.at + ' 가짜 인증으로 신고' }));
+    out.push(el('div', { class: 'dis' }, [
+      el('span', { class: 't', text: '내가 남긴 신고 사유' }),
+      el('span', { class: 'r', text: d.reason }),
+    ]));
+    if (!d.reply) {
+      out.push(el('span', { class: 'seenwait', text: '시터 소명을 기다리는 중 · 24시간 뒤 한 번 더 알립니다' }));
+      out.push(el('button', { class: 'undo', text: '잘못 눌렀어요', onclick: undo }));
+      out.push(el('button', { class: 'proto', text: '(프로토타입) 72시간 경과시키기',
+        onclick: () => { d.resolution = 'noreply'; save(); render(); } }));
+      return out;
+    }
+    out.push(el('div', { class: 'rep' }, [
+      el('span', { class: 't', text: `시터 소명 · ${d.reply.at}` }),
+      el('span', { class: 'r', text: d.reply.text }),
+    ]));
+    out.push(el('div', { class: 'act' }, [
+      el('button', { class: 'pri', text: '이해했어요', onclick: () => resolve(true) }),
+      el('button', { text: '그래도 다릅니다', onclick: () => resolve(false) }),
+    ]));
+    return out;
+  }
+
+  // ③ 신고 사유 고르는 중 — 아직 아무것도 확정되지 않았다
+  if (P.pendingReport) {
+    out.push(el('div', { class: 'dis' }, [
+      el('span', { class: 't', text: '왜 가짜라고 보시나요?' }),
+      el('span', { class: 'r', text: '사유를 골라야 신고가 접수됩니다. 그냥 나가면 아무 일도 일어나지 않습니다.' }),
+      el('div', { class: 'chips' }, REASONS.map(r =>
+        el('button', { class: 'chip', text: r, onclick: () => setReason(r) }))),
+    ]));
+    out.push(el('button', { class: 'undo', text: '잘못 눌렀어요', onclick: cancelReport }));
+    return out;
+  }
+
+  // ④ 판정 전 / 판정 완료
+  // 리액션이 곧 확인이다 — 「귀여워요」를 눌렀다는 것은 봤고 받아들였다는 뜻.
+  // 회계(확인 집계)는 그대로 돌고, 딱딱함만 빠진다.
+  const confirmWith = reaction => { P.verdict = { at: nowHM(), matched: true, reaction };
+    P.pendingReport = false; seenNow();
+    const it = S.schedule.find(x => x.id === id);
+    sitEvent(`보호자가 ${it ? kindPetLabel(it) : '인증'}에 ${reaction ? `「${reaction}」를 보냈어요` : '확인을 남겼어요'}`);
+    save(); render(); };
+  if (!P.verdict) {
+    out.push(el('div', { class: 'react' }, [
+      el('button', { class: 'main', text: '😍 귀여워요', onclick: () => confirmWith('귀여워요') }),
+      el('button', { class: 'main', text: '😌 안심돼요', onclick: () => confirmWith('안심돼요') }),
+      el('button', { class: 'main', text: '💙 고마워요', onclick: () => confirmWith('고마워요') }),
+      el('button', { text: '✓ 확인', onclick: () => confirmWith(null) }),
+    ]));
+    out.push(el('button', { class: 'floatlink', text: hasPhoto(P) ? '가짜 인증 같아요' : '사실과 달라요', onclick: report }));
+    return out;
+  }
+
+  out.push(el('span', { class: 'seen', text: P.verdict.at + (P.verdict.matched
+    ? (P.verdict.reaction ? ` ${({귀여워요:'😍',안심돼요:'😌',고마워요:'💙'})[P.verdict.reaction] || ''} ${P.verdict.reaction}` : ' 확인함')
+    : ' 사실과 다름') }));
+  // 리액션 확인은 좋은 쪽 오조작이라 되돌리기를 두지 않는다 — 다른 리액션으로 바꾸고 싶으면 다시 제출 흐름에서 갱신된다
+  return out;
+}
+
+/* ---------------- 보호자: 실시간 확인 ---------------- */
+// 시터가 인증할 때마다 보호자가 그 자리에서 눌러 확인한다.
+// 확인 시각이 남으면 나중에 몰아 찍어 올리는 것이 어려워진다.
+
+function live() {
+  if (!S.sent) return el2('아직 일정을 전달하지 않았습니다.', 'owner', 'schedule');
+  const done = ordered().filter(s => S.proofs[s.id]);
+  // 도착 배너는 열람 처리 전에 세어야 한다 — 순서를 바꾸면 배너가 영원히 안 뜬다
+  const fresh = done.filter(s => S.proofs[s.id] && !S.proofs[s.id].seen && !S.proofs[s.id].verdict).length;
+  // 이 화면을 연 것 자체가 열람이다 — 보호자가 따로 누를 필요 없이 시각만 남긴다
+  let touched = false;
+  const newly = [];
+  done.forEach(s => { const p = S.proofs[s.id];
+    if (!p.seen) { p.seen = { at: nowHM(), kind: 'view' };
+      if (!p.verdict) newly.push(s.id);   // 이미 홈에서 반응한 건 「새 인증」이 아니다
+      touched = true; } });
+  if (newly.length) S._freshIds = (S._freshIds || []).concat(newly);
+  if (touched) save();
+
+  return {
+    title: '지금 오는 인증',
+    back: () => go(S.sent ? 'home' : 'schedule'),
+    right: S.finished ? { label: '모아보기', on: () => go('confirm') } : null,
+    body: [
+      petTabs(),
+      // (프로토타입) 실제로는 시터 제출 즉시 푸시가 오고, 누르면 이 화면이 열린다
+      fresh > 0 ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '🔔 방금 인증이 도착했어요' }),
+        el('span', { class: 'd', text: '시터가 방금 제출한 인증 ' + fresh + '건이 아래에 있습니다. 확인만 눌러주시면 됩니다.' }),
+      ]) : null,
+      card([
+        el('div', { class: 'h', text: (multiPet() ? S.pets.map(pt => pt.name).join(' · ') : P().name) + ' · 오늘' }),
+        multiPet()
+          ? el('div', { class: 'meta', text: S.pets.map(pt => {
+              const mine = done.filter(x => x.petId === pt.id);
+              return `${pt.name} 제출 ${mine.length} · 확인 ${mine.filter(x => S.proofs[x.id].verdict).length}`;
+            }).join(' / ') })
+          : el('div', { class: 'meta', text: `제출 ${done.length}건 · 확인 ${done.filter(s => S.proofs[s.id].verdict).length}건` }),
+      ]),
+      S.extras.length ? card([
+        el('div', { class: 'h', text: '먼저 챙긴 순간' }),
+        el('div', { class: 'sub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
+        ...S.extras.map(x => el('div', { class: 'extra' }, [
+          el('span', { class: 't', text: `먼저 챙긴 순간 · ${x.at}` }),
+          momentSlider(x),
+          x.text ? el('span', { class: 'sub', text: x.text }) : null,
+          el('div', { class: 'react' }, ['귀여워요', '안심돼요', '고마워요'].map(rx =>
+            el('button', { 'aria-pressed': !!(x.thanks && (x.thanks.reaction || '고마워요') === rx),
+              onclick: () => { x.thanks = { at: nowHM(), reaction: rx };
+                sitEvent(`보호자가 먼저 챙긴 순간에 「${rx}」를 보냈어요`); save(); render(); } },
+              [el('span', { text: ({귀여워요:'😍',안심돼요:'😌',고마워요:'💙'})[rx] + ' ' + rx })]))),
+          x.thanks ? el('span', { class: 'thxdone', text: `${x.thanks.at} 시터에게 전달됐어요` }) : null,
+        ])),
+      ]) : null,
+      (() => { const freshDone = forCurPet(done).filter(x => S._freshIds && S._freshIds.includes(x.id));
+        return freshDone.length ? card([el('div', { class: 'tl' }, freshDone.map(s => {
+        const p = S.proofs[s.id];
+        const isNew = S._freshIds && S._freshIds.includes(s.id);
+        return el('div', { class: 'item vitem' + (isNew ? ' newitem' : '') }, [
+          el('div', { class: 'hrow' }, [
+            el('span', { class: 'k', text: kindPetLabel(s) }),
+            isNew ? el('span', { class: 'newbdg', text: 'NEW' }) : null,
+          ]),
+          el('div', { class: 'vtime' }, [
+            el('span', { class: 'vt', text: timeLabel(s) + (s.timeEnd ? ` ~${s.timeEnd}쯤` : '') }),
+            el('span', { class: 'rt', text: p.at + ' 도착' }),
+            p.late ? el('span', { class: 'rt miss', text: '종료 후 기록' }) : null,
+            p.resubmitted ? el('span', { class: 'rt miss', text: `${p.resubmitted}회 다시 제출` }) : null,
+          ]),
+          el('div', { class: 'b' }, [
+            p && p.photo ? el('img', { class: 'thumb', src: p.photo, alt: KINDS[s.kind].name }) : null,
+            p && p.photo2 ? el('img', { class: 'thumb', src: p.photo2, alt: KINDS[s.kind].name + ' 들어올 때' }) : null,
+            p && outMinutes(p) !== null
+              ? el('span', { class: 'veri' }, [icon('check-bold', 12),
+                  el('span', { text: `산책 시간 ${outMinutes(p)}분` })]) : null,
+            p.resubmitted ? el('span', { class: 'nophoto',
+              text: `이전 제출(${p.prevAt})을 지우고 다시 올렸습니다. 확인이 취소되어 다시 봐주셔야 합니다.` }) : null,
+            p.text ? el('div', { class: 'note' }, [
+                  el('span', { class: 'r', text: p.text }),
+                ]) : null,
+            ...ownerVerdictBlock(s.id, p),
+          ]),
+        ]);
+      }))]) : el('div', { class: 'empty', text: '새로 도착한 인증이 없습니다.\n전체 기록은 돌봄 일지(홈)에서 볼 수 있어요.' }); })(),
+      card([
+        el('div', { class: 'h', text: '마음 가는 대로 눌러주세요' }),
+        el('div', { class: 'sub', text: '귀여워요·안심돼요·고마워요 어느 것을 눌러도 확인으로 기록됩니다. 나중에 하셔도 되고, 안 하셔도 시터에게 불이익은 없습니다. 「가짜 인증 같아요」는 정말 의심될 때만 눌러주세요.' }),
+      ]),
+    ],
+    foot: [S.finished
+      ? el('button', { class: 'cta', text: '오늘 기록 확인하기', onclick: () => go('confirm') })
+      : el('button', { class: 'alt', text: '일정 보기', onclick: () => go('schedule') })],
+    hint: '보호자 화면입니다. 리액션 하나가 곧 확인입니다.',
+  };
+}
+
+/* ---------------- 시터: 추가 활동 ---------------- */
+// 보호자가 정한 일정 밖의 일. 약속 이행 집계에는 넣지 않는다 —
+// 넣으면 일정보다 쉬운 추가 활동으로 점수를 부풀릴 수 있다.
+
+function extra() {
+  S.extraDraft = S.extraDraft || { photos: [], text: '' };
+  const d = S.extraDraft;
+  if (!Array.isArray(d.photos)) d.photos = d.photo ? [{ url: d.photo, album: !!d.album, stamp: d.stamp }] : [];
+
+  const camInput = el('input', { type: 'file', accept: 'image/*', capture: 'environment', id: 'f_extra',
+    onchange: e => { const f = e.target.files[0]; if (!f) return;
+      shrink(f, url => { d.photos.push({ url, album: false, stamp: stampText() }); save(); render(); }, true); } });
+  // 앨범 다중 선택 — 순간은 점수와 무관한 안심 콘텐츠라 앨범이 허용돼도 회계를 해치지 않는다
+  const albumInput = el('input', { type: 'file', accept: 'image/*', multiple: true, id: 'f_extra_album',
+    onchange: e => { const fs = [...e.target.files]; if (!fs.length) return;
+      let left = fs.length;
+      fs.forEach(f => shrink(f, url => { d.photos.push({ url, album: true, stamp: null });
+        if (--left === 0) { save(); render(); } }, false)); } });
+
+  const cta = el('button', { class: 'cta' });
+  const sync = () => { const ok = d.photos.length > 0 || !!d.text.trim();
+    cta.disabled = !ok; cta.textContent = ok ? '이 순간 보내기' : '사진을 넣거나 내용을 적어주세요'; };
+
+  return {
+    title: '먼저 챙긴 순간',
+    back: () => go('today'),
+    body: [
+      card([
+        el('div', { class: 'h', text: '보여주고 싶은 순간이 있나요?' }),
+        el('div', { class: 'sub', text: '즐겁게 노는 모습, 잘 자는 모습. 여러 장을 넣으면 슬라이드로 보입니다.' }),
+        d.photos.length ? el('div', { class: 'slide' }, d.photos.map((ph, idx) =>
+          el('div', { class: 'sitem2' }, [
+            el('img', { src: ph.url, alt: '순간 ' + (idx + 1) }),
+            ph.album ? el('span', { class: 'tag', text: '앨범' }) : el('span', { class: 'tag', text: '앱 촬영' }),
+            el('button', { class: 'rm', 'aria-label': '삭제',
+              onclick: () => { d.photos.splice(idx, 1); save(); render(); } }, el('span', { text: '✕' })),
+          ]))) : null,
+        el('div', { class: 'react' }, [
+          el('button', { class: 'main', onclick: () => camInput.click() }, el('span', { text: '📷 지금 촬영' })),
+          el('button', { onclick: () => albumInput.click() }, el('span', { text: '🖼 앨범에서 선택' })),
+        ]),
+        camInput, albumInput,
+      ]),
+      card([
+        el('div', { class: 'h', text: '무엇을 했나요?' }),
+        el('textarea', { placeholder: '예) 낮잠을 아주 편하게 자네요. 배 보이고 잡니다.',
+          value: d.text, oninput: e => { d.text = e.target.value; save(); sync(); } }),
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+      S.extras.push({ id: 'x' + Date.now(), at: nowHM(),
+        photos: d.photos.slice(), text: d.text.trim() || null });
+      S.extraDraft = { photos: [], text: '' };
+      flash('전달되었어요!', '보호자 화면에 바로 보입니다.');
+      set({ screen: 'today' });
+    }), cta)],
+    hint: '약속 점수와는 따로, 보호자의 「고마워요」로 쌓입니다.',
+  };
+}
+
+/* ---------------- 시터: 돌봄 일기 쓰기 ---------------- */
+
+function diaryBook() {
+  const bk = S.diaryBooks.find(b => b.id === S.bookId);
+  if (!bk) return el2('일기장을 찾을 수 없습니다.', 'sitter', 'profile');
+  return {
+    title: bk.pet + '의 돌봄 일기',
+    back: () => go('profile'),
+    body: [
+      card([
+        el('div', { class: 'h', text: `${bk.pet} · 후기 ${bk.entries.length}편` }),
+        el('div', { class: 'sub', text: '돌봄 계약이 끝날 때마다 후기가 한 편씩 쌓입니다. 한 권이 이 아이와 함께한 시간 전체입니다.' }),
+      ]),
+      card([
+        el('div', { class: 'secthead' }, [
+          el('span', { class: 'unver' }, [icon('info', 12), el('span', { text: '① 시터 후기 · 내가 씀' })]),
+        ]),
+        bk.entries.length ? null : el('span', { class: 'nophoto',
+          text: (bk.petId && S.pets.some(pt => pt.id === bk.petId) && S.finished && !S.diaryDoneMap[bk.petId])
+            ? '아직 후기가 없어요. 아래 「' + bk.pet + ' 후기 쓰기」로 남겨보세요.'
+            : '아직 후기가 없습니다.' }),
+        ...bk.entries.map(en => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: en.at }),
+            el('div', { class: 'btnrow' }, [
+              el('button', { class: 'undo', text: '수정',
+                onclick: () => { S.diaryDraft = { pet: '', photos: (en.photos || []).slice(), text: en.text };
+                  set({ editEntryId: en.id, screen: 'diaryWrite' }); } }),
+              el('button', { class: 'undo', text: '삭제',
+                onclick: () => { bk.entries = bk.entries.filter(x => x.id !== en.id); save(); render(); } }),
+            ]),
+          ]),
+          el('div', { class: 'q', text: en.text }),
+          momentSlider(en),
+        ])),
+      ]),
+      card([
+        el('div', { class: 'secthead' }, [
+          el('span', { class: 'veri' }, [icon('check-bold', 12), el('span', { text: '② 돌봄 기록 · 검증됨' })]),
+          el('div', { class: 'sub', text: '일정 그대로 작성한 인증 기록을 보호자 동의를 받아 링크로 공개합니다. 후기는 내 마음이고, 이 기록은 증거입니다.' }),
+        ]),
+        ...(bk.records || []).map(r => {
+          const open = S.openRecId === r.id;
+          return el('div', { class: 'recrow' }, [
+            el('button', { class: 'rechead', 'aria-expanded': open,
+              onclick: () => set({ openRecId: open ? null : r.id }) }, [
+              el('span', { class: 'rdate', text: r.date + ' 돌봄 기록' }),
+              el('span', { class: 'rchev', text: open ? '▾' : '▸' }),
+            ]),
+            open ? recTimeline(r) : null,
+          ]);
+        }),
+        (bk.records || []).length ? null
+          : el('span', { class: 'nophoto', text: `${bk.pet} 돌봄을 마치고 보호자가 동의하면 기록 링크가 여기에 붙습니다` }),
+      ]),
+    ],
+    foot: (bk.petId && S.pets.some(pt => pt.id === bk.petId) && S.finished && !S.diaryDoneMap[bk.petId])
+      ? [el('button', { class: 'cta', text: bk.pet + ' 후기 쓰기', onclick: () => go('diaryWrite') })]
+      : [],
+    hint: '이 일기장은 공개 프로필에 「시터 본인이 씀」으로 보입니다.',
+  };
+}
+
+function diaryWrite() {
+  const bk = S.bookId ? S.diaryBooks.find(b => b.id === S.bookId) : null;
+  S.diaryDraft = S.diaryDraft || { pet: '', photos: [], text: '' };
+  const d = S.diaryDraft;
+  const albumInput = el('input', { type: 'file', accept: 'image/*', multiple: true, id: 'f_diary',
+    onchange: e => { const fs = [...e.target.files]; if (!fs.length) return;
+      let left = fs.length;
+      fs.forEach(f => shrink(f, url => { d.photos.push({ url, album: true, stamp: null });
+        if (--left === 0) { save(); render(); } }, false)); } });
+  const cta = el('button', { class: 'cta' });
+  const sync = () => { const ok = !!d.text.trim() && (bk || d.pet.trim());
+    cta.disabled = !ok;
+    cta.textContent = ok ? (S.editEntryId ? '수정 저장' : '후기 남기기')
+      : (!bk && !d.pet.trim()) ? '아이 이름을 적어주세요' : '이 아이의 이야기를 적어주세요'; };
+  return {
+    title: S.editEntryId ? (bk ? bk.pet + ' 후기 수정' : '후기 수정') : (bk ? bk.pet + ' 후기 쓰기' : '새 일기장'),
+    back: () => set({ editEntryId: null, screen: bk ? 'diaryBook' : 'profile' }),
+    body: [
+      S.finishPrompt ? el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '돌봄 기간이 끝났어요 — ' + (bk ? bk.pet : '아이') + '는 어떤 아이였나요?' }),
+        el('span', { class: 'd', text: '후기는 계약이 끝나면 한 번 남깁니다. 일기장에서 돌봄 기록 링크와 나란히 보입니다.' }),
+      ]) : null,
+      bk ? null : card([
+        el('div', { class: 'h', text: '어떤 아이의 일기장인가요?' }),
+        el('input', { type: 'text', placeholder: '예) 만두', value: d.pet,
+          oninput: e => { d.pet = e.target.value; save(); sync(); } }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '함께한 시간은 어땠나요?' }),
+        el('div', { class: 'sub', text: '이 아이가 어떤 아이였는지, 함께하며 알게 된 것들을 편하게 적어주세요. 보호자를 특정할 수 있는 정보(집 주소·실명)는 넣지 마세요.' }),
+        el('textarea', { placeholder: '예) 오늘 처음 만난 아이가 낯을 많이 가렸는데, 한 시간쯤 지나니 제 옆에 와서 엎드렸어요.',
+          value: d.text, oninput: e => { d.text = e.target.value; save(); sync(); } }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '사진 (선택)' }),
+        d.photos.length ? el('div', { class: 'slide' }, d.photos.map((ph, idx) =>
+          el('div', { class: 'sitem2' }, [
+            el('img', { src: ph.url, alt: '일기 사진 ' + (idx + 1) }),
+            el('button', { class: 'rm', 'aria-label': '삭제',
+              onclick: () => { d.photos.splice(idx, 1); save(); render(); } }, el('span', { text: '✕' })),
+          ]))) : null,
+        el('div', { class: 'react' }, [
+          el('button', { onclick: () => albumInput.click() }, el('span', { text: '🖼 앨범에서 선택' })),
+        ]),
+        albumInput,
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+      const t = d.text.trim(); if (!t) return;
+      if (S.editEntryId && bk) {
+        const en = bk.entries.find(x => x.id === S.editEntryId);
+        if (en) { en.text = t; en.photos = d.photos.slice(); }
+        S.diaryDraft = { pet: '', photos: [], text: '' };
+        flash('후기가 수정되었어요', `${bk.pet}의 일기장에 반영됐습니다.`);
+        set({ editEntryId: null, screen: 'diaryBook' });
+        return;
+      }
+      let book = bk;
+      if (!book) {
+        const name = d.pet.trim(); if (!name) return;
+        book = { id: 'b' + Date.now(), pet: name, entries: [] };
+        S.diaryBooks.unshift(book);
+        S.bookId = book.id;
+      }
+      book.entries.unshift({ id: 'e' + Date.now(), at: stampText().split(' ')[0], text: t, photos: d.photos.slice() });
+      S.diaryDraft = { pet: '', photos: [], text: '' };
+      flash('후기가 남겨졌어요', `${book.pet}의 일기장에 쌓입니다.`);
+      if (book.petId) S.diaryDoneMap[book.petId] = true;   // 아이당 1회
+      if (S.finishPrompt) {
+        const pending = S.pets.filter(pt => !S.diaryDoneMap[pt.id]);
+        if (pending.length) {
+          const nb = S.diaryBooks.find(b => b.petId === pending[0].id);
+          flash('후기가 남겨졌어요', `이어서 ${pending[0].name}의 후기를 남겨주세요.`);
+          set({ bookId: nb ? nb.id : S.bookId, screen: 'diaryWrite' });
+        } else set({ finishPrompt: false, role: 'owner', screen: 'confirm' });
+      } else set({ screen: 'diaryBook' });
+    }), cta),
+    S.finishPrompt ? el('button', { class: 'alt', text: '나중에 쓰기',
+      onclick: () => set({ finishPrompt: false, role: 'owner', screen: 'confirm' }) }) : null],
+    hint: '일기는 공개 프로필에 「시터 본인이 씀」으로 표시됩니다.',
+  };
+}
+
+/* ---------------- V1 온보딩: 초대 랜딩 → 아이 → 보호자 ---------------- */
+// 이 앱의 첫인상은 스토어가 아니라 "시터가 보낸 링크"다. 시터 이름이 맨 앞에 온다.
+
+function welcome() {
+  return {
+    title: '초대장',
+    body: [
+      card([
+        el('div', { class: 'profhead' }, [
+          el('div', { class: 'avatar' }),
+          el('div', { class: 'pcol' }, [
+            el('div', { class: 'h', text: SIT().name + ' 시터' }),
+            el('div', { class: 'meta', text: `${SIT().type} · ${SIT().region}` }),
+          ]),
+        ]),
+        SIT().bio ? el('div', { class: 'sub', text: SIT().bio }) : null,
+        (() => { const c = counts(), r = rating();
+          const stat = (l, v) => el('div', {}, [el('span', { class: 'l', text: l }), el('span', { class: 'v', text: v })]);
+          return el('div', { class: 'stat' }, [
+            stat('약속 이행', `${Math.round(c.earned / (c.total || 1) * 100)}%`),
+            stat('별점', `${r.avg} (${r.n})`),
+            stat('돌봄 일기', `${S.diaryBooks.length}권`),
+          ]);
+        })(),
+        el('button', { class: 'ctasm', text: '시터 프로필 자세히 보기', onclick: () => go('verify') }),
+        el('div', { class: 'sub', text: S.prefilled
+          ? `${SIT().name} 시터가 아이 정보와 일정 조건을 미리 채워뒀어요. 맞는지 확인만 하시면, 돌봄이 어떻게 진행되는지 사진으로 그때그때 보실 수 있습니다.`
+          : `${SIT().name} 시터가 돌봄 준비를 요청했어요. 아이 정보를 한 번만 등록하면, 돌봄이 어떻게 진행되는지 사진으로 그때그때 확인할 수 있습니다.` }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '이 앱이 약속하는 것' }),
+        el('div', { class: 'kv' }, [el('span', { class: 'meta', text: '일정대로 인증' }), el('span', { class: 'val', text: '항목마다 사진이 그 시각에 옵니다' })]),
+        el('div', { class: 'kv' }, [el('span', { class: 'meta', text: '조작 어렵게' }), el('span', { class: 'val', text: '앱 카메라로만 · 시각이 새겨짐' })]),
+        el('div', { class: 'kv' }, [el('span', { class: 'meta', text: '기록은 내 것' }), el('span', { class: 'val', text: '동의 없이 공개되지 않습니다' })]),
+      ]),
+      el('button', { class: 'undo', text: '(프로토타입) 건너뛰고 기본값으로',
+        onclick: () => set({ onboarded: true, screen: 'schedule' }) }),
+    ],
+    foot: [el('button', { class: 'cta', text: '시작하기', onclick: () => go('install') })],
+    hint: 'V1: 시터가 당근 채팅으로 보낸 초대 링크를 연 장면입니다.',
+  };
+}
+
+// 사파리로 열린 링크 → 홈 화면 추가 + 알림 → 앱처럼 쓰기
+// 두 단계를 하단 시트로 순차 노출한다 (참고: 시그널노트 A2HS/알림 시트)
+function install() {
+  if (S.installStep === undefined) S.installStep = 1;
+  const bullet = (ic, t) => el('div', { class: 'bul' }, [
+    el('span', { class: 'bic' }, icon(ic, 14)),
+    el('span', { class: 'btx', text: t }),
+  ]);
+  const sheet = (kids) => el('div', { class: 'sheetback nodim' }, [el('div', { class: 'sheet' }, kids)]);
+
+  // 참고 디자인: 그립바 · 앱 아이콘 · 파란 단계 박스 · 큰 화살표 · 안내형(설치는 브라우저가 한다)
+  const stepRow = (ic, num, head, tail) => el('div', { class: 'a2row' }, [
+    el('span', { class: 'a2ic' }, icon(ic, 15)),
+    el('span', { class: 'a2tx' }, [
+      el('b', { class: 'a2num', text: num + '. ' }),
+      el('span', { text: head }),
+      el('b', { text: tail }),
+    ]),
+  ]);
+  const step1 = () => sheet([
+    el('div', { class: 'grip' }),
+    el('div', { class: 'a2head' }, [
+      (() => { const box = el('div', { class: 'appicon' });
+        const img = el('img', { class: 'appimg', src: './app-icon.png', alt: '앱 아이콘' });
+        img.addEventListener('error', () => { img.remove(); box.appendChild(el('span', { class: 'appemoji', text: '🐶' })); });
+        box.appendChild(img); return box; })(),
+      el('div', { class: 'pcol' }, [
+        el('div', { class: 'h', text: '홈 화면에 앱으로 추가' }),
+        el('div', { class: 'meta', text: '설치하면 앱처럼 전체화면·오프라인으로 열려요.' }),
+      ]),
+    ]),
+    el('div', { class: 'a2box' }, [
+      stepRow('arrow-up', '1', 'Safari 하단의 ', '공유 버튼을 탭하세요'),
+      stepRow('plus-circle', '2', '', "'홈 화면에 추가'를 선택하세요"),
+    ]),
+    el('div', { class: 'hintdown' }, [
+      el('span', { class: 'ht', text: '아래 공유 버튼을 눌러주세요' }),
+      el('span', { class: 'har', text: '↓' }),
+    ]),
+    el('button', { class: 'undo skiplink', text: '나중에 할게요', onclick: () => set({ installStep: 2 }) }),
+    el('button', { class: 'proto', text: '(프로토타입) 추가한 셈 치고 다음',
+      onclick: () => set({ a2hs: true, installStep: 2 }) }),
+  ]);
+
+  const step2 = () => sheet([
+    el('div', { class: 'profhead' }, [
+      el('div', { class: 'avatar bellicon' }, icon('alert', 20)),
+      el('div', { class: 'pcol' }, [
+        el('div', { class: 'h', text: '돌봄 알림 받기' }),
+        el('div', { class: 'meta', text: '언제든 설정에서 끌 수 있어요.' }),
+      ]),
+    ]),
+    el('div', { class: 'steps' }, [
+      bullet('camera', '인증 사진이 도착하면 바로 알려드려요'),
+      bullet('bubble', '시터의 소명이 오면 놓치지 않아요'),
+      bullet('check-bold', '돌봄이 끝나면 하루 요약을 보내드려요'),
+    ]),
+    el('button', { class: 'cta', text: '알림 켜기',
+      onclick: () => { flash('알림이 켜졌어요', '인증이 도착하면 바로 알려드릴게요.');
+        S.notif = true; S.installStep = undefined; save(); go(S.prefilled ? 'confirmInfo' : 'petSetup'); } }),
+    el('button', { class: 'undo skiplink', text: '나중에 할게요',
+      onclick: () => { S.installStep = undefined; save(); go(S.prefilled ? 'confirmInfo' : 'petSetup'); } }),
+  ]);
+
+  return {
+    title: '앱처럼 쓰기',
+    back: () => set({ installStep: undefined, screen: 'welcome' }),
+    overlay: S.installStep === 2 ? step2() : step1(),
+    body: [
+      S.inappDismissed ? null : el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: '카카오톡·당근 안에서 열었다면' }),
+        el('span', { class: 'd', text: '인앱 브라우저에서는 알림 받기와 홈 화면 추가가 안 돼요. 오른쪽 아래 메뉴 → 「다른 브라우저로 열기」를 눌러주세요.' }),
+        el('button', { onclick: () => set({ inappDismissed: true }) },
+          [el('span', { text: '사파리로 열었어요' })]),
+      ]),
+      card([
+        el('div', { class: 'h', text: '두 가지만 하면 준비 끝이에요' }),
+        el('div', { class: 'sub', text: '홈 화면에 추가하면 앱처럼 열리고, 알림을 켜면 인증이 도착할 때 바로 알 수 있어요. 지금 넘겨도 나중에 설정할 수 있습니다.' }),
+        el('div', { class: 'stepdots' }, [
+          el('span', { class: 'dot' + (S.installStep !== 2 ? ' on' : ''), text: '1' }),
+          el('span', { class: 'dot' + (S.installStep === 2 ? ' on' : ''), text: '2' }),
+        ]),
+      ]),
+    ],
+    hint: '(프로토타입) 실제로는 브라우저가 설치·권한 창을 띄웁니다.',
+  };
+}
+
+// 시터가 채워 보낸 기본 정보를 보호자가 확인(수정 가능)한다. 확인 후엔 일정·특이사항이 보호자 몫
+function confirmInfo() {
+  const row = (label, value, onEdit) => el('button', { class: 'kvrow', onclick: onEdit }, [
+    el('span', { class: 'meta', text: label }),
+    el('span', { class: 'kvval', text: value }),
+    el('span', { class: 'chev' }, icon('chevron-right', 14)),
+  ]);
+  return {
+    title: '정보 확인',
+    back: () => go('install'),
+    overlay: petEditSheetEl() || periodSheetEl() || hoSheetEl(),
+    body: [
+      el('div', { class: 'ding' }, [
+        el('span', { class: 't', text: `${SIT().name} 시터가 미리 채워뒀어요` }),
+        el('span', { class: 'd', text: '맞는지만 확인해주세요. 다른 부분이 있으면 눌러서 고치면 됩니다.' }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '돌보는 아이' }),
+        ...S.pets.map((pt, i) => row(pt.name, [pt.age, pt.extra].filter(Boolean).join(' · ') || '정보 없음',
+          () => set({ petEditIdx: i }))),
+      ]),
+      card([
+        el('div', { class: 'h', text: '돌봄 기간' }),
+        row('기간', `${S.period.start} ~ ${S.period.end}`, () => set({ perOpen: true })),
+      ]),
+      card([
+        el('div', { class: 'h', text: '픽·드롭 약속' }),
+        el('button', { class: 'hrowsbtn', onclick: () => set({ hoOpen: true }) },
+          [handoffRows(), el('span', { class: 'chev' }, icon('chevron-right', 14))]),
+      ]),
+      placeCard(),
+      card([
+        el('div', { class: 'h', text: '다음은 보호자님 차례예요' }),
+        el('div', { class: 'sub', text: '확인을 누르면 돌봄 일정(언제 무엇을 해줄지)과 특이사항을 입력하는 화면으로 넘어갑니다.' }),
+      ]),
+    ],
+    foot: [el('button', { class: 'cta', text: '확인했어요',
+      onclick: () => { flash('확인 완료', '이제 돌봄 일정을 알려주세요.'); set({ onboarded: true, screen: 'schedule' }); } })],
+  };
+}
+
+function petSetup() {
+  S.petDraft = S.petDraft || { name: '', age: '', extra: '' };
+  if (S.petDraft.extra === undefined) S.petDraft.extra = '';
+  S.newPets = S.newPets || [];
+  const d = S.petDraft;
+  const cta = el('button', { class: 'cta' });
+  const sync = () => { const ok = d.name.trim() || S.newPets.length;
+    cta.disabled = !ok;
+    cta.textContent = !ok ? '아이 이름을 적어주세요'
+      : d.name.trim() && S.newPets.length ? `완료 — 아이 ${S.newPets.length + 1} · 일정 만들러 가기`
+      : '완료 — 일정 만들러 가기'; };
+  if (S.petStep === undefined) S.petStep = 0;
+  const commitDraft = () => {
+    const name = d.name.trim(); if (!name) return false;
+    S.newPets.push({ id: 'p' + (S.newPets.length + 1), name,
+      age: d.age.trim(), extra: d.extra.trim(), photo: null });
+    S.petDraft = { name: '', age: '', extra: '' };
+    S.petStep = 0;
+    flash(name + ' 등록됐어요', '아이를 더 추가하거나 완료를 눌러주세요.');
+    return true;
+  };
+  const field = (label, key, ph, req) => el('div', { class: 'field' }, [
+    el('label', { text: label + (req ? '' : ' (선택)') + (d[key].trim() ? ' ✔' : '') }),
+    el('input', { type: 'text', placeholder: ph, value: d[key],
+      oninput: e => { d[key] = e.target.value; save(); sync();
+        const lb = e.target.previousSibling;
+        lb.textContent = label + (req ? '' : ' (선택)') + (e.target.value.trim() ? ' ✔' : ''); } }),
+  ]);
+  return {
+    title: '아이 소개',
+    back: () => go('install'),
+    body: [
+      card([
+        el('div', { class: 'h', text: '어떤 아이를 돌보게 되나요?' }),
+        el('div', { class: 'sub', text: '이름만 있으면 시작할 수 있어요. 나머지는 나중에 채워도 됩니다.' }),
+        ...S.newPets.map(pt => el('div', { class: 'note' }, [
+          el('div', { class: 'notehead' }, [
+            el('span', { class: 'notechip', text: pt.name + (pt.age || pt.extra ? ` · ${[pt.age, pt.extra].filter(Boolean).join(' · ')}` : '') }),
+            el('button', { class: 'ntrash', 'aria-label': '삭제',
+              onclick: () => { S.newPets = S.newPets.filter(x => x.id !== pt.id); save(); render(); } },
+              icon('trash', 15)),
+          ]),
+        ])),
+        field('이름', 'name', '예) 콩이', true),
+        field('나이', 'age', '예) 4살', false),
+        field('추가 정보', 'extra', '예) 3.2kg · 크림색 · 말티즈', false),
+      ]),
+      el('button', { class: 'add', onclick: () => { if (commitDraft()) { save(); render(); } } },
+        [icon('plus-circle', 16), el('span', { text: '아이 더 추가' })]),
+      card([
+        el('div', { class: 'h', text: '픽·드롭 약속' }),
+        el('div', { class: 'sub', text: '맡기는 날과 돌아오는 날, 시각과 담당을 정해두면 양쪽 화면에 함께 보여요.' }),
+        handoffForm(),
+      ]),
+      card([
+        el('div', { class: 'h', text: '특이사항은 나중에' }),
+        el('div', { class: 'sub', text: '밥·산책 같은 주의사항은 일정을 만들면서 언제든 추가할 수 있어요. 아이 프로필에 저장되어 다음 돌봄에도 그대로 쓰입니다.' }),
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+      if (d.name.trim()) commitDraft();
+      if (!S.newPets.length) return;
+      S.pets = S.newPets.map((pt, i) => ({ ...pt, id: 'p' + (i + 1) }));
+      S.newPets = [];
+      S.schedule.forEach(it => { it.petId = S.pets[0].id; });
+      const names = S.pets.map(p => p.name).join('·');
+      flash('준비가 끝났어요', `이제 ${names}의 돌봄 일정을 ${SIT().name} 시터에게 보낼 수 있어요.`);
+      set({ onboarded: true, screen: 'schedule' });
+    }), cta)],
+  };
+}
+
+/* ---------------- 보호자: 아이 프로필 ---------------- */
+// 특이사항은 계약이 아니라 아이에게 붙는다 — 다음 돌봄에도 그대로 불러온다.
+const dotToDash = t => (t || '').replace(/\./g, '-');
+const dashToDot = t => (t || '').replace(/-/g, '.');
+
+function petEditSheetEl() {
+  const i = S.petEditIdx;
+  if (i === undefined || i === null || !S.pets[i]) return null;
+  const pt = S.pets[i];
+  const fld = (label, key, ph) => el('div', { class: 'field' }, [
+    el('label', { text: label }),
+    el('input', { type: 'text', placeholder: ph, value: pt[key] || '',
+      oninput: e => { pt[key] = e.target.value; save(); } }),
+  ]);
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) set({ petEditIdx: null }); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'h', text: (pt.name || '아이') + ' 정보 수정' }),
+      fld('이름', 'name', '예) 콩이'),
+      fld('나이', 'age', '예) 4살'),
+      fld('추가 정보', 'extra', '예) 3.2kg · 크림색 · 말티즈'),
+      el('div', { class: 'btnrow sheetrow' }, [
+        el('button', { class: 'proof', onclick: () => { flash('아이 정보가 수정됐어요', '양쪽 화면에 반영됩니다.'); set({ petEditIdx: null }); } },
+          [el('span', { text: '완료' })]),
+        el('button', { class: 'sheetcancel', text: '닫기', onclick: () => set({ petEditIdx: null }) }),
+      ]),
+    ]),
+  ]);
+}
+
+function periodSheetEl() {
+  if (!S.perOpen) return null;
+  const fld = (label, key) => el('div', { class: 'field' }, [
+    el('label', { text: label }),
+    el('input', { type: 'date', value: dotToDash(S.period[key]),
+      onchange: e => { if (e.target.value) { S.period[key] = dashToDot(e.target.value); save(); render(); } } }),
+  ]);
+  return el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) set({ perOpen: false }); } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'h', text: '돌봄 기간 수정' }),
+      el('div', { class: 'hgrid' }, [fld('시작일', 'start'), fld('종료일', 'end')]),
+      el('div', { class: 'btnrow sheetrow' }, [
+        el('button', { class: 'proof', onclick: () => { flash('돌봄 기간이 저장됐어요', '양쪽 화면에 반영됩니다.'); set({ perOpen: false }); } },
+          [el('span', { text: '완료' })]),
+        el('button', { class: 'sheetcancel', text: '닫기', onclick: () => set({ perOpen: false }) }),
+      ]),
+    ]),
+  ]);
+}
+
+function petProfile() {
+  return {
+    overlay: petEditSheetEl() || cnSheetEl(),
+    title: P().name + ' 프로필',
+    back: () => go(S.sent ? 'home' : 'schedule'),
+    body: [
+      card([
+        ...S.pets.map((pt, i) => el('div', { class: 'profhead' }, [
+          el('div', { class: 'avatar' }),
+          el('div', { class: 'pcol' }, [
+            el('div', { class: 'h', text: pt.name }),
+            (pt.age || pt.extra) ? el('div', { class: 'meta', text: [pt.age, pt.extra].filter(Boolean).join(' · ') }) : null,
+          ]),
+          el('button', { class: 'plink', text: '수정 ›', onclick: () => set({ petEditIdx: i }) }),
+        ])),
+        el('div', { class: 'sub', text: '보호자 프로필에 저장된 아이입니다. 다음 돌봄에도 그대로 쓰여요.' }),
+      ]),
+      card([
+        el('div', {}, [
+          el('div', { class: 'h', text: '저장된 특이사항' }),
+          el('div', { class: 'sub', text: '여기 저장해두면 다음 돌봄 일정을 만들 때 그대로 불러와집니다. 시터가 바뀌어도 다시 쓸 필요가 없어요.' }),
+        ]),
+        ...S.careNotes.map(nn => el('div', { class: 'note' }, [
+          el('div', { class: 'notehead' }, [
+            el('span', { class: 'notechip' + (nn.kind === 'all' ? ' nc-all' : ''),
+              text: KIND_LABEL(nn.kind) + (multiPet() && nn.petId ? ` · ${petById(nn.petId).name}` : '') }),
+            el('button', { class: 'ntrash', 'aria-label': '삭제', title: '삭제',
+              onclick: () => { S.careNotes = S.careNotes.filter(x => x.id !== nn.id); save(); render(); } },
+              icon('trash', 15)),
+          ]),
+          el('span', { class: 'r', text: nn.text }),
+        ])),
+        S.careNotes.length ? null : el('span', { class: 'nophoto', text: '아직 저장된 특이사항이 없습니다.' }),
+        el('button', { class: 'add', onclick: () => set({ cnOpen: true }) },
+          [icon('plus-circle', 16), el('span', { text: '특이사항 추가' })]),
+      ]),
+    ],
+    hint: '여기서 고치면 돌봄 일정과 시터 화면에 바로 반영됩니다.',
+  };
+}
+
+/* ---------------- 공개 돌봄 기록 (읽기 전용) ---------------- */
+// 일기장의 두 번째 구성 요소 — 일정 그대로 작성된 인증 기록을 링크로 공개한다.
+// 시터의 후기(주관)와 달리 이것은 검증된 기록(객관)이다. 보호자 동의가 전제.
+
+// 기록을 행 배열로 정규화해 컴팩트 타임라인으로 — 일기장 인라인 토글용
+function recTimeline(rec) {
+  const RX = { 귀여워요: '😍', 안심돼요: '😌', 고마워요: '💙' };
+  const rows = rec.live
+    ? ordered().filter(x => !rec.petId || (x.petId || S.pets[0].id) === rec.petId).map(x => { const p = S.proofs[x.id];
+        return p ? { time: timeLabel(x), kind: kindPetLabel(x), at: p.at, text: p.text,
+                     ok: p.verdict && p.verdict.matched, reaction: p.verdict && p.verdict.reaction }
+                 : { time: timeLabel(x), kind: kindPetLabel(x), none: true }; })
+    : rec.items.map(it => ({ time: it.time, kind: KINDS[it.kind].name, at: it.at, text: it.text, ok: it.ok, reaction: it.reaction }));
+  return el('div', { class: 'rectl' }, [
+    el('span', { class: 'nophoto', text: '보호자 동의를 받아 공개된 기록입니다 · 편집 불가' }),
+    el('div', { class: 'tl' }, rows.map(row => el('div', { class: 'item vitem' }, [
+      el('div', { class: 'vtime' }, [
+        el('span', { class: 'vt', text: row.time }),
+        el('span', { class: 'k', text: row.kind }),
+        row.at ? el('span', { class: 'rt', text: row.at + ' 제출' }) : null,
+        row.none ? el('span', { class: 'rt miss', text: '기록 없음' }) : null,
+      ]),
+      row.text ? el('div', { class: 'pvw', text: row.text }) : null,
+      row.ok ? el('span', { class: 'seen', text: '보호자 확인' + (row.reaction ? ` · ${RX[row.reaction] || ''} ${row.reaction}` : '') }) : null,
+    ]))),
+  ]);
+}
+
+function careRecord() {
+  const RX = { 귀여워요: '😍', 안심돼요: '😌', 고마워요: '💙' };
+  let bk = null, rec = null;
+  for (const b of S.diaryBooks) { const r = (b.records || []).find(x => x.id === S.recId); if (r) { bk = b; rec = r; break; } }
+  if (!rec) return el2('공개된 기록을 찾을 수 없습니다.', S.role, S.role === 'public' ? 'verify' : 'profile');
+  const back = () => go(S.role === 'sitter' ? 'diaryBook' : 'verify');
+  const head = [
+    el('div', { class: 'ding' }, [
+      el('span', { class: 't', text: '보호자 동의를 받아 공개된 기록입니다' }),
+      el('span', { class: 'd', text: '일정 그대로 남긴 인증과 보호자의 확인이 편집 없이 보입니다. 보호자가 공개에 동의해 준 덕분에, 다음 보호자가 이 시터의 신뢰도를 말이 아닌 실제 기록으로 확인할 수 있습니다.' }),
+    ]),
+  ];
+  if (rec.live) {
+    const mine = ordered().filter(x => !rec.petId || (x.petId || S.pets[0].id) === rec.petId);
+    const done = mine.filter(x => S.proofs[x.id]);
+    return { title: bk.pet + ' 돌봄 기록 · 공개', back, hint: '검증된 기록 그대로입니다 — 시터도 보호자도 여기서는 편집할 수 없습니다.', foot: [],
+      body: [...head,
+        card([
+          el('div', { class: 'h', text: `${bk.pet} · ${rec.date}` }),
+          el('div', { class: 'meta', text: `예정 ${mine.length}건 · 제출 ${done.length}건` }),
+          (e => e ? el('div', { class: 'recreview' }, [
+            el('div', { class: 'rl', text: '시터 후기 · 시터 본인이 씀' }),
+            el('div', { class: 'rp', text: e.text }),
+          ]) : null)(bk.entries.find(x => x.at === rec.date) || bk.entries[0]),
+        ]),
+        card([el('div', { class: 'tl' }, mine.map(x => {
+          const p = S.proofs[x.id];
+          return el('div', { class: 'item' }, [
+            el('div', { class: 'when' }, [
+              el('span', { text: timeLabel(x) }),
+              x.timeEnd ? el('span', { class: 'rt miss', text: `~${x.timeEnd}쯤` }) : null,
+              p ? el('span', { class: 'rt', text: p.at + ' 제출' }) : null,
+            ]),
+            el('div', { class: 'b' }, [
+              el('span', { class: 'k', text: kindPetLabel(x) }),
+              p && p.photo ? el('img', { class: 'thumb', src: p.photo, alt: KINDS[x.kind].name }) : null,
+              p && p.photo2 ? el('img', { class: 'thumb', src: p.photo2, alt: KINDS[x.kind].name }) : null,
+              p && outMinutes(p) !== null ? el('span', { class: 'veri' }, [icon('check-bold', 12),
+                el('span', { text: `산책 시간 ${outMinutes(p)}분` })]) : null,
+              p && p.text ? el('div', { class: 'note' }, [
+                el('span', { class: 't', text: hasPhoto(p) ? '시터 메모' : '시터 설명' }),
+                el('span', { class: 'r', text: p.text }),
+              ]) : null,
+              !p ? el('span', { class: 'noproof', text: '기록 없음' }) : null,
+              p && p.verdict && p.verdict.matched
+                ? el('span', { class: 'seen', text: '보호자 확인' + (p.verdict.reaction ? ` · ${RX[p.verdict.reaction] || ''} ${p.verdict.reaction}` : '') })
+                : null,
+            ]),
+          ]);
+        }))]),
+      ] };
+  }
+  // 지난 기록(시드): 그날 남은 데이터를 그대로 보여준다
+  return { title: bk.pet + ' 돌봄 기록 · 공개', back, hint: '검증된 기록 그대로입니다 — 시터도 보호자도 여기서는 편집할 수 없습니다.', foot: [],
+    body: [...head,
+      card([
+        el('div', { class: 'h', text: `${bk.pet} · ${rec.date}` }),
+        el('div', { class: 'meta', text: `예정 ${rec.items.length}건 · 제출 ${rec.items.length}건` }),
+          (e => e ? el('div', { class: 'recreview' }, [
+            el('div', { class: 'rl', text: '시터 후기 · 시터 본인이 씀' }),
+            el('div', { class: 'rp', text: e.text }),
+          ]) : null)(bk.entries.find(x => x.at === rec.date) || bk.entries[0]),
+      ]),
+      card([el('div', { class: 'tl' }, rec.items.map(it =>
+        el('div', { class: 'item' }, [
+          el('div', { class: 'when' }, [
+            el('span', { text: it.time }),
+            el('span', { class: 'rt', text: it.at + ' 제출' }),
+          ]),
+          el('div', { class: 'b' }, [
+            el('span', { class: 'k', text: KINDS[it.kind].name }),
+            it.text ? el('div', { class: 'note' }, [
+              el('span', { class: 't', text: '시터 설명' }),
+              el('span', { class: 'r', text: it.text }),
+            ]) : null,
+            it.ok ? el('span', { class: 'seen', text: '보호자 확인' + (it.reaction ? ` · ${RX[it.reaction] || ''} ${it.reaction}` : '') }) : null,
+          ]),
+        ])))]),
+    ] };
+}
+
+/* ---------------- 시터: 소명하기 ---------------- */
+
+function reply() {
+  const s = S.schedule.find(x => x.id === S.replyId);
+  const p = s && S.proofs[s.id];
+  if (!p || !p.dispute || !p.dispute.reason) return el2('소명할 신고를 찾을 수 없습니다.', 'sitter', 'today');
+  const d = p.dispute;
+  const K = KINDS[s.kind];
+  S.replyDraft = S.replyDraft || {};
+
+  const cta = el('button', { class: 'cta' });
+  const sync = () => { const ok = (S.replyDraft[s.id] || '').trim().length > 0;
+    cta.disabled = !ok; cta.textContent = ok ? '소명 보내기' : '무슨 일이 있었는지 적어주세요'; };
+
+  if (d.resolution === 'noreply') return {
+    title: '소명하기', back: () => go('today'),
+    body: [el('div', { class: 'empty', text: '72시간이 지나 소명 기회가 닫혔습니다.\n신고 사유와 기한 경과 사실은 기록에 남습니다.' })],
+    foot: [el('button', { class: 'cta', text: '돌아가기', onclick: () => go('today') })], hint: '',
+  };
+
+  return {
+    title: '소명하기',
+    back: () => go('today'),
+    body: [
+      el('div', { class: 'alert' }, [
+        el('span', { class: 't', text: '보호자가 가짜 인증으로 신고했습니다' }),
+        el('span', { class: 'd', text: `${timeLabel(s)} · ${kindPetLabel(s)} — “${d.reason}”` }),
+        el('span', { class: 'd', text: '72시간 안에 답하지 않으면 「소명 없음」으로 기록에 남습니다.' }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '내가 보낸 인증' }),
+        p.photo ? el('img', { class: 'thumb', src: p.photo, alt: K.name, style: 'max-width:100%;aspect-ratio:auto' }) : null,
+        p.photo2 ? el('img', { class: 'thumb', src: p.photo2, alt: K.name, style: 'max-width:100%;aspect-ratio:auto' }) : null,
+        p.text ? el('span', { class: 'sub', text: '메모: ' + p.text }) : null,
+        el('span', { class: 'meta', text: p.stamp ? '촬영 ' + p.stamp : '제출 ' + p.at }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '무슨 일이 있었나요?' }),
+        el('div', { class: 'sub', text: '사실만 적으면 됩니다. 보호자가 읽고 「이해했어요」를 누르면 이 항목은 확인으로 정정됩니다. 신고와 소명 내용은 지워지지 않고 함께 남습니다.' }),
+        el('textarea', { placeholder: '예) 10시에 사료 30g 그대로 부었는데 입을 안 대서 12시에 다시 확인했습니다.',
+          value: S.replyDraft[s.id] || '',
+          oninput: e => { S.replyDraft[s.id] = e.target.value; save(); sync(); } }),
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+      const t = (S.replyDraft[s.id] || '').trim(); if (!t) return;
+      d.reply = { at: nowHM(), text: t };
+      delete S.replyDraft[s.id];
+      flash('소명을 보냈어요', '보호자가 읽고 다시 판단합니다.');
+      set({ screen: 'today' });
+    }), cta)],
+    hint: '소명하면 보호자가 다시 판단합니다.',
+  };
+}
+
+/* ---------------- 시터: 내 프로필 ---------------- */
+
+const SOURCES = ['당근 알바', '펫플래닛', '와요', '도그메이트', '지인 소개', '기타'];
+
+// 의뢰가 오면 시터가 기본 정보를 먼저 채워 링크를 보낸다.
+// 고객 장부는 시터 기기(V2에서는 시터 계정)에 저장 — 보호자는 계속 무계정
+function newContract() {
+  S.clientDraft = S.clientDraft || { nick: '', pets: [{ name: '', age: '', extra: '' }] };
+  const d = S.clientDraft;
+  const cta = el('button', { class: 'cta' });
+  const ready = () => d.pets.some(pt => (pt.name || '').trim());
+  const sync = () => { const ok = ready();
+    cta.disabled = !ok;
+    cta.textContent = ok ? '초대 링크 만들기' : '아이 이름을 적어주세요'; };
+  const fld = (obj, label, key, ph) => el('div', { class: 'field' }, [
+    el('label', { text: label }),
+    el('input', { type: 'text', placeholder: ph, value: obj[key] || '',
+      oninput: e => { obj[key] = e.target.value; save(); sync(); } }),
+  ]);
+  const dfld = (label, key) => el('div', { class: 'field' }, [
+    el('label', { text: label }),
+    el('input', { type: 'date', value: dotToDash(S.period[key]),
+      onchange: e => { if (e.target.value) { S.period[key] = dashToDot(e.target.value); save(); } } }),
+  ]);
+  return {
+    title: '돌봄 준비하기',
+    back: () => go('profile'),
+    body: [
+      S.clients.length ? card([
+        el('div', { class: 'h', text: '다시 맡기는 고객인가요?' }),
+        el('div', { class: 'sub', text: '전에 저장해둔 정보를 그대로 불러옵니다. 아이 정보와 특이사항까지 다시 쓸 필요가 없어요.' }),
+        el('div', { class: 'chips' }, S.clients.map(c =>
+          el('button', { class: 'chip', text: `${c.nick} · ${c.pets.map(p => p.name).join('·')}`,
+            onclick: () => {
+              S.clientDraft = { nick: c.nick, pets: structuredClone(c.pets) };
+              if (c.handoff) S.handoff = structuredClone(c.handoff);
+              if (Array.isArray(c.careNotes)) S.careNotes = structuredClone(c.careNotes);
+              flash(`${c.nick} 정보를 불러왔어요`, '아이 정보와 특이사항이 채워졌습니다.');
+              save(); render();
+            } }))),
+      ]) : null,
+
+      card([
+        el('div', { class: 'h', text: '보호자' }),
+        fld(d, '호칭', 'nick', '예) 콩이 보호자님'),
+      ]),
+
+      card([
+        el('div', { class: 'headrow' }, [
+          el('div', {}, [
+            el('div', { class: 'h', text: '돌보는 아이' }),
+            el('div', { class: 'sub', text: '이름만 있어도 됩니다. 보호자가 확인하면서 고칠 수 있어요.' }),
+          ]),
+          el('button', { class: 'addmini', 'aria-label': '아이 추가',
+            onclick: () => { d.pets.push({ name: '', age: '', extra: '' }); save(); render(); } },
+            icon('plus-circle', 20)),
+        ]),
+        ...d.pets.map((pt, i) => el('div', { class: 'note' }, [
+          el('div', { class: 'notehead' }, [
+            el('span', { class: 'notechip', text: pt.name.trim() || `아이 ${i + 1}` }),
+            d.pets.length > 1 ? el('button', { class: 'ntrash', 'aria-label': '삭제',
+              onclick: () => { d.pets.splice(i, 1); save(); render(); } }, icon('trash', 15)) : null,
+          ]),
+          fld(pt, '이름', 'name', '예) 콩이'),
+          fld(pt, '나이', 'age', '예) 4살'),
+          fld(pt, '추가 정보', 'extra', '예) 3.2kg · 크림색 · 말티즈'),
+        ])),
+      ]),
+
+      card([
+        el('div', { class: 'h', text: '돌봄 기간' }),
+        el('div', { class: 'hgrid' }, [dfld('시작일', 'start'), dfld('종료일', 'end')]),
+      ]),
+
+      card([
+        el('div', { class: 'h', text: '픽·드롭 약속' }),
+        handoffForm(),
+      ]),
+
+      card([
+        el('div', { class: 'h', text: '보내면 이렇게 됩니다' }),
+        el('div', { class: 'sub', text: '보호자는 링크를 열어 이 정보를 확인하고(수정 가능), 돌봄 일정과 특이사항만 입력하면 됩니다. 회원가입은 필요 없어요.' }),
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+        S.pets = d.pets.filter(pt => (pt.name || '').trim())
+          .map((pt, i) => ({ id: 'p' + (i + 1), name: pt.name.trim(), age: (pt.age || '').trim(), extra: (pt.extra || '').trim(), photo: null }));
+        S.schedule.forEach(it => { it.petId = S.pets[0].id; });
+        // 고객 장부 upsert (무계정 저장)
+        const nick = (d.nick || '').trim() || S.pets.map(p => p.name).join('·') + ' 보호자';
+        const rec = { id: 'c' + Date.now(), nick, pets: structuredClone(S.pets),
+          careNotes: structuredClone(S.careNotes), handoff: structuredClone(S.handoff), lastAt: stampText().split(' ')[0] };
+        const old = S.clients.findIndex(c => c.nick === nick);
+        if (old >= 0) S.clients[old] = { ...rec, id: S.clients[old].id }; else S.clients.unshift(rec);
+        S.clientDraft = null;
+        flash('초대 링크가 준비됐어요', '내 프로필의 초대 링크를 보호자에게 보내세요.');
+        set({ prefilled: true, onboarded: false, sent: false, screen: 'profile' });
+    }), cta)],
+    hint: '이 정보는 내 기기(다음 단계에서는 내 계정)에 저장됩니다. 보호자는 가입하지 않아도 됩니다.',
+  };
+}
+
+function sitterEdit() {
+  const d = S.sitterInfo;
+  const fld = (label, key, ph) => el('div', { class: 'field' }, [
+    el('label', { text: label }),
+    el('input', { type: 'text', placeholder: ph, value: d[key] || '',
+      oninput: e => { d[key] = e.target.value; save(); } }),
+  ]);
+  return {
+    title: '프로필 수정',
+    back: () => go('profile'),
+    body: [
+      card([
+        el('div', { class: 'h', text: '보호자에게 보이는 정보예요' }),
+        fld('이름', 'name', '예) 박서준'),
+        fld('서비스 유형', 'type', '예) 방문 돌봄'),
+        fld('활동 지역', 'region', '예) 서울 마포구'),
+        fld('기본 약속 장소', 'addr', '예) 서울 마포구 월드컵북로 12'),
+        fld('장소 상세', 'addrDetail', '예) 1층 카페 앞'),
+        el('div', { class: 'field' }, [
+          el('label', { text: '한 줄 소개 (선택)' }),
+          el('textarea', { placeholder: '예) 기록으로 신뢰를 쌓는 시터입니다.', value: d.bio || '',
+            oninput: e => { d.bio = e.target.value; save(); } }),
+        ]),
+      ]),
+    ],
+    foot: [el('button', { class: 'cta', text: '저장',
+      onclick: () => { flash('프로필이 저장됐어요', '공개 프로필에 바로 반영됩니다.'); go('profile'); } })],
+  };
+}
+
+function profile() {
+  const c = counts(), r = rating();
+  return {
+    title: '내 프로필',
+    back: () => go('today'),
+    body: [
+      card([
+        el('div', { class: 'hrow' }, [
+          el('div', { class: 'h', text: SIT().name }),
+          el('button', { class: 'plink', text: '수정 ›', onclick: () => go('sitterEdit') }),
+        ]),
+        el('div', { class: 'meta', text: `${SIT().type} · ${SIT().region}` }),
+        SIT().bio ? el('div', { class: 'sub', text: SIT().bio }) : null,
+        el('div', { class: 'stat' }, [
+          el('div', {}, [el('span', { class: 'l', text: '별점' }), el('span', { class: 'v', text: `${r.avg} (${r.n})` })]),
+          el('div', {}, [el('span', { class: 'l', text: '약속 이행' }), el('span', { class: 'v', text: `${Math.round(c.earned / (c.total||1) * 100)}%` })]),
+        ]),
+      ]),
+
+      S.inquiries.length ? card([
+        el('div', {}, [
+          el('div', { class: 'h', text: `받은 의뢰 · ${S.inquiries.length}건` }),
+          el('div', { class: 'sub', text: '공개 프로필을 보고 온 보호자들입니다. 남긴 연락처로 답해주세요.' }),
+        ]),
+        ...S.inquiries.map(q => el('div', { class: 'note' }, [
+          el('div', { class: 'notehead' }, [
+            el('span', { class: 'notechip', text: q.at }),
+            el('button', { class: 'ntrash', 'aria-label': '삭제',
+              onclick: () => { S.inquiries = S.inquiries.filter(x => x.id !== q.id); save(); render(); } },
+              icon('trash', 15)),
+          ]),
+          el('span', { class: 'r', text: [q.contact, q.when, q.msg].filter(Boolean).join(' · ') }),
+        ])),
+      ]) : null,
+      card([
+        el('div', {}, [
+          el('div', { class: 'h', text: '보호자 초대' }),
+          el('div', { class: 'sub', text: '당근에서 알바가 확정되면 이 링크를 채팅으로 보내세요. 보호자가 아이 등록과 일정 작성을 여기서 합니다.' }),
+        ]),
+        el('button', { class: 'add', onclick: () => go('newContract') },
+          [icon('plus-circle', 16), el('span', { text: S.prefilled ? '기본 정보 다시 채우기' : '기본 정보 채우고 링크 만들기' })]),
+        S.clients.length ? el('div', { class: 'sub', text: `저장된 고객 ${S.clients.length}명 · 다시 맡길 때 정보를 불러올 수 있어요` }) : null,
+        el('button', { class: 'note linkcopy', title: '탭하면 복사됩니다',
+          onclick: () => { flash('초대 링크가 복사되었어요', '당근 채팅에 붙여넣어 보내세요.'); render(); } }, [
+          el('span', { class: 't', text: '내 초대 링크 · 탭하면 복사' }),
+          el('span', { class: 'r', text: 'petcare.app/invite/PSJ-0812' }),
+        ]),
+      ]),
+      card([
+        el('div', { class: 'secthead' }, [
+          el('div', { class: 'hrow' }, [
+            el('div', { class: 'h', text: '쌓인 기록' }),
+            el('span', { class: 'veri' }, [icon('check-bold', 12), el('span', { text: '이 서비스에서 확인됨' })]),
+          ]),
+          el('div', { class: 'sub', text: '내가 손댈 수 없습니다. 인증과 보호자 판정에서 자동으로 계산됩니다.' }),
+        ]),
+        el('div', { class: 'kv' }, [el('span', { class: 'meta', text: '약속 이행' }), el('span', { class: 'val', text: `${c.submitted} / ${c.total}건` })]),
+        el('div', { class: 'kv' }, [el('span', { class: 'meta', text: '보호자 대조' }), el('span', { class: 'val', text: `${c.checked}회 중 ${c.matched}회 일치` })]),
+      ]),
+
+      card([
+        el('div', { class: 'secthead' }, [
+          el('div', { class: 'h', text: '다른 곳에서 받은 후기' }),
+          el('div', { class: 'sub', text: '당근 알바 등에서 받은 후기를 캡처와 함께 옮겨 둘 수 있습니다. 캡처가 있어야 등록됩니다.' }),
+        ]),
+        ...(S.imported.length
+          ? S.imported.map(v => el('div', { class: 'imp' }, [
+              el('div', { class: 'top' }, [
+                el('span', { class: 'src', text: v.source }),
+                v.date ? el('span', { class: 'date', text: v.date }) : null,
+              ]),
+              el('div', { class: 'q', text: '“' + v.text + '”' }),
+              el('img', { src: v.capture, alt: v.source + ' 캡처' }),
+              el('button', { class: 'rm', text: '삭제',
+                onclick: () => { S.imported = S.imported.filter(x => x.id !== v.id); save(); render(); } }),
+            ]))
+          : [el('div', { class: 'sub', text: '아직 옮겨 둔 후기가 없습니다.' })]),
+        el('button', { class: 'add', onclick: () => go('addReview') },
+          [icon('plus-circle', 16), el('span', { text: '후기 옮겨 담기' })]),
+      ]),
+
+      card([
+        el('div', { class: 'secthead' }, [
+          el('div', { class: 'h', text: '돌봄 일기' }),
+          el('div', { class: 'sub', text: '아이마다 한 권씩. 계약이 끝나면 후기 한 편을 남깁니다. 일기장이 쌓이는 것이 곧 돌본 경력입니다.' }),
+        ]),
+        ...S.diaryBooks.map(bk => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: `${bk.pet}의 돌봄 일기` }),
+            el('span', { class: 'date', text: bk.entries[0] ? bk.entries[0].at : '' }),
+          ]),
+          bk.entries[0] ? el('div', { class: 'q', text: bk.entries[0].text.slice(0, 60) + (bk.entries[0].text.length > 60 ? '…' : '') }) : null,
+          el('button', { class: 'proof', onclick: () => set({ bookId: bk.id, screen: 'diaryBook' }) },
+            [el('span', { text: '펼쳐보기' })]),
+        ])),
+        el('div', { class: 'sub', text: '일기장은 돌봄을 마치면 그 아이 이름으로 자동으로 생깁니다.' }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '왜 나눠서 보여주나' }),
+        el('div', { class: 'sub', text: '가져온 후기는 캡처를 만들 수도 있어서 서비스가 진짜인지 확인할 수 없습니다. 확인된 것과 섞어 보여주면, 확인 안 된 것까지 확인된 척하게 됩니다. 그래서 자랑은 하되 자리를 나눕니다.' }),
+      ]),
+    ],
+    foot: [el('button', { class: 'cta', text: '공개 프로필로 보기', onclick: () => set({ role: 'public', screen: 'verify' }) })],
+    hint: '시터 화면입니다. 위 칸은 못 건드리고, 아래 칸만 내가 채웁니다.',
+  };
+}
+
+function addReview() {
+  const d = S.impDraft;
+  const input = el('input', { type: 'file', accept: 'image/*', id: 'f_cap',
+    onchange: e => { const f = e.target.files[0]; if (f) shrink(f, url => { d.capture = url; save(); render(); }); } });
+  const cta = el('button', { class: 'cta' });
+  const sync = () => { const ok = !!(d.text.trim() && d.capture);
+    cta.disabled = !ok; cta.textContent = ok ? '프로필에 담기' : '내용과 캡처를 채워주세요'; };
+
+  return {
+    title: '후기 옮겨 담기',
+    back: () => go('profile'),
+    body: [
+      card([
+        el('div', { class: 'field' }, [
+          el('label', { text: '어디서 받은 후기인가요' }),
+          el('select', { onchange: e => { d.source = e.target.value; save(); } },
+            SOURCES.map(x => el('option', { value: x, selected: d.source === x, text: x }))),
+        ]),
+        el('div', { class: 'field' }, [
+          el('label', { text: '받은 날짜 (선택)' }),
+          el('input', { type: 'month', value: d.date || '',
+            onchange: e => { d.date = e.target.value; save(); } }),
+        ]),
+        el('div', { class: 'field' }, [
+          el('label', { text: '후기 내용' }),
+          el('textarea', { placeholder: '받은 후기를 그대로 옮겨 적어주세요',
+            value: d.text, oninput: e => { d.text = e.target.value; save(); sync(); } }),
+        ]),
+        el('div', { class: 'field' }, [
+          el('label', { text: '캡처 (필수)' }),
+          d.capture ? el('img', { src: d.capture, alt: '캡처 미리보기',
+              style: 'width:100%;border-radius:8px;border:1px solid var(--line);display:block' }) : null,
+          el('button', { class: 'upl' + (d.capture ? ' has' : ''), onclick: () => input.click() },
+            [icon('camera', 16), el('span', { text: d.capture ? '캡처 바꾸기' : '캡처 올리기' })]),
+          input,
+        ]),
+      ]),
+      card([
+        el('div', { class: 'h', text: '캡처가 왜 필수인가' }),
+        el('div', { class: 'sub', text: '글만 옮기면 지어낸 것과 구분되지 않습니다. 캡처가 있으면 보호자가 직접 보고 판단할 수 있습니다. 다만 서비스가 진위를 확인해주지는 않습니다.' }),
+      ]),
+    ],
+    foot: [(sync(), cta.addEventListener('click', () => {
+      S.imported.push({ id: 'i' + Date.now(), source: d.source, text: d.text.trim(), date: d.date, capture: d.capture });
+      S.impDraft = { source: '당근 알바', text: '', date: '', capture: null };
+      save(); go('profile');
+    }), cta)],
+    hint: '캡처 없이는 등록되지 않습니다.',
+  };
+}
+
+function verify() {
+  const c = counts(), r = rating();
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const hit = S.review && S.review.chips.includes('있는 그대로 찍어줘요');
+
+  const hero = (label, pctv, sub, desc) => card([
+    el('div', { class: 'hero' }, [
+      el('span', { class: 'l', text: label }),
+      el('div', { class: 'row' }, [
+        el('span', { class: 'n', text: pctv + '%' }),
+        el('span', { class: 'p', text: '(' + sub + ')' }),
+      ]),
+      el('span', { class: 'd', text: desc }),
+      el('div', { class: 'pbar' }, el('i', { style: `width:${pctv}%` })),
+    ]),
+  ]);
+
+  const minor = (k, v) => el('div', { class: 'r' }, [
+    el('span', { class: 'k', text: k }), el('span', { class: 'v', text: v }),
+  ]);
+
+  const inqSheet = (() => {
+    if (!S.inqOpen) return null;
+    S.inqDraft = S.inqDraft || { contact: '', when: '', msg: '' };
+    const d = S.inqDraft;
+    const fld = (label, key, ph) => el('div', { class: 'field' }, [
+      el('label', { text: label }),
+      el('input', { type: 'text', placeholder: ph, value: d[key],
+        oninput: e => { d[key] = e.target.value; save(); } }),
+    ]);
+    const sendBtn = el('button', { class: 'proof' }, [el('span', { text: '의뢰 보내기' })]);
+    sendBtn.addEventListener('click', () => {
+      if (!d.contact.trim()) { flash('연락받을 방법을 남겨주세요', '시터가 답을 드릴 곳이 필요해요.'); render(); return; }
+      S.inquiries.unshift({ id: 'q' + Date.now(), at: stampText().split(' ')[0], contact: d.contact.trim(), when: d.when.trim(), msg: d.msg.trim() });
+      const body = `[돌봄 의뢰] 연락처: ${d.contact.trim()}` +
+        (d.when.trim() ? ` / 시기: ${d.when.trim()}` : '') +
+        (d.msg.trim() ? ` / 소개: ${d.msg.trim()}` : '');
+      S.inqDraft = { contact: '', when: '', msg: '' };
+      flash('문자 앱이 열려요', '전송 버튼만 누르면 시터에게 바로 전달됩니다.');
+      set({ inqOpen: false });
+      // V1: 서버 없이 시터 번호로 문자 초안을 연다 (모바일에서 동작)
+      try { location.href = 'sms:01035490816?&body=' + encodeURIComponent(body); } catch (e) {}
+    });
+    return el('div', { class: 'sheetback',
+      onclick: e => { if (e.target.classList.contains('sheetback')) set({ inqOpen: false }); } }, [
+      el('div', { class: 'sheet' }, [
+        el('div', { class: 'h', text: '돌봄 의뢰 보내기' }),
+        el('div', { class: 'sub', text: '보내주시면 시터가 연락드려요. 계약 전에는 아무것도 결제되지 않습니다.' }),
+        fld('연락받을 방법', 'contact', '예) 전화번호, 이메일'),
+        fld('원하는 시기 (선택)', 'when', '예) 8월 마지막 주 2박 3일'),
+        fld('한 줄 소개 (선택)', 'msg', '예) 말티즈 4살, 낯가림 있어요'),
+        el('div', { class: 'btnrow sheetrow' }, [
+          sendBtn,
+          el('button', { class: 'sheetcancel', text: '취소', onclick: () => set({ inqOpen: false }) }),
+        ]),
+      ]),
+    ]);
+  })();
+
+  return {
+    title: '펫시터 프로필',
+    overlay: inqSheet,
+    back: S.role === 'owner' ? () => go(!S.onboarded ? 'welcome' : (S.sent ? 'home' : 'schedule')) : null,
+    body: [
+      card([
+        el('div', { class: 'profhead' }, [
+          el('div', { class: 'avatar' }),
+          el('div', { class: 'pcol' }, [
+            el('div', { class: 'h', text: SIT().name + ' 펫시터' }),
+            el('div', { class: 'meta', text: '방문 돌봄 · 서울 마포구' }),
+          ]),
+          el('div', { class: 'pstar' }, [
+            el('span', { class: 'st', text: `★ ${r.avg}` }),
+            el('span', { class: 'cnt', text: `후기 ${r.n}` }),
+          ]),
+        ]),
+      ]),
+
+      // ── 숫자 3종이 주인공
+      hero('약속 이행', pct(c.submitted, c.total), `${c.submitted} / ${c.total}건`,
+        '보호자가 정한 항목 중 제때 인증한 비율입니다.'),
+      hero('보호자 확인', pct(c.checked, c.submitted), `${c.checked} / ${c.submitted}건`,
+        '보낸 것을 보호자가 직접 보고 확인한 비율입니다. 보낸 것과 확인된 것은 다릅니다.'),
+
+      card([
+        el('div', { class: 'h', text: '이 시터에게 맡기고 싶다면' }),
+        el('div', { class: 'sub', text: 'SNS에서 이 프로필을 보고 오셨나요? 의뢰를 남기면 시터가 직접 연락드립니다.' }),
+        el('button', { class: 'cta inqcta', text: '돌봄 의뢰 보내기', onclick: () => set({ inqOpen: true }) }),
+      ]),
+      card([
+        el('div', { class: 'h', text: '이 세 숫자만 보셔도 됩니다' }),
+        el('div', { class: 'sub', text: '약속한 것을 얼마나 했고, 그중 얼마가 보호자에게 확인됐고, 어긋난 것은 어떻게 됐는지. 실시간 영상은 그 순간만 보여주고 사라지지만 이 숫자는 남습니다.' }),
+      ]),
+
+      // ── 보조 지표
+      card([
+        el('span', { class: 'veri' }, [icon('check-bold', 12), el('span', { text: '이 서비스에서 확인됨' })]),
+        el('div', { class: 'minor' }, [
+          minor('신원 인증', '정부 발급 신분증'),
+          minor('앱 촬영 인증', '전 건 앱 카메라 · 시각 새김'),
+          minor('가짜 인증 신고', `${c.disputes}건 중 ${c.resolved}건 해소` + (c.noreply ? ` · 무응답 ${c.noreply}` : '')),
+          minor('사진 인증', `${c.photos}건`),
+          minor('설명 인증', `${c.notes}건`),
+          minor('다시 제출', `${c.resub}건`),
+          minor('도착 직후 열람', `${c.seen} / ${c.submitted}건`),
+          minor('산책 왕복 인증', '나갈 때·들어올 때 두 컷 · 시각 차이 기록'),
+          minor('받은 리액션', `${c.reactions}개 (😍 😌 💙)`),
+          minor('먼저 챙긴 순간', `${c.extras}건 · 보호자 고마워요 ${c.thanks}`),
+        ]),
+        el('div', { class: 'sub', text: '사진과 설명의 비율을 그대로 공개합니다. 사진이 많은 시터인지는 숫자로 바로 보입니다.' }),
+      ]),
+
+      hit ? card([
+        el('div', { class: 'h', text: '보호자들이 꼽은 점' }),
+        el('div', { class: 'chips' }, [el('span', { class: 'chip', 'aria-pressed': 'true', text: '있는 그대로 찍어줘요 · 1' })]),
+      ]) : null,
+
+      S.diaryBooks.length ? card([
+        el('div', { class: 'secthead' }, [
+          el('span', { class: 'unver' }, [icon('info', 12), el('span', { text: '시터 본인이 씀' })]),
+          el('div', { class: 'h', text: `돌봄 일기 · ${S.diaryBooks.length}권` }),
+          el('div', { class: 'sub', text: '돌본 아이마다 한 권씩입니다. 어떤 마음으로 돌보는 사람인지 여기서 보입니다.' }),
+        ]),
+        ...S.diaryBooks.slice(0, 2).map(bk => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: `${bk.pet}의 돌봄 일기` }),
+            el('span', { class: 'date', text: `후기 ${bk.entries.length}편` }),
+          ]),
+          bk.entries[0] ? el('div', { class: 'q', text: '“' + bk.entries[0].text.slice(0, 80) + (bk.entries[0].text.length > 80 ? '…' : '') + '”' }) : null,
+          bk.entries[0] ? momentSlider(bk.entries[0]) : null,
+          (bk.records || []).length ? el('button', { class: 'proof',
+            onclick: () => set({ recId: bk.records[0].id, screen: 'careRecord' }) },
+            [el('span', { text: '🔗 돌봄 기록 읽어보기 · 검증됨' })]) : null,
+        ])),
+        S.diaryBooks.length > 2 ? el('div', { class: 'sub', text: `외 ${S.diaryBooks.length - 2}권` }) : null,
+      ]) : null,
+      S.imported.length ? card([
+        el('div', { class: 'secthead' }, [
+          el('span', { class: 'unver' }, [icon('info', 12), el('span', { text: '시터 본인이 올림 · 이 서비스가 확인하지 않음' })]),
+          el('div', { class: 'h', text: '다른 곳에서 받은 후기' }),
+          el('div', { class: 'sub', text: '캡처를 직접 보고 판단해주세요.' }),
+        ]),
+        ...S.imported.map(v => el('div', { class: 'imp' }, [
+          el('div', { class: 'top' }, [
+            el('span', { class: 'src', text: v.source }),
+            v.date ? el('span', { class: 'date', text: v.date }) : null,
+          ]),
+          el('div', { class: 'q', text: '“' + v.text + '”' }),
+          el('img', { src: v.capture, alt: v.source + ' 캡처' }),
+        ])),
+      ]) : null,
+
+      card([
+        el('div', { class: 'h', text: '왜 「사고 0건」이 아닌가' }),
+        el('div', { class: 'sub', text: '무사고를 자랑 지표로 쓰면 이상을 알린 시터가 손해를 봅니다. 여기서는 신고된 건과 해소된 건을 함께 셉니다. 소명하지 않은 것도 숨기지 않습니다.' }),
+      ]),
+    ],
+    foot: [el('button', { class: 'cta', text: '한 바퀴 다시 돌기',
+      onclick: () => {
+        const c = counts(), r = rating();
+        // counts()를 baseline에 통째로 대입하면 rating·reviews가 사라진다 — 항목별로 승계한다
+        const nb = Object.assign(structuredClone(S.baseline), {
+          care: c.care, total: c.total, photos: c.photos, notes: c.notes, seen: c.seen, resub: c.resub,
+          checked: c.checked, matched: c.matched, disputes: c.disputes, resolved: c.resolved,
+          noreply: c.noreply, rating: Number(r.avg), reviews: r.n,
+        });
+        const keepImported = S.imported;      // 프로필 ②칸은 라운드와 무관한 자산이다
+        const keepSitter = S.sitter;
+        S = Object.assign(structuredClone(SEED), { baseline: nb, imported: keepImported, sitter: keepSitter });
+        set({ role: 'owner', screen: 'schedule' });
+      } })],
+    hint: '공개 프로필입니다. 숫자 3종이 먼저 보입니다.',
+  };
+}
+
+
+function el2(msg, role, screen) {
+  return { title: '알림',
+    body: [el('div', { class: 'empty', text: msg })],
+    foot: [el('button', { class: 'cta', text: '그 화면으로', onclick: () => set({ role, screen }) })],
+    hint: '' };
+}
+
+/* ---------------- render ---------------- */
+
+const SCREENS = {
+  owner:  { welcome, install, confirmInfo, petSetup, home: ownerHome, schedule, live, confirm: confirmScreen, review, verify, petProfile },
+  sitter: { today, record, extra, reply, profile, sitterEdit, newContract, addReview, diaryWrite, diaryBook, careRecord },
+  public: { verify, careRecord },
+};
+
+function render() {
+  if (S.role === 'owner' && !S.onboarded && !['welcome', 'petSetup', 'confirmInfo', 'install', 'verify'].includes(S.screen)) S.screen = 'welcome';
+  if (!(S.role === 'owner' && S.screen === 'live')) S._freshIds = null;   // live를 벗어나면 NEW 해제 (역할 전환 포함)
+  const byRole = SCREENS[S.role];
+  if (!byRole[S.screen]) S.screen = Object.keys(byRole)[0];
+  const v = byRole[S.screen]();
+
+  document.getElementById('bar').replaceChildren(
+    ...[['owner','보호자'],['sitter','시터'],['public','공개']].map(([r,t]) =>
+      el('button', { class: 'rolebtn', 'aria-pressed': S.role === r, text: t,
+        onclick: () => set({ role: r, screen: r === 'owner' ? ownerDefault() : Object.keys(SCREENS[r])[0] }) })),
+    el('button', { class: 'reset', text: '초기화',
+      onclick: () => { localStorage.removeItem(KEY); S = load(); render(); } }),
+  );
+
+  document.getElementById('nav').replaceChildren(...[
+    v.back ? el('button', { 'aria-label': '뒤로', onclick: v.back }, icon('chevron-left', 20)) : el('span', { class: 'sp' }),
+    el('span', { class: 't', text: v.title }),
+    v.rightExtra ? el('button', { class: 'navr bell', 'aria-label': v.rightExtra.label, onclick: v.rightExtra.on },
+      [icon(v.rightExtra.icon, 20), v.rightExtra.badge ? el('span', { class: 'bdg', text: String(v.rightExtra.badge) }) : null]) : null,
+    v.right ? el('button', { class: 'navr' + (v.right.icon ? ' bell' : ''), 'aria-label': v.right.label, onclick: v.right.on },
+      v.right.icon
+        ? [icon(v.right.icon, 20), v.right.badge ? el('span', { class: 'bdg', text: String(v.right.badge) }) : null]
+        : [el('span', { text: v.right.label })]) : el('span', { class: 'sp' }),
+  ].filter(Boolean));
+  document.getElementById('body').replaceChildren(...v.body.filter(Boolean));
+  const footEl = document.getElementById('foot');
+  const footKids = (v.foot || []).filter(Boolean);
+  footEl.replaceChildren(...footKids);
+  footEl.style.display = footKids.length ? 'flex' : 'none';
+  document.querySelectorAll('.fab').forEach(t => t.remove());
+  if (v.fab) document.querySelector('.phone').appendChild(v.fab);
+  document.querySelectorAll('.sheetback, .lightbox').forEach(t => t.remove());
+  if (v.overlay) {
+    if (S._sheetShown) {
+      v.overlay.style.animation = 'none';
+      const sh = v.overlay.querySelector('.sheet'); if (sh) sh.style.animation = 'none';
+    }
+    document.querySelector('.phone').appendChild(v.overlay);
+    S._sheetShown = true;
+  } else S._sheetShown = false;
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  if (S.flash) {
+    const tst = el('div', { class: 'toast' }, [
+      el('span', { class: 't', text: S.flash.title }),
+      S.flash.desc ? el('span', { class: 'd', text: S.flash.desc }) : null,
+    ]);
+    document.querySelector('.phone').appendChild(tst);
+  }
+  document.getElementById('hint').textContent = v.hint || '';
+}
+
+render();
+</script>
+</body>
+</html>
