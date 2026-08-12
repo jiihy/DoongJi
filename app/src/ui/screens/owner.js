@@ -649,6 +649,8 @@ export function ownerHome(c, go, ui, rerender, bell) {
             el('div', { class: 'excol' }, [
               el('span', { class: 'tltime', text: dayTime(x.at) }),
               x.text ? el('div', { class: 'ptext', text: x.text }) : null,
+            ]),
+          ]),
           el('div', { class: 'react' + (x.thanks_reaction ? ' locked' : '') },
             Object.entries(REACTIONS).map(([label, emoji]) =>
               el('button', {
@@ -662,8 +664,6 @@ export function ownerHome(c, go, ui, rerender, bell) {
                   try { await thankExtra(x.id, label); } catch (e) { flash('전달 실패', e.message); }
                 },
               }))),
-            ]),
-          ]),
           x.thanks_at ? el('span', { class: 'thxdone', text: `${clock(x.thanks_at)} 시터에게 전달됐어요` }) : null,
         ])),
       ]) : null,

@@ -159,7 +159,8 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .shot .rm{position:absolute;right:4px;top:4px;width:22px;height:22px;border:none;border-radius:1000px;
   background:rgba(23,23,25,.62);color:#fff;font-size:12px;line-height:1}
 .react{display:flex;gap:6px;flex-wrap:wrap}
-.react button{flex:1;min-width:96px;height:38px;border-radius:1000px;border:1px solid var(--line);
+.react{flex-wrap:nowrap}
+.react button{flex:1 1 0;min-width:0;white-space:nowrap;padding:0 6px;height:38px;border-radius:1000px;border:1px solid var(--line);
   background:#fff;color:var(--ink2);font-size:13px;font-weight:600;
   display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .react button[aria-pressed="true"]{background:var(--tint);border-color:var(--primary);color:var(--primary-ink)}
