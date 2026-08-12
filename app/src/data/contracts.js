@@ -70,4 +70,4 @@ export async function createContract(sitterId, form) {
   return contract;
 }
 
-export const inviteUrlOf = token => `${shareOrigin()}/?t=${token}`;
+export const inviteUrlOf = token => `${shareOrigin()}/i/${token}`;

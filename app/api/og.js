@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     }
   } else if (type === 't' && id) {
     const v = await rpc('invite_preview', { p_token: id });
-    path = `/?t=${id}`;
+    path = `/i/${id}`;
     if (v) {
       const pets = (v.pets || []).join(' · ');
       title = `${v.sitter} 시터가 보낸 돌봄 초대`;

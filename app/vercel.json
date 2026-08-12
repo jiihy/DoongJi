@@ -3,15 +3,8 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "t",
-          "value": "(?<tok>[A-Za-z0-9_-]+)"
-        }
-      ],
-      "destination": "/api/og?type=t&id=:tok"
+      "source": "/i/:token",
+      "destination": "/api/og?type=t&id=:token"
     },
     {
       "source": "/s/:slug",
