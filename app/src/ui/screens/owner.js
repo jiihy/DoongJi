@@ -377,10 +377,34 @@ export function ownerHome(c, go, ui, rerender) {
     at ? el('span', { class: 'shotstamp', text: clock(at) }) : null,
   ]);
 
+  // 보호자가 가는 계약일 때만 시터 주소를 보여준다 (확인 화면과 같은 규칙)
+  const showSitterAddr = (c.handoff_start_by === 'owner' || c.handoff_end_by === 'owner') && s.addr;
+  const sitterSheet = () => el('div', { class: 'sheetback',
+    onclick: e => { if (e.target.classList.contains('sheetback')) { ui.sitterOpen = false; rerender(); } } }, [
+    el('div', { class: 'sheet' }, [
+      el('div', { class: 'grip' }),
+      el('div', { class: 'profhead' }, [
+        el('div', { class: 'avatar' + (s.photo_url ? ' hasimg' : ''), style: s.photo_url ? `background-image:url(${s.photo_url})` : null }),
+        el('div', { class: 'pcol' }, [
+          el('div', { class: 'h', text: `${s.name} 시터` }),
+          el('div', { class: 'sub', text: [s.type, s.region].filter(Boolean).join(' · ') || '정보 없음' }),
+        ]),
+      ]),
+      s.bio ? el('div', { class: 'lead', text: s.bio }) : null,
+      showSitterAddr ? el('div', { class: 'hogrp' }, [
+        el('label', { text: '약속 장소' }),
+        el('div', { class: 'mapbox' }, [el('span', { text: '📍' }),
+          el('span', { class: 'maptx', text: s.addr + (s.addr_detail ? ` · ${s.addr_detail}` : '') })]),
+        el('button', { class: 'ctasm', text: '지도에서 보기', onclick: () => window.open(mapUrl(s.addr), '_blank') }),
+      ]) : null,
+      el('button', { class: 'cta', text: '닫기', onclick: () => { ui.sitterOpen = false; rerender(); } }),
+    ]),
+  ]);
+
   const overlay = ui.lightbox
     ? el('div', { class: 'lightbox', onclick: () => { ui.lightbox = null; rerender(); } },
         el('img', { src: ui.lightbox, alt: '' }))
-    : null;
+    : (ui.sitterOpen ? sitterSheet() : null);
 
   return {
     title: '돌봄 일지',
@@ -388,12 +412,12 @@ export function ownerHome(c, go, ui, rerender) {
     body: [
       card([
         el('div', { class: 'profhead' }, [
-          el('div', { class: 'avatar' + (s.photo_url ? ' hasimg' : ''), style: s.photo_url ? `background-image:url(${s.photo_url})` : null }),
           el('div', { class: 'pcol' }, [
             el('div', { class: 'h', text: c.pets.map(p => p.name).join(' · ') }),
             el('div', { class: 'sub', text: `${dot(c.start_date)} ~ ${dot(c.end_date)}` }),
           ]),
-          el('span', { class: 'ctasm', text: `${s.name} 시터` }),
+          el('button', { class: 'ctasm', text: `${s.name} 시터`,
+            onclick: () => { ui.sitterOpen = true; rerender(); } }),
         ]),
       ]),
 
