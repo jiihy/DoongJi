@@ -23,9 +23,9 @@ export async function publicProfile(slug) {
   if (error) throw error;
   return data;
 }
-export async function sendInquiry(slug, contact, when, msg) {
+export async function sendInquiry(slug, contact, when, msg, pet) {
   const { data, error } = await sb.rpc('send_inquiry',
-    { p_slug: slug, p_contact: contact, p_when: when || null, p_msg: msg || null });
+    { p_slug: slug, p_contact: contact, p_when: when || null, p_msg: msg || null, p_pet: pet || null });
   if (error) throw error;
   return data;
 }

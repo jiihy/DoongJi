@@ -225,14 +225,15 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
               el('span', { text: kindName(it.kind) }),
               it.proof ? el('span', { class: 'badge', text: '제출됨' }) : null,
             ]),
-            el('div', { class: 'sub', text: it.proof
-              ? `${clock(it.proof.submitted_at)} 기록`
-                + (it.proof.dispute ? ' · 이의' : it.proof.verdict?.matched ? ' · 확인됨' : '')
-                + (outMinutes(it.proof) !== null ? ` · 밖에 있던 시간 ${outMinutes(it.proof)}분` : '')
-                + (!it.proof.photo_url ? ' · 설명만' : '')
-              : '아직 기록 없음' }),
+            el('div', { class: 'metacol' }, it.proof
+              ? [`${clock(it.proof.submitted_at)} 기록`
+                  + (it.proof.dispute ? ' · 이의' : it.proof.verdict?.matched ? ' · 확인됨' : ''),
+                 [outMinutes(it.proof) !== null ? `밖에 있던 시간 ${outMinutes(it.proof)}분` : null,
+                  !it.proof.photo_url ? '설명만' : null].filter(Boolean).join(' · '),
+                ].filter(Boolean).map(t => el('span', { class: 'sub', text: t }))
+              : [el('span', { class: 'sub', text: '아직 기록 없음' })]),
           ]),
-          el('button', { class: 'ctasm', text: it.proof ? '다시' : '기록하기',
+          el('button', { class: 'ctasm', text: it.proof ? '다시 기록' : '기록하기',
             onclick: () => { ui.proofFor = it.id; ui.proofDraft = null; rerender(); } }),
         ]))),
         // 이의가 온 항목은 목록 아래에 따로 세워 놓친 것이 없게 한다
@@ -260,8 +261,7 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         el('div', { class: 'sub', text: '부탁받지 않았어도 보여주고 싶은 순간. 보호자의 리액션은 프로필에 쌓입니다.' }),
         (c.extras || []).length ? el('div', { class: 'rows' }, c.extras.map(x => el('div', { class: 'prow' }, [
           el('div', { class: 'phead' }, [
-            el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
-            el('span', { class: 'sub', text: clock(x.at) }),
+            el('span', { class: 'tltime', text: clock(x.at) }),
           ]),
           (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
             el('div', { class: 'shot' }, [

@@ -70,7 +70,7 @@ const renderPublic = () => {
   return paint(sitterProfileScreen(pubState.p, pubState.p.stats, null, {
     ui: pubState.ui,
     rerender: renderPublic,
-    send: (contact, when, msg) => sendInquiry(publicSlug, contact, when, msg),
+    send: (contact, when, msg, pet) => sendInquiry(publicSlug, contact, when, msg, pet),
   }));
 };
 

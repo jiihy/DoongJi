@@ -80,6 +80,7 @@ export function profileScreen(ctx, rerender, go) {
             el('span', { class: 'tk', text: q.contact }),
             el('span', { class: 'sub', text: new Date(q.at).toLocaleDateString('ko-KR') }),
           ]),
+          q.pet_name ? el('div', { class: 'ptext', text: `아이 · ${q.pet_name}` }) : null,
           q.when_text ? el('div', { class: 'ptext', text: `원하는 시기 · ${q.when_text}` }) : null,
           q.msg ? el('div', { class: 'ptext', text: q.msg }) : null,
           el('div', { class: 'hgrid' }, [

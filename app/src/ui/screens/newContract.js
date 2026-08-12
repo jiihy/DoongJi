@@ -15,7 +15,7 @@ export function newContractScreen(ctx, go, rerender) {
   const q = ctx.fromInquiry || null;          // 받은 의뢰에서 넘어온 경우
   const f = ctx.form = ctx.form || {
     nickname: q ? `${q.contact} 보호자님` : '', ownerId: null, petIds: null,
-    pets: [{ name: '', age: '', extra: q ? (q.msg || '') : '' }],
+    pets: [{ name: q ? (q.pet_name || '') : '', age: '', extra: q ? (q.msg || '') : '' }],
     start: today(), end: plus(2),
     startTime: '14:00', startBy: 'owner', endTime: '18:00', endBy: 'owner',
     items: [
@@ -48,6 +48,8 @@ export function newContractScreen(ctx, go, rerender) {
     el('div', { class: 'h', text: '받은 의뢰에서 가져왔어요' }),
     el('div', { class: 'notelist' }, [
       el('span', { class: 'k', text: '연락처' }), el('span', { class: 'v', text: q.contact }),
+      ...(q.pet_name ? [el('span', { class: 'k sep', text: '아이' }),
+                        el('span', { class: 'v sep', text: q.pet_name })] : []),
       ...(q.when_text ? [el('span', { class: 'k sep', text: '원하는 시기' }),
                         el('span', { class: 'v sep', text: q.when_text })] : []),
       ...(q.msg ? [el('span', { class: 'k sep', text: '한 줄 소개' }),

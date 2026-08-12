@@ -30,7 +30,7 @@ export function sitterProfileScreen(s, stats, back, pub) {
   const totalAll = n('total') + offsite;
 
   const inqSheet = () => {
-    const d = ui.inq = ui.inq || { contact: '', when: '', msg: '', busy: false };
+    const d = ui.inq = ui.inq || { contact: '', pet: '', when: '', msg: '', busy: false };
     const close = () => { ui.inqOpen = false; pub.rerender(); };
     const f = (label, key, ph) => field(label, {
       name: `inq_${key}`, placeholder: ph, value: d[key],
@@ -43,6 +43,7 @@ export function sitterProfileScreen(s, stats, back, pub) {
         el('div', { class: 'h', text: '돌봄 의뢰 보내기' }),
         el('div', { class: 'sub', text: '보내주시면 시터가 연락드려요. 계약 전에는 아무것도 결제되지 않습니다.' }),
         f('연락받을 방법', 'contact', '예) 전화번호, 이메일'),
+        f('아이 이름', 'pet', '예) 초코'),
         f('원하는 시기 (선택)', 'when', '예) 8월 마지막 주 2박 3일'),
         f('한 줄 소개 (선택)', 'msg', '예) 말티즈 4살, 낯가림 있어요'),
         el('button', { class: 'cta', disabled: d.busy, text: d.busy ? '보내는 중…' : '보내기',
@@ -50,7 +51,7 @@ export function sitterProfileScreen(s, stats, back, pub) {
             if (!d.contact.trim()) { flash('연락받을 방법을 적어주세요'); return; }
             d.busy = true; pub.rerender();
             try {
-              await pub.send(d.contact.trim(), d.when.trim(), d.msg.trim());
+              await pub.send(d.contact.trim(), d.when.trim(), d.msg.trim(), d.pet.trim());
               ui.inq = null; ui.inqOpen = false; ui.inqDone = true;
               flash('의뢰를 보냈어요', '시터가 확인하면 연락드립니다.');
             } catch (e) { flash('전송 실패', e.message); }

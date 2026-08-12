@@ -627,8 +627,7 @@ export function ownerHome(c, go, ui, rerender, bell) {
         el('div', { class: 'sectsub', text: '부탁하지 않았는데 시터가 남긴 순간입니다. 마음에 닿았다면 리액션을 눌러주세요 — 시터 프로필에 쌓입니다.' }),
         ...c.extras.map(x => card([
           el('div', { class: 'phead' }, [
-            el('span', { class: 'tk', text: '먼저 챙긴 순간' }),
-            el('span', { class: 'sub', text: clock(x.at) }),
+            el('span', { class: 'tltime', text: clock(x.at) }),
           ]),
           (x.extra_photos || []).length ? el('div', { class: 'shots' }, x.extra_photos.map(ph =>
             el('button', { class: 'thumb', onclick: () => { ui.lightbox = ph.url; rerender(); } }, [
