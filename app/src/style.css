@@ -208,6 +208,7 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
   background:var(--tint);border-radius:1000px;padding:7px 12px}
 .tight{display:flex;flex-direction:column;gap:0}
 .tight .ptext{margin-top:12px}
+.tight .notelist{margin-top:8px}
 .capture{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
 /* 돌봄 일지 — 활동 타임라인 */
 .sect{font-size:17px;font-weight:800;letter-spacing:-.01em;padding:6px 4px 0}

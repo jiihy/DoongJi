@@ -207,11 +207,14 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
           onclick: () => { ui.petTab = p.id; rerender(); } }))) : null,
 
       (() => {
-        const common = c.notes.filter(n => n.kind === 'all' && (!multi || !n.pet_id || n.pet_id === cur));
-        return common.length ? card([
+        const notes = c.notes.filter(n => !multi || !n.pet_id || n.pet_id === cur);
+        return notes.length ? card([
           el('div', { class: 'tight' }, [
             el('div', { class: 'h', text: '보호자가 남긴 참고 사항' }),
-            ...common.map(n => el('div', { class: 'ptext', text: n.text })),
+            el('div', { class: 'notelist' }, notes.flatMap((n, i) => [
+              el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
+              el('span', { class: 'v' + (i ? ' sep' : ''), text: n.text }),
+            ])),
           ]),
         ]) : null;
       })(),
