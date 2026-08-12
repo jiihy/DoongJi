@@ -130,3 +130,45 @@ export function openLightbox(urls, start = 0) {
   document.addEventListener('keydown', onKey);
   document.body.appendChild(back);
 }
+
+// 좌로 밀면 삭제, 우로 밀면 편집이 나오는 줄. 마우스로도 끌 수 있다.
+export function swipeRow(kids, { onEdit, onDelete } = {}) {
+  const W = 84;
+  const content = el('div', { class: 'swcontent' }, kids);
+  const wrap = el('div', { class: 'swrow' }, [
+    onEdit ? el('button', { class: 'swact edit', text: '편집',
+      onclick: e => { e.stopPropagation(); reset(); onEdit(); } }) : null,
+    onDelete ? el('button', { class: 'swact del', text: '삭제',
+      onclick: e => { e.stopPropagation(); reset(); onDelete(); } }) : null,
+    content,
+  ]);
+
+  let x0 = null, dx = 0, open = 0;   // open: -1 삭제 / 1 편집 / 0 닫힘
+  const move = v => { content.style.transform = `translateX(${v}px)`; };
+  const reset = () => { open = 0; content.style.transition = 'transform .18s'; move(0); };
+  const snap = () => {
+    content.style.transition = 'transform .18s';
+    if (dx < -W / 2 && onDelete) { open = -1; move(-W); }
+    else if (dx > W / 2 && onEdit) { open = 1; move(W); }
+    else reset();
+  };
+
+  const start = x => { x0 = x; dx = 0; content.style.transition = 'none'; };
+  const drag = x => {
+    if (x0 === null) return false;
+    dx = x - x0 + open * W;
+    if ((!onDelete && dx < 0) || (!onEdit && dx > 0)) dx = 0;
+    move(Math.max(-W, Math.min(W, dx)));
+    return Math.abs(x - x0) > 6;
+  };
+  const end = () => { if (x0 !== null) { x0 = null; snap(); } };
+
+  content.addEventListener('touchstart', e => start(e.touches[0].clientX), { passive: true });
+  content.addEventListener('touchmove', e => drag(e.touches[0].clientX), { passive: true });
+  content.addEventListener('touchend', end);
+  content.addEventListener('mousedown', e => { start(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', e => { if (x0 !== null) drag(e.clientX); });
+  window.addEventListener('mouseup', end);
+
+  return wrap;
+}

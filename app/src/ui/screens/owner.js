@@ -150,17 +150,20 @@ function petEditSheet(c, ui, reload, rerender) {
 
 /* 특이사항 추가 시트 — 일정·아이 프로필에서 함께 쓴다 */
 export function careNoteSheet(c, ui, reload, rerender, defaultPet) {
-  if (!ui.cnOpen) return null;
+  if (!ui.cnOpen && !ui.cnEdit) return null;
+  const editing = ui.cnEdit || null;
   const multi = c.pets.length > 1;
   const saved = [...new Set(c.notes.map(n => n.kind).filter(k => String(k).startsWith('c:')))];
   const customKinds = [...new Set([...saved, ...(ui.customKinds || [])])];
-  const d = ui.cnDraft = ui.cnDraft || { kind: 'all', pet_id: multi ? (defaultPet || null) : null, text: '' };
-  const close = () => { ui.cnOpen = false; rerender(); };
+  const d = ui.cnDraft = ui.cnDraft || (editing
+    ? { kind: editing.kind, pet_id: editing.pet_id, text: editing.text }
+    : { kind: 'all', pet_id: multi ? (defaultPet || null) : null, text: '' });
+  const close = () => { ui.cnOpen = false; ui.cnEdit = null; ui.cnDraft = null; rerender(); };
   return el('div', { class: 'sheetback',
     onclick: e => { if (e.target.classList.contains('sheetback')) close(); } }, [
     el('div', { class: 'sheet' }, [
       el('div', { class: 'grip' }),
-      el('div', { class: 'h', text: '특이사항 추가' }),
+      el('div', { class: 'h', text: editing ? '특이사항 수정' : '특이사항 추가' }),
       multi ? el('div', { class: 'chips' }, [{ id: null, name: '모든 아이' }, ...c.pets].map(p =>
         el('button', { class: 'chip', 'aria-pressed': d.pet_id === p.id, text: p.name,
           onclick: () => { d.pet_id = p.id; rerender(); } }))) : null,
@@ -187,6 +190,13 @@ export function careNoteSheet(c, ui, reload, rerender, defaultPet) {
         value: d.text, oninput: e => { d.text = e.target.value; } }),
       el('button', { class: 'cta', text: '저장', onclick: async () => {
         if (!d.text.trim()) { flash('내용을 적어주세요'); return; }
+        if (editing) {
+          try { await api.saveNote(editing.id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() }); }
+          catch (e) { flash('저장 실패', e.message); return; }
+          Object.assign(editing, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
+          ui.cnEdit = null; ui.cnDraft = null; flash('수정했어요'); rerender();
+          return;
+        }
         const { data, error } = await api.addNote(c.owner_id, { kind: d.kind, pet_id: d.pet_id, text: d.text.trim() });
         if (error) { flash('저장 실패', error.message); return; }
         c.notes.push(data);

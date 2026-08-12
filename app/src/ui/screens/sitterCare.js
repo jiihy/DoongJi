@@ -1,4 +1,4 @@
-import { el, card, flash, openLightbox } from '../el.js';
+import { el, card, flash, openLightbox, swipeRow } from '../el.js';
 import * as api from '../../data/care.js';
 import { finishCare, replyDispute, noReply } from '../../data/care.js';
 import { delNote } from '../../data/owner.js';
@@ -223,16 +223,16 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
             el('button', { class: 'addmini', text: '＋', 'aria-label': '특이사항 추가',
               onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
           ]),
-          notes.length ? el('div', { class: 'notelist' }, notes.flatMap((n, i) => [
-            el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
-            el('span', { class: 'v' + (i ? ' sep' : '') }, [
-              el('span', { class: 'vtx', text: n.text }),
-              el('button', { class: 'ntrash', text: '✕', 'aria-label': '삭제', onclick: async () => {
-                c.notes.splice(c.notes.indexOf(n), 1); rerender();
-                try { await delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
-              } }),
-            ]),
-          ])) : el('div', { class: 'sub', text: '아직 없습니다. ＋로 통화에서 들은 내용을 적어두세요.' }),
+          notes.length ? el('div', { class: 'swlist' }, notes.map(n => swipeRow([
+            el('span', { class: 'k', text: kindName(n.kind) }),
+            el('span', { class: 'v', text: n.text }),
+          ], {
+            onEdit: () => { ui.cnEdit = n; ui.cnDraft = null; rerender(); },
+            onDelete: async () => {
+              c.notes.splice(c.notes.indexOf(n), 1); rerender();
+              try { await delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
+            },
+          }))) : el('div', { class: 'sub', text: '아직 없습니다. ＋로 통화에서 들은 내용을 적어두세요.' }),
         ]);
       })(),
 

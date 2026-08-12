@@ -61,3 +61,4 @@ export const delItem  = async id => { await sb.from('schedule_items').delete().e
 export const addNote = (ownerId, row) =>
   sb.from('care_notes').insert({ owner_id: ownerId, ...row }).select().single();
 export const delNote = async id => { await sb.from('care_notes').delete().eq('id', id).throwOnError(); };
+export const saveNote = async (id, patch) => { await sb.from('care_notes').update(patch).eq('id', id).throwOnError(); };

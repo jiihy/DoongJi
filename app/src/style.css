@@ -283,3 +283,14 @@ a.proofline{text-decoration:none}
   bottom:calc(18px + env(safe-area-inset-bottom));z-index:41;
   font-size:13px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);
   padding:6px 12px;border-radius:1000px}
+/* 스와이프로 편집·삭제가 나오는 줄 */
+.swrow{position:relative;overflow:hidden}
+.swrow+.swrow{border-top:1px solid var(--line)}
+.swcontent{position:relative;z-index:1;background:#fff;display:flex;align-items:baseline;gap:10px;
+  padding:13px 2px;will-change:transform;touch-action:pan-y}
+.swact{position:absolute;top:0;bottom:0;width:84px;border:none;font-size:13px;font-weight:700;color:#fff}
+.swact.edit{left:0;background:var(--primary)}
+.swact.del{right:0;background:#e5484d}
+.swrow .k{flex:none;min-width:50px;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.swrow .v{flex:1;min-width:0;font-size:14px;font-weight:500;line-height:1.5;color:var(--ink3)}
+.swlist{display:flex;flex-direction:column;margin-top:12px}

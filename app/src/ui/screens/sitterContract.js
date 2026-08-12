@@ -1,4 +1,4 @@
-import { el, card, field, flash, copyText } from '../el.js';
+import { el, card, field, flash, copyText, swipeRow } from '../el.js';
 import { KINDS } from '../../lib/kinds.js';
 import { savePet, saveContract, addItem, saveItem, delItem } from '../../data/owner.js';
 import { inviteUrlOf } from '../../data/contracts.js';
@@ -135,18 +135,18 @@ export function sitterContractScreen(c, ui, go, reload, rerender) {
       card([
         el('div', { class: 'h', text: '특이사항' }),
         el('div', { class: 'sub', text: '원래는 보호자가 적는 칸입니다. 통화로 들었다면 여기에 대신 적어두세요 — 보호자도 자기 화면에서 고칠 수 있습니다.' }),
-        c.notes.length ? el('div', { class: 'notelist' }, c.notes
+        c.notes.length ? el('div', { class: 'swlist' }, c.notes
           .filter(n => !multi || !n.pet_id || n.pet_id === cur)
-          .flatMap((n, i) => [
-            el('span', { class: 'k' + (i ? ' sep' : ''), text: kindName(n.kind) }),
-            el('span', { class: 'v' + (i ? ' sep' : '') }, [
-              el('span', { class: 'vtx', text: n.text }),
-              el('button', { class: 'ntrash', text: '✕', 'aria-label': '삭제', onclick: async () => {
-                c.notes.splice(c.notes.indexOf(n), 1); rerender();
-                try { await delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
-              } }),
-            ]),
-          ])) : el('div', { class: 'sub', text: '아직 없습니다.' }),
+          .map(n => swipeRow([
+            el('span', { class: 'k', text: kindName(n.kind) }),
+            el('span', { class: 'v', text: n.text }),
+          ], {
+            onEdit: () => { ui.cnEdit = n; ui.cnDraft = null; rerender(); },
+            onDelete: async () => {
+              c.notes.splice(c.notes.indexOf(n), 1); rerender();
+              try { await delNote(n.id); } catch (e) { flash('삭제 실패', e.message); await reload(); }
+            },
+          }))) : el('div', { class: 'sub', text: '아직 없습니다.' }),
         el('button', { class: 'add', text: '＋ 특이사항 추가',
           onclick: () => { ui.cnOpen = true; ui.cnDraft = null; rerender(); } }),
       ]),
