@@ -10,6 +10,8 @@ import { loadContract } from './data/owner.js';
 import { ownerWelcome, ownerInstall, ownerConfirm, ownerSchedule, ownerHome, installSeen, markInstallSeen, freshProofs } from './ui/screens/owner.js';
 import { sitterProfileScreen } from './ui/screens/sitterProfile.js';
 import { bellButton, bellScreen } from './ui/screens/bell.js';
+import { diaryWriteScreen, booksScreen } from './ui/screens/diary.js';
+import { listBooks, writtenPets } from './data/care.js';
 import { listEvents, readEvents, markSeen } from './data/care.js';
 import { sitterStats, publicProfile, sendInquiry } from './data/owner.js';
 import { newContractScreen } from './ui/screens/newContract.js';
@@ -30,6 +32,11 @@ const go = async (screen, arg) => {
     return;
   }
   if (wasBell) ctx.events = await listEvents('sitter');
+  if (screen === 'diaryWrite') {
+    uiState.written = await writtenPets(ctx.sitter.id, ctx.careId);
+    uiState.writeFor = null;
+  }
+  if (screen === 'books') ctx.books = await listBooks(ctx.sitter.id);
   if (screen === 'care') { ctx.careId = arg || ctx.careId; ctx.care = null; render(); ctx.care = await loadCare(ctx.careId); watchCare(); }
   else { unwatch(); await refresh(); }
   render();
@@ -76,6 +83,12 @@ function render() {
     return paint(sitterCareScreen(ctx.care, uiState, go,
       async () => { ctx.care = await loadCare(ctx.careId); render(); }, rerender));
   }
+  if (ctx.screen === 'diaryWrite') {
+    if (!ctx.care) return paint({ title: '후기 작성', body: [card([el('div', { class: 'sub', text: '불러오는 중…' })])] });
+    return paint(diaryWriteScreen(ctx.care, uiState, ctx.sitter.id, go,
+      async () => { ctx.care = await loadCare(ctx.careId); ctx.books = await listBooks(ctx.sitter.id); }, rerender));
+  }
+  if (ctx.screen === 'books') return paint(booksScreen(ctx.books || [], go));
   const unread = (ctx.events || []).filter(e => !e.read_at).length;
   return paint(sitterHomeScreen(ctx, go, rerender, bellButton(unread, () => go('bell'))));
 }

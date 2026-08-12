@@ -123,3 +123,51 @@ export const markSeen = async (proofIds) => {
   await sb.from('seens').upsert(proofIds.map(id => ({ proof_id: id, kind: 'view' })),
     { onConflict: 'proof_id', ignoreDuplicates: true }).throwOnError();
 };
+
+/* ── F12 돌봄 마치기 · F13 돌봄 일기 ── */
+// finished_at은 전 항목이 기록된 뒤에만 들어간다 — 서버 트리거(guard_finish)가 막는다
+export async function finishCare(contractId) {
+  const { error } = await sb.from('contracts')
+    .update({ finished_at: new Date().toISOString() }).eq('id', contractId);
+  if (error) throw error;
+}
+
+// 아이당 한 권(unique sitter_id, pet_id) · 계약당 한 편(unique book_id, contract_id)
+export async function ensureBook(sitterId, petId) {
+  const { data: found } = await sb.from('diary_books')
+    .select('id').eq('sitter_id', sitterId).eq('pet_id', petId).maybeSingle();
+  if (found) return found.id;
+  const { data, error } = await sb.from('diary_books')
+    .insert({ sitter_id: sitterId, pet_id: petId }).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function writeEntry(sitterId, petId, contractId, text) {
+  const bookId = await ensureBook(sitterId, petId);
+  const { error } = await sb.from('diary_entries')
+    .insert({ book_id: bookId, contract_id: contractId, text });
+  if (error) {
+    if (error.code === '23505') throw new Error('이 돌봄의 후기는 이미 쓰셨어요');
+    throw error;
+  }
+}
+
+// 이 계약에서 이미 후기를 쓴 아이
+export async function writtenPets(sitterId, contractId) {
+  const { data } = await sb.from('diary_entries')
+    .select('diary_books(pet_id)').eq('contract_id', contractId);
+  return (data || []).map(r => r.diary_books?.pet_id).filter(Boolean);
+}
+
+export async function listBooks(sitterId) {
+  const { data, error } = await sb.from('diary_books')
+    .select('id, created_at, pets(id, name), diary_entries(id, text, written_at, contract_id)')
+    .eq('sitter_id', sitterId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export const setRecordPublic = async (contractId, on) => {
+  await sb.from('contracts').update({ record_public: on }).eq('id', contractId).throwOnError();
+};

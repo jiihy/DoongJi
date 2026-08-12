@@ -51,6 +51,8 @@ export function profileScreen(ctx, rerender, go) {
         f('장소 상세', 'addr_detail', '예) 1층 카페 앞'),
         f('한 줄 소개', 'bio', '예) 기록으로 신뢰를 쌓습니다'),
       ]),
+      el('button', { class: 'add', text: '돌봄 일기 보기', onclick: () => go('books') }),
+
       card([
         el('div', { class: 'h', text: '공개 프로필 링크' }),
         el('div', { class: 'sub', text: 'SNS·당근 소개글에 이 주소를 올리면, 본 사람이 바로 의뢰를 보낼 수 있어요. 주소와 연락처는 공개되지 않습니다.' }),

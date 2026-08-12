@@ -196,3 +196,4 @@ input[type=time]::-webkit-calendar-picker-indicator{width:15px;height:15px;paddi
 .imp .q{font-size:13px;line-height:1.6;color:var(--ink2)}
 .proofline{align-self:flex-start;font-size:12px;font-weight:700;color:var(--primary-ink);
   background:var(--tint);border-radius:1000px;padding:7px 12px}
+.tight{display:flex;flex-direction:column;gap:0}

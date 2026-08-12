@@ -1,5 +1,6 @@
 import { el, card, flash } from '../el.js';
 import * as api from '../../data/care.js';
+import { finishCare } from '../../data/care.js';
 
 import { KINDS, kindName, outMinutes } from '../../lib/kinds.js';
 const hm = t => (t || '').slice(0, 5);
@@ -172,10 +173,10 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
       (() => {
         const common = c.notes.filter(n => n.kind === 'all' && (!multi || !n.pet_id || n.pet_id === cur));
         return common.length ? card([
-          el('div', { class: 'h', text: '보호자가 남긴 참고 사항 · 공통' }),
-          el('div', { class: 'rows' }, common.map(n => el('div', { class: 'prow' }, [
-            el('div', { class: 'ptext', text: n.text }),
-          ]))),
+          el('div', { class: 'tight' }, [
+            el('div', { class: 'h', text: '보호자가 남긴 참고 사항' }),
+            ...common.map(n => el('div', { class: 'ptext', text: n.text })),
+          ]),
         ]) : null;
       })(),
 
@@ -223,6 +224,20 @@ export function sitterCareScreen(c, ui, go, reload, rerender) {
         el('button', { class: 'add', text: '＋ 순간 남기기',
           onclick: () => { ui.extraOpen = true; ui.extraDraft = null; rerender(); } }),
       ]),
+
+      // 전 항목이 기록돼야 마칠 수 있다 — 서버(guard_finish)도 같은 조건으로 막는다
+      c.finished_at ? card([
+        el('div', { class: 'h', text: '돌봄을 마쳤어요' }),
+        el('div', { class: 'sub', text: '이 돌봄의 후기를 아이마다 한 편씩 남길 수 있습니다.' }),
+        el('button', { class: 'cta', text: '후기 쓰기', onclick: () => go('diaryWrite') }),
+      ]) : (done === c.items.length && c.items.length ? card([
+        el('div', { class: 'h', text: '오늘 할 것을 다 기록했어요' }),
+        el('div', { class: 'sub', text: '돌봄 기간이 끝났다면 마치기를 누르세요. 마치면 아이마다 후기를 한 편 남길 수 있어요.' }),
+        el('button', { class: 'cta', text: '돌봄 마치기', onclick: async () => {
+          try { await finishCare(c.id); flash('돌봄을 마쳤어요', '이제 후기를 남겨주세요.'); await reload(); go('diaryWrite'); }
+          catch (e) { flash('마칠 수 없어요', e.message); }
+        } }),
+      ]) : null),
     ],
     hint: '사진을 올린 시각이 그대로 남습니다. 늦어도 벌점은 없어요.',
   };
